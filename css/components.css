@@ -1,0 +1,380 @@
+/* AI Tutor Chatbot Panel */
+.ai-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 450px;
+  background-color: var(--bg-secondary);
+  border-radius: var(--card-radius);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+
+.ai-chat-header {
+  padding: 16px 20px;
+  background-color: var(--bg-sidebar);
+  color: var(--text-on-dark);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-orange) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.ai-chat-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-chat-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.ai-chat-status {
+  font-size: 0.7rem;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-chat-status::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--success);
+  border-radius: 50%;
+}
+
+.ai-chat-history {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.chat-bubble.ai {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  align-self: flex-start;
+  border-bottom-left-radius: 2px;
+  border: 1px solid var(--glass-border);
+}
+
+.chat-bubble.student {
+  background-color: var(--brand-blue);
+  color: #ffffff;
+  align-self: flex-end;
+  border-bottom-right-radius: 2px;
+}
+
+.ai-chat-input-bar {
+  display: flex;
+  padding: 12px 16px;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--glass-border);
+  gap: 10px;
+}
+
+.ai-chat-input-bar input {
+  flex: 1;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  outline: none;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.ai-chat-send-btn {
+  background-color: var(--brand-orange);
+  color: #fff;
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ai-chat-send-btn:hover {
+  background-color: var(--brand-orange-hover);
+}
+
+/* Digital LKPD Styles */
+.lkpd-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lkpd-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--brand-blue);
+  border-bottom: 2px solid var(--brand-orange);
+  padding-bottom: 10px;
+}
+
+.lkpd-card {
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.lkpd-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lkpd-textarea {
+  width: 100%;
+  height: 100px;
+  border-radius: 8px;
+  border: 1px solid var(--text-secondary);
+  padding: 12px;
+  font-size: 0.9rem;
+  outline: none;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.lkpd-textarea:focus {
+  border-color: var(--brand-blue);
+}
+
+.lkpd-obs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.lkpd-obs-table th, 
+.lkpd-obs-table td {
+  border: 1px solid var(--text-secondary);
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.lkpd-obs-table th {
+  background-color: var(--accent-blue-light);
+  color: var(--brand-blue);
+  font-weight: bold;
+}
+
+/* Completion Certificate Style */
+.certificate-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: var(--card-radius);
+  margin-bottom: 24px;
+}
+
+.certificate-border {
+  width: 100%;
+  max-width: 800px;
+  padding: 24px;
+  background: #ffffff;
+  border: 15px double #d4af37; /* Gold double border */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+  position: relative;
+  font-family: 'Outfit', sans-serif;
+  text-align: center;
+}
+
+.certificate-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6rem;
+  color: rgba(212, 175, 55, 0.05);
+  font-weight: 800;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.certificate-header {
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #555555;
+  margin-bottom: 12px;
+}
+
+.certificate-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #b8972e;
+  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.certificate-present {
+  font-size: 1rem;
+  font-style: italic;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.certificate-name {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #111111;
+  text-decoration: underline;
+  text-decoration-color: #d4af37;
+  text-underline-offset: 8px;
+  margin-bottom: 20px;
+}
+
+.certificate-text {
+  font-size: 0.95rem;
+  color: #444;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+}
+
+.certificate-text strong {
+  color: var(--brand-blue);
+}
+
+.certificate-footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.certificate-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.certificate-signature-line {
+  width: 150px;
+  height: 1px;
+  background-color: #999;
+  margin-top: 50px;
+  margin-bottom: 8px;
+}
+
+.certificate-sign-name {
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.certificate-sign-title {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.certificate-qr {
+  width: 90px;
+  height: 90px;
+  border: 1px solid #ddd;
+  padding: 4px;
+  background: #fff;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.certificate-qr-code {
+  width: 100%;
+  height: 100%;
+}
+
+.certificate-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* PRINT MEDIA STYLING */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .certificate-border,
+  .certificate-border * {
+    visibility: visible;
+  }
+  .certificate-border {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    box-shadow: none;
+    border: 15px double #d4af37 !important;
+    background: #ffffff !important;
+  }
+  
+  /* Report printing layout overrides */
+  body.printing-reports * {
+    visibility: hidden;
+  }
+  body.printing-reports #printable-reports-area,
+  body.printing-reports #printable-reports-area * {
+    visibility: visible;
+  }
+  body.printing-reports #printable-reports-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Hide print buttons */
+  .certificate-actions {
+    display: none !important;
+  }
+}

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2d59" />
+      <stop offset="45%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="orbitGrad1_512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="orbitGrad2_512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c" />
+      <stop offset="100%" stop-color="#f97316" />
+    </linearGradient>
+    <linearGradient id="coreGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <filter id="glowEffect" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Background with smooth rounded corners -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad512)" />
+  <rect width="508" height="508" x="2" y="2" rx="110" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="4" />
+  
+  <!-- Physics Atom Orbits -->
+  <g transform="translate(256, 230)">
+    <!-- Glow aura in center -->
+    <circle cx="0" cy="0" r="110" fill="#2563eb" opacity="0.18" filter="url(#glowEffect)" />
+    
+    <!-- Orbit 1 (Horizontal tilt) -->
+    <ellipse cx="0" cy="0" rx="170" ry="64" fill="none" stroke="url(#orbitGrad1_512)" stroke-width="10" transform="rotate(-30)" stroke-dasharray="20 8" opacity="0.95" />
+    <!-- Orbit 2 (Opposite tilt) -->
+    <ellipse cx="0" cy="0" rx="170" ry="64" fill="none" stroke="url(#orbitGrad2_512)" stroke-width="10" transform="rotate(30)" opacity="0.95" />
+    <!-- Orbit 3 (Vertical) -->
+    <ellipse cx="0" cy="0" rx="170" ry="64" fill="none" stroke="#c084fc" stroke-width="10" transform="rotate(90)" stroke-dasharray="32 10" opacity="0.9" />
+    
+    <!-- Electrons -->
+    <circle cx="147" cy="-85" r="16" fill="#38bdf8" filter="url(#glowEffect)" />
+    <circle cx="-147" cy="85" r="16" fill="#fb923c" filter="url(#glowEffect)" />
+    <circle cx="0" cy="-170" r="16" fill="#c084fc" filter="url(#glowEffect)" />
+    
+    <!-- Core Nucleus Glowing -->
+    <circle cx="0" cy="0" r="48" fill="url(#coreGrad512)" filter="url(#glowEffect)" />
+    <circle cx="-10" cy="-10" r="14" fill="#ffffff" opacity="0.85" />
+  </g>
+  
+  <!-- Subtitle & Brand Banner -->
+  <text x="256" y="440" text-anchor="middle" font-family="'Outfit', 'Poppins', system-ui, sans-serif" font-weight="900" font-size="52" fill="#f8fafc" letter-spacing="8">FIVIA</text>
+  <text x="256" y="475" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="19" fill="#94a3b8" letter-spacing="3">VIRTUAL LAB FISIKA</text>
+</svg>

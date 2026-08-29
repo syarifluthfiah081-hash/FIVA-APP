@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIVIA – Fisika Virtual Aplikatif</title>
+  
+  <!-- PWA & Mobile Optimization -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0f2d59">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FIVIA Lab">
+  <link rel="apple-touch-icon" href="./icons/icon-192.svg">
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Local Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/dashboards.css">
+  <link rel="stylesheet" href="css/labs.css">
+  <link rel="stylesheet" href="css/components.css">
+  
+  <script>
+    // Hide loading screen after full load
+    window.addEventListener("load", () => {
+      const loader = document.getElementById("fivia-loading-screen");
+      if (loader) {
+        loader.style.opacity = "0";
+        loader.style.visibility = "hidden";
+        setTimeout(() => {
+          loader.remove();
+        }, 500);
+      }
+    });
+  </script>
+</head>
+<body>
+
+  <!-- FIVIA Loading Screen -->
+  <div id="fivia-loading-screen" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: #050b18; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease, visibility 0.5s ease; color: #f8fafc; font-family: 'Poppins', sans-serif;">
+    <div style="margin-bottom: 24px; position: relative; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+      <svg viewBox="0 0 100 100" width="80" height="80" style="fill: none; stroke-linecap: round; stroke-linejoin: round; position: absolute; animation: spin 8s linear infinite;">
+        <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-orange)" stroke-width="4" transform="rotate(30 50 50)" />
+        <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--accent-violet)" stroke-width="4" transform="rotate(-30 50 50)" />
+      </svg>
+      <svg viewBox="0 0 100 100" width="80" height="80" style="fill: none; stroke-linecap: round; stroke-linejoin: round; position: absolute;">
+        <path d="M35 38 L50 68 L65 38" stroke="var(--brand-orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="50" cy="42" r="5" fill="var(--brand-blue)" />
+      </svg>
+    </div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 4px; letter-spacing: 2px; color: #ffffff;">FIVIA</h1>
+    <p style="font-size: 0.95rem; font-weight: 500; color: #94a3b8; margin-bottom: 16px;">Fisika Virtual Aplikatif</p>
+    <p style="font-size: 0.85rem; font-style: italic; color: var(--brand-orange); margin-bottom: 40px;">"Jelajahi. Eksperimen. Pahami."</p>
+    <!-- Spinner -->
+    <div style="width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--brand-orange); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+  </div>
+
+  <div id="app-container">
+    
+    <!-- Left Navigation Sidebar (Hidden for guests) -->
+    <aside class="sidebar hidden-section">
+      <div class="sidebar-logo" style="gap: 10px;">
+        <svg viewBox="0 0 100 100" width="30" height="30" style="fill: none; stroke-linecap: round; stroke-linejoin: round;">
+          <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-orange)" stroke-width="4" transform="rotate(30 50 50)" />
+          <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--accent-violet)" stroke-width="4" transform="rotate(-30 50 50)" />
+          <path d="M35 38 L50 68 L65 38" stroke="var(--brand-orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="50" cy="42" r="5" fill="var(--brand-blue)" />
+        </svg>
+        <span>FIVIA</span>
+      </div>
+      
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar">?</div>
+        <div class="sidebar-user-info">
+          <span class="sidebar-user-name">Loading...</span>
+          <span class="sidebar-user-role">Siswa</span>
+        </div>
+      </div>
+      
+      <ul class="sidebar-menu">
+        <!-- Injected dynamically via app.js -->
+      </ul>
+      
+      <div class="sidebar-footer">
+        <button class="btn btn-outline" id="btn-logout" style="width: 100%; border-color: rgba(255,255,255,0.2); color: #fff;">
+          <i class="fas fa-sign-out-alt"></i> Keluar
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main App Container Wrapper -->
+    <div id="main-content" class="expanded">
+      
+      <!-- Top Sticky Header -->
+      <header class="app-header">
+        <div class="header-title-container">
+          <button class="header-toggle-sidebar" title="Toggle Menu">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 100 100" width="24" height="24" style="fill: none; stroke-linecap: round; stroke-linejoin: round;">
+              <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-orange)" stroke-width="4" transform="rotate(30 50 50)" />
+              <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--accent-violet)" stroke-width="4" transform="rotate(-30 50 50)" />
+              <path d="M35 38 L50 68 L65 38" stroke="var(--brand-orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="50" cy="42" r="5" fill="var(--brand-blue)" />
+            </svg>
+            <h2 style="font-size: 1.15rem; font-weight: 700; font-family: 'Poppins'; color: var(--brand-blue);">FIVIA</h2>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <!-- PWA Install Button (appears automatically if browser supports installation) -->
+          <button id="btn-pwa-install" class="btn btn-orange" style="display: none; padding: 6px 12px; font-size: 0.8rem; border-radius: 20px; align-items: center; gap: 6px;" title="Install FIVIA sebagai Aplikasi Desktop/HP">
+            <i class="fas fa-download"></i> <span>Install App</span>
+          </button>
+
+          <!-- Firebase Cloud Sync Status Badge -->
+          <button id="btn-open-firebase-modal" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; border-color: rgba(255,255,255,0.15);" title="Pengaturan & Status Firebase Cloud Storage">
+            <span id="firebase-status-badge"><i class="fas fa-database" style="color: #f59e0b;"></i> Local DB</span>
+          </button>
+
+          <button class="theme-switch" title="Ganti Tema">
+            <i class="fas fa-moon"></i>
+          </button>
+          
+          <div id="header-auth-buttons">
+            <button class="btn btn-secondary btn-open-login" style="padding: 8px 16px; font-size: 0.85rem;">Masuk</button>
+            <button class="btn btn-primary btn-open-register" style="padding: 8px 16px; font-size: 0.85rem;">Daftar</button>
+          </div>
+          
+          <div id="header-user-badge" class="hidden-section" style="display: flex; align-items: center; gap: 8px;">
+            <span id="user-display-name" style="font-size: 0.9rem; font-weight: 600;">Guest</span>
+            <i class="fas fa-user-circle" style="font-size: 1.5rem; color: var(--brand-blue);"></i>
+            <button class="btn btn-outline" id="btn-header-logout" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(0,0,0,0.15); margin-left: 8px;" title="Keluar"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- VIEW PANELS (SPA SECTIONS) -->
+
+      <!-- 1. LANDING PAGE SECTION -->
+      <section id="landing-section" class="spa-section hero-section fade-in-section">
+        <div class="hero-text">
+          <div class="badge badge-orange" style="margin-bottom: 16px;">Kurikulum Merdeka - Fase E & F</div>
+          <h1 style="font-family: 'Poppins'; font-weight: 800; font-size: 3.2rem; line-height: 1.1; margin-bottom: 8px;">FIVIA</h1>
+          <h2 style="font-family: 'Poppins'; font-weight: 600; font-size: 1.6rem; color: var(--brand-blue); margin-bottom: 12px;">Fisika Virtual Aplikatif</h2>
+          <p style="font-size: 1.1rem; font-weight: 600; color: var(--brand-orange); margin-bottom: 16px; letter-spacing: 0.05em;">"Jelajahi. Eksperimen. Pahami."</p>
+          <p>
+            Platform pembelajaran Fisika interaktif yang membawa eksperimen, simulasi, laboratorium virtual, dan teknologi AI ke dalam pengalaman belajar siswa SMA.
+          </p>
+          <div class="hero-cta" style="margin-top: 24px;">
+            <button class="btn btn-primary btn-open-login" style="padding: 12px 24px;"><i class="fas fa-play"></i> Mulai Belajar</button>
+            <button class="btn btn-outline btn-open-login" style="padding: 12px 24px;"><i class="fas fa-flask"></i> Masuk Laboratorium</button>
+          </div>
+        </div>
+        <div class="hero-image-container">
+          <div class="glass-panel" style="padding: 16px; width: 100%; max-width: 460px;">
+            <div style="background-color: #050b18; border-radius: 12px; aspect-ratio: 4/3; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 16px; padding: 24px; position: relative; overflow: hidden;">
+              <!-- Outer glowing decorative orbits -->
+              <div style="position: absolute; width: 180px; height: 180px; border: 1px dashed rgba(6,182,212,0.15); border-radius: 50%; animation: spin 20s linear infinite;"></div>
+              <div style="position: absolute; width: 260px; height: 260px; border: 1px dashed rgba(124,58,237,0.1); border-radius: 50%; animation: spin 30s linear infinite reverse;"></div>
+              
+              <svg viewBox="0 0 100 100" width="100" height="100" style="fill: none; stroke-linecap: round; stroke-linejoin: round; animation: spin 10s linear infinite;">
+                <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-orange)" stroke-width="3" transform="rotate(30 50 50)" />
+                <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--accent-violet)" stroke-width="3" transform="rotate(-30 50 50)" />
+                <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-blue)" stroke-width="2" transform="rotate(90 50 50)" />
+                <circle cx="50" cy="50" r="6" fill="var(--brand-orange)" />
+              </svg>
+              
+              <h3 style="color: #fff; font-size: 1.25rem; font-family: 'Poppins'; font-weight: 700; margin-top: 10px;">Virtual Lab 3D & AI</h3>
+              <p style="color: #94a3b8; font-size: 0.85rem;">Eksplorasi konsep gerak, energi terbarukan, efek rumah kaca, dan instrumen ukur presisi secara interaktif.</p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                <span class="badge badge-blue" style="background-color: rgba(15,45,89,0.3); color: #93c5fd; border: 1px solid rgba(147,197,253,0.2);">Eksperimen 3D</span>
+                <span class="badge badge-orange" style="background-color: rgba(6,182,212,0.2); color: #22d3ee; border: 1px solid rgba(34,211,238,0.2);">AI Tutor</span>
+                <span class="badge badge-success" style="background-color: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(52,211,153,0.2);">Digital LKPD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. STUDENT DASHBOARD SECTION -->
+      <section id="student-dashboard-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div style="padding: 24px 24px 0 24px; margin-bottom: -16px;">
+          <h2 style="font-size: 1.8rem; font-weight: 800; font-family: 'Poppins'; color: var(--brand-blue);" id="student-greeting">Halo, Siswa! 👋</h2>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px; font-weight: 500;">Siap menjelajahi Fisika hari ini?</p>
+        </div>
+        <div class="dashboard-grid">
+          <div class="glass-panel stat-card">
+            <div class="stat-info">
+              <span class="stat-label">Progress Pembelajaran</span>
+              <span class="stat-value" id="student-stat-progress">0%</span>
+            </div>
+            <div class="stat-icon"><i class="fas fa-graduation-cap"></i></div>
+          </div>
+          <div class="glass-panel stat-card orange-theme">
+            <div class="stat-info">
+              <span class="stat-label">LKPD Dikirim</span>
+              <span class="stat-value" id="student-stat-lkpd">0</span>
+            </div>
+            <div class="stat-icon"><i class="fas fa-clipboard-check"></i></div>
+          </div>
+          <div class="glass-panel stat-card success-theme">
+            <div class="stat-info">
+              <span class="stat-label">Sertifikat Diperoleh</span>
+              <span class="stat-value" id="student-stat-certs">0</span>
+            </div>
+            <div class="stat-icon"><i class="fas fa-award"></i></div>
+          </div>
+        </div>
+
+        <div class="glass-panel dashboard-section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-route" style="color: var(--brand-blue);"></i> Peta Belajar Fisika</h3>
+          </div>
+          <div class="course-grid" id="student-course-grid">
+            <!-- Dynamic Material cards -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. TEACHER DASHBOARD SECTION -->
+      <section id="teacher-dashboard-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="dashboard-grid">
+          <div class="glass-panel stat-card">
+            <div class="stat-info">
+              <span class="stat-label">Total Kelas Diajar</span>
+              <span class="stat-value" id="teacher-stat-classes">4</span>
+            </div>
+            <div class="stat-icon"><i class="fas fa-school"></i></div>
+          </div>
+          <div class="glass-panel stat-card orange-theme">
+            <div class="stat-info">
+              <span class="stat-label">Tugas Pending</span>
+              <span class="stat-value" id="teacher-stat-pending">0</span>
+            </div>
+            <div class="stat-icon"><i class="fas fa-file-invoice"></i></div>
+          </div>
+          <div class="glass-panel stat-card success-theme">
+            <div class="stat-info">
+              <span class="stat-label">Siswa Terdaftar</span>
+              <span class="stat-value" id="teacher-stat-students">5</span>
+            </div>
+            <div class="stat-icon"><i class="fas fa-user-friends"></i></div>
+          </div>
+        </div>
+
+        <div class="glass-panel dashboard-section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-clipboard-list" style="color: var(--brand-orange);"></i> Penilaian LKPD Digital Siswa</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table" id="teacher-submissions-table">
+              <thead>
+                <tr>
+                  <th>Nama Siswa</th>
+                  <th>Kelas</th>
+                  <th>Nama Eksperimen</th>
+                  <th>Tanggal Pengiriman</th>
+                  <th>Status</th>
+                  <th>Nilai</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. GURU CLASS MANAGEMENT SECTION -->
+      <section id="class-management-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="glass-panel dashboard-section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-users-cog" style="color: var(--brand-blue);"></i> Manajemen Kelas & Siswa</h3>
+            <button class="btn btn-primary" id="btn-add-student"><i class="fas fa-user-plus"></i> Tambah Siswa</button>
+          </div>
+          
+          <div class="action-box">
+            <input type="text" class="form-control search-input" id="search-student" placeholder="Cari nama siswa...">
+            <select class="form-control" id="filter-class" style="max-width: 180px;">
+              <option value="">Semua Kelas</option>
+              <option value="cls_x1">Kelas X-1</option>
+              <option value="cls_x2">Kelas X-2</option>
+              <option value="cls_xi1">Kelas XI IPA-1</option>
+              <option value="cls_xi2">Kelas XI IPA-2</option>
+            </select>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="class-students-table">
+              <thead>
+                <tr>
+                  <th>ID Siswa</th>
+                  <th>Nama Lengkap</th>
+                  <th>Email</th>
+                  <th>Kelas</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. GURU REPORTS SECTION -->
+      <section id="teacher-reports-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="glass-panel dashboard-section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-file-alt" style="color: var(--brand-orange);"></i> Laporan Hasil Belajar Siswa</h3>
+            <button class="btn btn-orange" id="btn-print-reports"><i class="fas fa-print"></i> Cetak Laporan PDF</button>
+          </div>
+          
+          <div class="action-box">
+            <select class="form-control" id="report-class-select" style="max-width: 240px;">
+              <option value="cls_x1">Kelas X-1</option>
+              <option value="cls_x2">Kelas X-2</option>
+              <option value="cls_xi1">Kelas XI IPA-1</option>
+              <option value="cls_xi2">Kelas XI IPA-2</option>
+            </select>
+          </div>
+
+          <div class="table-responsive" id="printable-reports-area">
+            <table class="custom-table" id="reports-summary-table">
+              <thead>
+                <tr>
+                  <th>Nama Siswa</th>
+                  <th>Fase</th>
+                  <th>Rata-rata LKPD</th>
+                  <th>Rata-rata Kuis</th>
+                  <th>Sertifikat Diclaim</th>
+                  <th>Predikat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. STUDENT MATERIALS LIST SECTION -->
+      <section id="materi-list-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="glass-panel dashboard-section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-book" style="color: var(--brand-blue);"></i> Modul Pembelajaran Fisika</h3>
+          </div>
+          <div class="course-grid" id="materi-list-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. MATERIAL DETAIL VIEW SECTION -->
+      <section id="materi-detail-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="glass-panel dashboard-section" style="padding: 32px;">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <a href="#materi" class="btn btn-secondary" style="padding: 8px 12px; border-radius: 8px;"><i class="fas fa-arrow-left"></i> Kembali</a>
+            <span class="badge badge-blue" id="materi-detail-fase">Fase E</span>
+          </div>
+          
+          <h1 id="materi-detail-title" style="font-size: 2.2rem; margin-bottom: 16px;">Judul Materi</h1>
+          <p id="materi-detail-desc" style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 30px;">Deskripsi panjang materi pembelajaran.</p>
+          
+          <div class="tab-container" id="materi-detail-tabs-nav">
+            <button class="tab-btn active" id="detail-tab-teori"><i class="fas fa-book-open"></i> Materi &amp; Teori</button>
+            <button class="tab-btn" id="detail-tab-detektif"><i class="fas fa-search-plus"></i> Kegiatan Detektif Besaran, Satuan &amp; Dimensi</button>
+            <button class="tab-btn" id="detail-tab-lkpd"><i class="fas fa-file-signature"></i> LKPD Digital</button>
+            <button class="tab-btn" id="detail-tab-video"><i class="fas fa-play-circle"></i> Video Pembelajaran</button>
+          </div>
+          
+          <div id="materi-detail-tab-content">
+            <!-- 1. Theory Content View -->
+            <div id="detail-content-teori" class="fade-in-section">
+              <div class="glass-panel" style="padding: 24px; background-color: var(--bg-primary); margin-bottom: 24px;">
+                <h4 style="margin-bottom: 12px; color: var(--brand-orange);"><i class="fas fa-bullseye"></i> Tujuan Pembelajaran</h4>
+                <p id="materi-detail-tujuan" style="line-height: 1.5; font-size: 0.95rem;">Siswa dapat...</p>
+              </div>
+              
+              <div class="glass-panel" style="padding: 24px; margin-bottom: 24px;">
+                <h4 style="margin-bottom: 12px; color: var(--brand-blue);"><i class="fas fa-atom"></i> Rumus / Formula Inti</h4>
+                <div style="background-color: #1e293b; color: #38bdf8; font-family: monospace; font-size: 1.2rem; padding: 16px; border-radius: 8px; text-align: center;" id="materi-detail-formula">
+                  E = mc^2
+                </div>
+              </div>
+              
+              <div id="materi-detail-body" style="line-height: 1.6; font-size: 0.95rem;">
+                <!-- Detailed explanation -->
+              </div>
+            </div>
+
+            <!-- 2. Interactive Detective Activity View -->
+            <div id="detail-content-detektif" class="hidden-section fade-in-section">
+              <div id="materi-detektif-container">
+                <!-- Injected dynamically based on module -->
+              </div>
+            </div>
+
+            <!-- 3. Digital LKPD View -->
+            <div id="detail-content-lkpd" class="hidden-section fade-in-section">
+              <div id="materi-lkpd-container">
+                <!-- Injected dynamically based on module -->
+              </div>
+            </div>
+            
+            <!-- 4. Video Mockup View -->
+            <div id="detail-content-video" class="hidden-section fade-in-section">
+              <div class="glass-panel" style="padding: 16px; aspect-ratio: 16/9; max-width: 800px; margin: 0 auto;">
+                <iframe id="materi-video-iframe" src="" style="width: 100%; height: 100%; border-radius: 8px; border: none;" allowfullscreen></iframe>
+              </div>
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 16px; margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 24px;">
+            <button class="btn btn-primary" id="btn-go-to-lab"><i class="fas fa-flask"></i> Masuk Virtual Lab</button>
+            <button class="btn btn-orange" id="btn-go-to-quiz"><i class="fas fa-question-circle"></i> Evaluasi Kuis HOTS</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. VIRTUAL LAB PLAYER SECTION -->
+      <section id="lab-viewport-section" class="spa-section hidden-section fade-in-section" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="lab-navigation-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(8px);">
+          <a href="#materi" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px;"><i class="fas fa-arrow-left"></i> Kembali ke Modul</a>
+          <h3 id="lab-header-title" style="font-size: 1.1rem; margin: 0; font-family: 'Outfit', sans-serif;">Eksperimen Virtual</h3>
+          <div style="width: 120px;"></div> <!-- spacer for centering visual balance -->
+        </div>
+        <div class="lab-layout">
+          
+          <!-- Left Column: Simulation Display & Controls -->
+          <div class="lab-main-view">
+            <div class="lab-canvas-container">
+              <div class="lab-viewport-overlay" id="lab-overlay-title" style="display: none;">Simulasi: Jangka Sorong</div>
+              <div class="lab-viewport-stats" id="lab-overlay-stats">
+                <!-- Injected dynamically -->
+              </div>
+              <canvas id="lab-canvas"></canvas>
+            </div>
+
+            <!-- Simulation Parameters & Run Controls directly below the canvas -->
+            <div class="glass-panel" style="padding: 16px; border-radius: var(--card-radius); display: flex; flex-direction: column; gap: 15px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 5px;">
+                <h4 style="margin: 0; font-family: 'Outfit'; font-size: 1rem;"><i class="fas fa-sliders-h" style="color: var(--brand-blue); margin-right: 6px;"></i> Kontrol & Parameter Percobaan</h4>
+                <div class="lab-controls-bar" style="display: flex; gap: 6px; margin: 0; padding: 0; background: none; border: none; box-shadow: none;">
+                  <button class="btn btn-primary" id="btn-sim-start" title="Mulai" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-play"></i></button>
+                  <button class="btn btn-secondary" id="btn-sim-pause" title="Jeda" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-pause"></i></button>
+                  <button class="btn btn-danger" id="btn-sim-stop" title="Berhenti" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-stop"></i></button>
+                  <button class="btn btn-outline" id="btn-sim-reset" title="Reset" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-undo"></i></button>
+                </div>
+              </div>
+              <div id="lab-sliders-container">
+                <!-- Sliders injected by labs.js -->
+              </div>
+            </div>
+            
+            <!-- Graphics Plotter Panel -->
+            <div class="lab-graph-container" style="display: none;">
+              <div class="graph-header">
+                <span class="graph-title"><i class="fas fa-chart-line" style="color: var(--brand-blue);"></i> Grafik Plotting Real-time</span>
+                <button class="btn btn-secondary" id="btn-download-graph" style="padding: 4px 10px; font-size: 0.75rem;"><i class="fas fa-download"></i> Unduh PNG</button>
+              </div>
+              <div class="graph-canvas-wrapper">
+                <canvas id="lab-graph-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Column: LKPD and AI Tutor Tabs -->
+          <div class="glass-panel lab-panel">
+            <div class="lab-panel-tabs">
+              <button class="lab-tab-btn active" id="tab-lab-lkpd">FIVIA Digital LKPD</button>
+              <button class="lab-tab-btn" id="tab-lab-tutor">AI Tutor</button>
+            </div>
+            
+            <div class="lab-panel-content">
+              
+              <!-- Tab 2: LKPD digital worksheet fields -->
+              <div id="panel-content-lkpd" class="fade-in-section">
+                <div class="lkpd-container">
+                  <div class="lkpd-card">
+                    <div class="lkpd-section-title"><i class="fas fa-bullseye" style="color: var(--brand-blue);"></i> Tujuan Praktikum</div>
+                    <p id="lkpd-tujuan-text" style="font-size: 0.85rem; color: var(--text-secondary);"></p>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="lkpd-hipotesis"><i class="fas fa-lightbulb" style="color: var(--brand-orange);"></i> Hipotesis Anda</label>
+                    <textarea class="lkpd-textarea" id="lkpd-hipotesis" placeholder="Tuliskan dugaan atau hipotesis awal Anda mengenai eksperimen ini..."></textarea>
+                  </div>
+                  
+                  <div class="lkpd-card" style="padding: 16px;">
+                    <div class="lkpd-section-title"><i class="fas fa-table" style="color: var(--success);"></i> Tabel Data Pengamatan</div>
+                    <div class="table-responsive">
+                      <table class="lkpd-obs-table" id="lkpd-data-table">
+                        <thead>
+                          <!-- Headers injected -->
+                        </thead>
+                        <tbody>
+                          <!-- Rows injected -->
+                        </tbody>
+                      </table>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-add-obs-row" style="margin-top: 10px; width: 100%; font-size: 0.8rem; padding: 6px 12px;"><i class="fas fa-plus"></i> Catat Obyek Terukur</button>
+                  </div>
+                  
+                  <div id="lkpd-questions-container">
+                    <!-- Dynamic questions -->
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="lkpd-kesimpulan"><i class="fas fa-pencil-alt" style="color: var(--brand-blue);"></i> Kesimpulan</label>
+                    <textarea class="lkpd-textarea" id="lkpd-kesimpulan" placeholder="Tuliskan kesimpulan yang Anda peroleh dari praktikum ini..."></textarea>
+                  </div>
+                  
+                  <button class="btn btn-orange" id="btn-submit-lkpd" style="width: 100%;"><i class="fas fa-paper-plane"></i> Kirim Jawaban LKPD</button>
+                </div>
+              </div>
+              
+              <!-- Tab 3: AI Tutor Assistant panel -->
+              <div id="panel-content-tutor" class="hidden-section fade-in-section">
+                <div class="ai-chat-container">
+                  <div class="ai-chat-header" style="background-color: var(--accent-violet);">
+                    <div class="ai-chat-avatar" style="background: rgba(255,255,255,0.2);"><i class="fas fa-robot"></i></div>
+                    <div class="ai-chat-header-info">
+                      <span class="ai-chat-title" style="font-family: 'Poppins'; font-weight: 700;">FIVIA AI Tutor</span>
+                      <span class="ai-chat-status" style="color: #a7f3d0;">Aktif &amp; Siap Bimbing</span>
+                    </div>
+                  </div>
+                  <div class="ai-chat-history" id="ai-chat-history">
+                    <div class="chat-bubble ai" style="border-left: 3px solid var(--accent-violet);">
+                      Halo! Saya <strong>FIVIA AI Tutor ("Ask FIVIA")</strong>. Tanyakan apa saja terkait eksperimen yang sedang Anda jalankan. Contoh: "Bagaimana cara membaca jangka sorong?" atau "Jelaskan hubungan tegangan dan arus."
+                    </div>
+                  </div>
+                  <div class="ai-chat-input-bar">
+                    <input type="text" id="ai-chat-input" placeholder="Ketik pertanyaan fisika Anda...">
+                    <button class="ai-chat-send-btn" id="btn-send-ai-chat"><i class="fas fa-paper-plane"></i></button>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- 8B. MISI DETEKTIF FISIKA SECTION -->
+      <section id="detektif-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <!-- Sub-dashboard View -->
+        <div id="detektif-dashboard-view" class="fade-in-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h1 style="font-size: 2rem; font-family: 'Poppins'; font-weight: 800; background: linear-gradient(135deg, var(--brand-blue), var(--brand-orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">FIVIA MISSION</h1>
+              <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 2px;">Fisika Virtual Aplikatif &bull; SMAN 4 Soppeng</p>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <!-- Control to unlock all missions for Teacher/Admin -->
+              <div id="detektif-unlock-all-container" class="glass-panel hidden-section" style="padding: 10px 20px; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-key" style="color: var(--brand-blue); font-size: 1.2rem;"></i>
+                <div style="display: flex; flex-direction: column;">
+                  <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold; text-transform: uppercase; white-space: nowrap;">Akses Semua Level</div>
+                  <button class="btn btn-secondary" id="btn-toggle-unlock-all" style="padding: 4px 8px; font-size: 0.75rem; margin-top: 4px; line-height: 1; min-height: unset; height: auto;">Aktifkan</button>
+                </div>
+              </div>
+
+              <div class="glass-panel" style="padding: 10px 20px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-bolt" style="color: var(--brand-orange); font-size: 1.2rem;"></i>
+                <div>
+                  <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold; text-transform: uppercase;">Total XP</div>
+                  <div style="font-size: 1.1rem; font-weight: bold;" id="detektif-xp-val">0 XP</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="glass-panel stat-card" style="background: linear-gradient(135deg, rgba(13,110,253,0.1), transparent);">
+              <div class="stat-info">
+                <span class="stat-label">Progress Misi</span>
+                <span class="stat-value" id="detektif-progress-val">0/7 Misi</span>
+                <div class="progress-bar-container" style="width: 100%; margin-top: 8px; height: 6px;">
+                  <div class="progress-bar" id="detektif-progress-bar" style="width: 0%;"></div>
+                </div>
+              </div>
+              <div class="stat-icon"><i class="fas fa-map-marked-alt"></i></div>
+            </div>
+            
+            <div class="glass-panel stat-card orange-theme">
+              <div class="stat-info">
+                <span class="stat-label">Lencana Detektif</span>
+                <span class="stat-value" id="detektif-badges-count">1</span>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="detektif-active-badge">Pemula Fisika</div>
+              </div>
+              <div class="stat-icon"><i class="fas fa-medal"></i></div>
+            </div>
+
+            <div class="glass-panel stat-card success-theme">
+              <div class="stat-info">
+                <span class="stat-label">Nilai Terakhir</span>
+                <span class="stat-value" id="detektif-grade-val">-</span>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="detektif-predikat-val">Belum Dinilai</div>
+              </div>
+              <div class="stat-icon"><i class="fas fa-clipboard-check"></i></div>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 24px; margin-bottom: 24px;">
+            <h3 style="font-size: 1.25rem; font-family: 'Outfit'; font-weight: 700; margin-bottom: 16px;"><i class="fas fa-award" style="color: var(--brand-orange);"></i> Lencana Penghargaan (Badges)</h3>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;" id="detektif-badges-container">
+              <!-- Dynamically populated badges -->
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 24px;">
+            <h3 style="font-size: 1.25rem; font-family: 'Outfit'; font-weight: 700; margin-bottom: 20px;"><i class="fas fa-folder-open" style="color: var(--brand-blue);"></i> Daftar Misi Penyelidikan</h3>
+            <div class="course-grid" id="detektif-missions-grid">
+              <!-- 7 Mission cards populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Mission Play View -->
+        <div id="detektif-mission-view" class="hidden-section fade-in-section" style="flex: 1; display: flex; flex-direction: column;">
+          <div class="lab-navigation-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(8px); border-radius: 12px; margin-bottom: 16px;">
+            <button class="btn btn-secondary" id="btn-detektif-back" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px;"><i class="fas fa-arrow-left"></i> Peta Misi</button>
+            <h3 id="detektif-mission-title" style="font-size: 1.1rem; margin: 0; font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--brand-blue);">FIVIA Mission 1: Detektif Besaran</h3>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="badge badge-orange" id="detektif-mission-xp-badge">XP Misi: +50 XP</span>
+            </div>
+          </div>
+
+          <div class="lab-layout">
+            <!-- Left Panel: Interactive Game Area -->
+            <div class="lab-main-view" style="flex: 1.4;">
+              <div class="glass-panel" style="padding: 24px; min-height: 480px; display: flex; flex-direction: column;" id="detektif-game-workspace">
+                <!-- Injected dynamically by detektif.js -->
+              </div>
+            </div>
+
+            <!-- Right Panel: LKPD / AI Tutor helper -->
+            <div class="glass-panel lab-panel" style="flex: 0.9;">
+              <div class="lab-panel-tabs">
+                <button class="lab-tab-btn active" id="tab-detektif-info">Panduan</button>
+                <button class="lab-tab-btn" id="tab-detektif-tutor">AI Tutor</button>
+              </div>
+
+              <div class="lab-panel-content">
+                <!-- Info Tab -->
+                <div id="panel-detektif-info" class="fade-in-section">
+                  <div style="padding: 16px; display: flex; flex-direction: column; gap: 16px;" id="detektif-info-content">
+                    <!-- Target goal and mission objective -->
+                  </div>
+                </div>
+
+                <!-- AI Tutor Tab -->
+                <div id="panel-detektif-tutor" class="hidden-section fade-in-section">
+                  <div class="ai-chat-container">
+                    <div class="ai-chat-header">
+                      <div class="ai-chat-avatar"><i class="fas fa-robot"></i></div>
+                      <div class="ai-chat-header-info">
+                        <span class="ai-chat-title">AI Tutor Detektif</span>
+                        <span class="ai-chat-status">Penasihat Investigasi</span>
+                      </div>
+                    </div>
+                    <div class="ai-chat-history" id="detektif-ai-history">
+                      <div class="chat-bubble ai">
+                        Halo Agen! Saya AI Tutor Detektif. Jika Anda merasa bingung saat menginvestigasi misi ini, jangan sungkan mengklik tombol <strong>"Saya Tidak Mengerti"</strong>. Saya akan membimbing Anda langkah demi langkah.
+                      </div>
+                    </div>
+                    <div class="ai-chat-input-bar">
+                      <input type="text" id="detektif-ai-input" placeholder="Tanyakan petunjuk penyelidikan...">
+                      <button class="ai-chat-send-btn" id="btn-detektif-ai-send"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. EVALUASI QUIZ SECTION -->
+      <section id="quiz-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="glass-panel dashboard-section" style="max-width: 720px; margin: 0 auto;">
+          <div class="section-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 16px;">
+            <h3 class="section-title"><i class="fas fa-file-signature" style="color: var(--brand-orange);"></i> Evaluasi Kuis HOTS</h3>
+            <span id="quiz-timer" style="font-family: monospace; font-size: 1.15rem; font-weight: bold; color: var(--danger);"><i class="far fa-clock"></i> 10:00</span>
+          </div>
+          
+          <div id="quiz-body-container" style="padding: 20px 0;">
+            <!-- Quiz question rendering card -->
+          </div>
+          
+          <div class="section-header" style="border-top: 1px solid var(--glass-border); padding-top: 16px;">
+            <button class="btn btn-outline" id="btn-quiz-prev">Sebelumnya</button>
+            <button class="btn btn-primary" id="btn-quiz-next">Berikutnya</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. CERTIFICATES LIST SECTION -->
+      <section id="certificates-list-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <!-- Dashboard Certificates list -->
+        <div class="glass-panel dashboard-section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-medal" style="color: var(--brand-blue);"></i> Sertifikat Kelulusan Topik Fisika</h3>
+          </div>
+          <div class="course-grid" id="certificates-grid">
+            <!-- Dynamic certificate items -->
+          </div>
+        </div>
+        
+        <!-- Certificate Viewer Modal Area -->
+        <div id="certificate-print-overlay" class="hidden-section fade-in-section">
+          <div class="certificate-preview-container">
+            <div class="certificate-border" id="cert-printable-card">
+              <div class="certificate-watermark">FIVIA</div>
+              <div class="certificate-header">Sertifikat Penghargaan</div>
+              <div class="certificate-title">FIVIA ACADEMY</div>
+              <div class="certificate-present">Diberikan Kepada:</div>
+              <div class="certificate-name" id="cert-recipient-name">Pasya Ramadhan</div>
+              <div class="certificate-text">
+                Atas dedikasi dan kelulusannya dalam menyelesaikan praktikum mandiri dan evaluasi kuis HOTS pada topik pembelajaran <strong><span id="cert-subject-title">Gerak Lurus (Fase E)</span></strong> dengan predikat kelulusan sangat baik.
+              </div>
+              
+              <div class="certificate-footer-grid">
+                <div class="certificate-sign">
+                  <div class="certificate-signature-line"></div>
+                  <span class="certificate-sign-name" id="cert-date-issued">2026-07-09</span>
+                  <span class="certificate-sign-title">Tanggal Terbit</span>
+                </div>
+                <div class="certificate-qr">
+                  <!-- QR code placeholder (we can render a text representation or standard canvas code) -->
+                  <div id="cert-qr-text" style="font-size: 0.6rem; font-family: monospace;">VERIFIED<br>1092837</div>
+                </div>
+                <div class="certificate-sign">
+                  <div class="certificate-signature-line"></div>
+                  <span class="certificate-sign-name">Hidayat, S.Pd.</span>
+                  <span class="certificate-sign-title">Instruktur Utama</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="certificate-actions">
+              <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Cetak Sekarang (PDF)</button>
+              <button class="btn btn-outline" id="btn-close-cert-viewer">Tutup Pratinjau</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- App Footer Section -->
+      <footer class="app-footer" style="display: flex; flex-direction: column; gap: 3px; text-align: center; padding: 12px 16px; font-size: 0.75rem;">
+        <div style="font-weight: 700; color: var(--brand-blue); font-size: 0.85rem; font-family: 'Poppins';">FIVIA &bull; Fisika Virtual Aplikatif</div>
+        <div style="font-size: 0.72rem; color: #475569;">
+          Pembuat: <strong>Syarif Hidayatullah, S.Pd.</strong> &bull; SMAN 4 Soppeng
+        </div>
+        <div style="font-size: 0.68rem; color: var(--text-secondary);">&copy; 2026 FIVIA. Semua Hak Cipta Dilindungi.</div>
+      </footer>
+
+    </div>
+
+  </div>
+
+  <!-- TOAST ALERTS WRAPPER -->
+  <div id="toast-holder" class="toast-container"></div>
+
+  <!-- AUTHENTICATION MODALS -->
+
+  <!-- LOGIN MODAL -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal-container">
+      <button class="modal-close"><i class="fas fa-times"></i></button>
+      
+      <div style="text-align: center; margin-bottom: 20px;">
+        <svg viewBox="0 0 100 100" width="40" height="40" style="fill: none; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 8px;">
+          <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-orange)" stroke-width="4" transform="rotate(30 50 50)" />
+          <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--accent-violet)" stroke-width="4" transform="rotate(-30 50 50)" />
+          <path d="M35 38 L50 68 L65 38" stroke="var(--brand-orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="50" cy="42" r="5" fill="var(--brand-blue)" />
+        </svg>
+        <h3 style="font-size: 1.6rem; font-family: 'Poppins'; font-weight: 800; margin: 0; color: var(--brand-blue);">FIVIA</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; margin-top: 2px;">Fisika Virtual Aplikatif</p>
+        <p style="font-size: 0.75rem; font-style: italic; color: var(--brand-orange);">"Jelajahi. Eksperimen. Pahami."</p>
+      </div>
+
+      <!-- Segmented Control for SISWA / GURU demo login -->
+      <div style="display: flex; gap: 8px; margin-bottom: 20px; justify-content: center;">
+        <button type="button" class="btn btn-outline" id="login-role-siswa" style="flex: 1; font-size: 0.85rem; padding: 8px; font-weight: 700;" onclick="
+          document.getElementById('login-email').value = 'siswa@hidayahstore.edu';
+          document.getElementById('login-password').value = 'siswa123';
+          this.style.backgroundColor = 'var(--brand-blue)';
+          this.style.color = '#fff';
+          const btnGuru = document.getElementById('login-role-guru');
+          btnGuru.style.backgroundColor = '';
+          btnGuru.style.color = '';
+        ">SISWA</button>
+        <button type="button" class="btn btn-outline" id="login-role-guru" style="flex: 1; font-size: 0.85rem; padding: 8px; font-weight: 700;" onclick="
+          document.getElementById('login-email').value = 'guru@hidayahstore.edu';
+          document.getElementById('login-password').value = 'guru123';
+          this.style.backgroundColor = 'var(--brand-blue)';
+          this.style.color = '#fff';
+          const btnSiswa = document.getElementById('login-role-siswa');
+          btnSiswa.style.backgroundColor = '';
+          btnSiswa.style.color = '';
+        ">GURU</button>
+      </div>
+      
+      <form id="form-login">
+        <div class="form-group">
+          <label for="login-email">Alamat Email</label>
+          <input type="email" class="form-control" id="login-email" required placeholder="siswa@hidayahstore.edu">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Kata Sandi</label>
+          <input type="password" class="form-control" id="login-password" required placeholder="siswa123">
+        </div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 12px; font-weight: 700; font-family: 'Poppins';" type="submit">MASUK KE FIVIA</button>
+      </form>
+      
+      <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 20px; padding: 12px; background-color: var(--bg-primary); border-radius: 10px; font-size: 0.75rem;">
+        <span style="font-weight: bold; color: var(--brand-blue);">Petunjuk Demo:</span>
+        <span>Pilih tombol <strong>SISWA</strong> atau <strong>GURU</strong> di atas untuk memuat akun uji coba secara otomatis.</span>
+      </div>
+      
+      <p style="text-align: center; font-size: 0.85rem; margin-top: 20px; color: var(--text-secondary);">
+        Belum punya akun? <a href="#" class="btn-open-register" style="color: var(--brand-orange); text-decoration: none; font-weight: 600;">Daftar disini</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- REGISTER MODAL -->
+  <div class="modal-overlay" id="register-modal">
+    <div class="modal-container">
+      <button class="modal-close"><i class="fas fa-times"></i></button>
+      <h3 style="font-size: 1.5rem; margin-bottom: 24px; text-align: center; font-family: 'Poppins'; font-weight: 700; color: var(--brand-blue);">Daftar Akun Baru</h3>
+      
+      <form id="form-register">
+        <div class="form-group">
+          <label for="register-name">Nama Lengkap</label>
+          <input type="text" class="form-control" id="register-name" required placeholder="Budi Wijaya">
+        </div>
+        <div class="form-group">
+          <label for="register-email">Alamat Email</label>
+          <input type="email" class="form-control" id="register-email" required placeholder="budi@email.com">
+        </div>
+        <div class="form-group">
+          <label for="register-password">Kata Sandi</label>
+          <input type="password" class="form-control" id="register-password" required placeholder="minimal 6 karakter">
+        </div>
+        <div class="form-group">
+          <label for="register-role">Tipe Pengguna (Peran)</label>
+          <select class="form-control" id="register-role">
+            <option value="siswa">Siswa SMA</option>
+            <option value="guru">Guru Fisika</option>
+          </select>
+        </div>
+        <div class="form-group" id="register-class-group">
+          <label for="register-class">Pilih Kelas</label>
+          <select class="form-control" id="register-class">
+            <option value="cls_x1">Kelas X-1</option>
+            <option value="cls_x2">Kelas X-2</option>
+            <option value="cls_xi1">Kelas XI IPA-1</option>
+            <option value="cls_xi2">Kelas XI IPA-2</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 12px; font-weight: 700; font-family: 'Poppins';" type="submit">Daftar Sekarang</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD STUDENT (GURU DASHBOARD ONLY) -->
+  <div class="modal-overlay" id="add-student-modal">
+    <div class="modal-container">
+      <button class="modal-close"><i class="fas fa-times"></i></button>
+      <h3 style="font-size: 1.5rem; margin-bottom: 24px; text-align: center;"><i class="fas fa-user-plus"></i> Tambah Siswa Baru</h3>
+      
+      <form id="form-add-student">
+        <div class="form-group">
+          <label for="add-student-name">Nama Lengkap Siswa</label>
+          <input type="text" class="form-control" id="add-student-name" required placeholder="Contoh: Andi Pratama">
+        </div>
+        <div class="form-group">
+          <label for="add-student-email">Alamat Email</label>
+          <input type="email" class="form-control" id="add-student-email" required placeholder="andi@hidayahstore.edu">
+        </div>
+        <div class="form-group">
+          <label for="add-student-class">Penempatan Kelas</label>
+          <select class="form-control" id="add-student-class">
+            <option value="cls_x1">Kelas X-1</option>
+            <option value="cls_x2">Kelas X-2</option>
+            <option value="cls_xi1">Kelas XI IPA-1</option>
+            <option value="cls_xi2">Kelas XI IPA-2</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" type="submit">Tambahkan Siswa</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: GRADE WORKSHEET (GURU DASHBOARD ONLY) -->
+  <div class="modal-overlay" id="grade-lkpd-modal">
+    <div class="modal-container" style="max-width: 600px;">
+      <button class="modal-close"><i class="fas fa-times"></i></button>
+      <h3 style="font-size: 1.5rem; margin-bottom: 12px;"><i class="fas fa-edit"></i> Koreksi LKPD Siswa</h3>
+      <div style="background-color: var(--bg-primary); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem;" id="grading-meta-info">
+        <!-- Injected grading metadata -->
+      </div>
+      
+      <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; padding: 10px; border: 1px solid var(--glass-border); border-radius: 8px;" id="grading-answers-preview">
+        <!-- Question/Answer lists -->
+      </div>
+      
+      <form id="form-grade-submission">
+        <input type="hidden" id="grade-student-id">
+        <input type="hidden" id="grade-lab-id">
+        
+        <div class="form-group">
+          <label for="grading-score">Berikan Nilai Akhir (0 - 100)</label>
+          <input type="number" min="0" max="100" class="form-control" id="grading-score" required placeholder="Contoh: 85">
+        </div>
+        <div class="form-group">
+          <label for="grading-feedback">Umpan Balik (Feedback) Guru</label>
+          <textarea class="form-control" id="grading-feedback" rows="3" placeholder="Tuliskan masukan koreksi Anda untuk praktikum siswa..."></textarea>
+        </div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" type="submit">Kirim Penilaian & Beri Feedback</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: STUDENT MEASUREMENT INPUT -->
+  <div class="modal-overlay" id="meas-input-modal">
+    <div class="modal-container" style="max-width: 400px; width: 90%;">
+      <button class="modal-close"><i class="fas fa-times"></i></button>
+      <h3 style="font-size: 1.25rem; margin-bottom: 16px; font-family: 'Outfit'; color: var(--brand-blue);"><i class="fas fa-edit"></i> Catat Hasil Pengukuran Anda</h3>
+      
+      <form id="form-meas-input">
+        <div id="meas-input-fields-container" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Injected dynamically -->
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;"><i class="fas fa-check"></i> Periksa & Catat</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FIREBASE CLOUD STORAGE CONFIGURATION -->
+  <div class="modal-overlay" id="firebase-config-modal">
+    <div class="modal-container" style="max-width: 520px; width: 92%;">
+      <button class="modal-close" id="btn-close-firebase-modal"><i class="fas fa-times"></i></button>
+      
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px;">
+        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 1.2rem;">
+          <i class="fas fa-fire"></i>
+        </div>
+        <div>
+          <h3 style="font-size: 1.15rem; margin: 0; font-family: 'Outfit'; color: var(--text-primary);">Firebase Cloud Storage</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0;">Sinkronisasi LKPD, Nilai Kuis, dan Akun ke Cloud Database</p>
+        </div>
+      </div>
+
+      <div id="firebase-status-display" style="padding: 10px 14px; border-radius: 8px; background: var(--bg-tertiary); margin-bottom: 16px; font-size: 0.82rem; display: flex; align-items: center; justify-content: space-between;">
+        <span>Status Koneksi: <strong id="fb-status-text">Memeriksa...</strong></span>
+        <button class="btn btn-secondary" id="btn-test-firebase" style="padding: 4px 10px; font-size: 0.75rem;"><i class="fas fa-plug"></i> Test</button>
+      </div>
+
+      <form id="form-firebase-config">
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label style="font-size: 0.8rem; font-weight: 600;">Opsi Cepat: Tempel JSON Konfigurasi dari Firebase Console</label>
+          <textarea class="form-control" id="fb-json-input" rows="3" placeholder='Tempel { apiKey: "...", projectId: "...", ... }' style="font-family: monospace; font-size: 0.75rem;"></textarea>
+        </div>
+
+        <div style="text-align: center; margin: 8px 0; font-size: 0.75rem; color: var(--text-secondary);">- ATAU ISI MANUAL -</div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label for="fb-api-key" style="font-size: 0.75rem;">API Key</label>
+            <input type="text" class="form-control" id="fb-api-key" placeholder="AIzaSy..." style="font-size: 0.8rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label for="fb-project-id" style="font-size: 0.75rem;">Project ID</label>
+            <input type="text" class="form-control" id="fb-project-id" placeholder="fivia-lab-123" style="font-size: 0.8rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label for="fb-auth-domain" style="font-size: 0.75rem;">Auth Domain</label>
+            <input type="text" class="form-control" id="fb-auth-domain" placeholder="project.firebaseapp.com" style="font-size: 0.8rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label for="fb-storage-bucket" style="font-size: 0.75rem;">Storage Bucket</label>
+            <input type="text" class="form-control" id="fb-storage-bucket" placeholder="project.appspot.com" style="font-size: 0.8rem;">
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1; font-size: 0.85rem;"><i class="fas fa-save"></i> Simpan & Hubungkan</button>
+          <button type="button" class="btn btn-danger" id="btn-reset-firebase" style="font-size: 0.85rem;"><i class="fas fa-trash-alt"></i> Reset</button>
+        </div>
+      </form>
+
+      <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--glass-border); font-size: 0.75rem; color: var(--text-secondary);">
+        <i class="fas fa-info-circle" style="color: var(--brand-blue);"></i> Belum punya project Firebase? Buka <a href="https://console.firebase.google.com/" target="_blank" style="color: var(--brand-orange); text-decoration: underline;">Firebase Console</a> &rarr; Tambah Proyek &rarr; Aktifkan Firestore Database &rarr; Buat Web App dan salin kuncinya ke sini.
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE COMPAT SDK (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <!-- FIREBASE INTEGRATION SCRIPTS -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-sync.js"></script>
+
+  <!-- APPLICATION CORE SCRIPTS -->
+  <script src="js/database.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/dashboards.js"></script>
+  <script src="js/labs.js"></script>
+  <script src="js/lkpd.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/ai-tutor.js"></script>
+  <script src="js/detektif.js"></script>
+
+  <!-- PWA SERVICE WORKER & UI CONTROLLERS -->
+  <script>
+    // 1. Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('[FIVIA PWA] Service Worker aktif dengan scope:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('[FIVIA PWA] Gagal meregistrasi Service Worker:', err);
+          });
+      });
+    }
+
+    // 2. PWA Install Prompt Banner/Button Handler
+    let deferredPrompt = null;
+    const pwaInstallBtn = document.getElementById('btn-pwa-install');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (pwaInstallBtn) {
+        pwaInstallBtn.style.display = 'inline-flex';
+      }
+    });
+
+    if (pwaInstallBtn) {
+      pwaInstallBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log('[FIVIA PWA] User install choice:', outcome);
+          deferredPrompt = null;
+          pwaInstallBtn.style.display = 'none';
+        } else {
+          alert('Aplikasi dapat di-install dari menu browser Anda (Pilih "Install App" / "Tambahkan ke Layar Utama").');
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[FIVIA PWA] FIVIA berhasil diinstal sebagai aplikasi!');
+      if (pwaInstallBtn) pwaInstallBtn.style.display = 'none';
+    });
+
+    // 3. Firebase Modal Event Listeners
+    const btnOpenFb = document.getElementById('btn-open-firebase-modal');
+    const fbModal = document.getElementById('firebase-config-modal');
+    const btnCloseFb = document.getElementById('btn-close-firebase-modal');
+    const formFb = document.getElementById('form-firebase-config');
+    const jsonInputFb = document.getElementById('fb-json-input');
+    const btnTestFb = document.getElementById('btn-test-firebase');
+    const btnResetFb = document.getElementById('btn-reset-firebase');
+
+    function populateFirebaseModalForm() {
+      const cfg = getFirebaseConfig();
+      document.getElementById('fb-api-key').value = cfg.apiKey || '';
+      document.getElementById('fb-project-id').value = cfg.projectId || '';
+      document.getElementById('fb-auth-domain').value = cfg.authDomain || '';
+      document.getElementById('fb-storage-bucket').value = cfg.storageBucket || '';
+
+      const statusEl = document.getElementById('fb-status-text');
+      if (statusEl) {
+        statusEl.innerHTML = window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.isConnected 
+          ? `<span style="color: #22c55e;"><i class="fas fa-check-circle"></i> Terhubung Cloud (${cfg.projectId || 'OK'})</span>` 
+          : `<span style="color: #f59e0b;"><i class="fas fa-info-circle"></i> Mode Lokal (Offline)</span>`;
+      }
+    }
+
+    if (btnOpenFb && fbModal) {
+      btnOpenFb.addEventListener('click', () => {
+        populateFirebaseModalForm();
+        fbModal.classList.add('active');
+      });
+    }
+
+    if (btnCloseFb && fbModal) {
+      btnCloseFb.addEventListener('click', () => {
+        fbModal.classList.remove('active');
+      });
+    }
+
+    if (jsonInputFb) {
+      jsonInputFb.addEventListener('input', () => {
+        try {
+          const raw = jsonInputFb.value.trim();
+          let jsonStr = raw;
+          if (raw.startsWith('const firebaseConfig =')) {
+            jsonStr = raw.replace('const firebaseConfig =', '').replace(/;$/, '').trim();
+          }
+          const parsed = (new Function(`return ${jsonStr}`))();
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.apiKey) document.getElementById('fb-api-key').value = parsed.apiKey;
+            if (parsed.projectId) document.getElementById('fb-project-id').value = parsed.projectId;
+            if (parsed.authDomain) document.getElementById('fb-auth-domain').value = parsed.authDomain;
+            if (parsed.storageBucket) document.getElementById('fb-storage-bucket').value = parsed.storageBucket;
+          }
+        } catch (_) {}
+      });
+    }
+
+    if (formFb) {
+      formFb.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const config = {
+          apiKey: document.getElementById('fb-api-key').value.trim(),
+          projectId: document.getElementById('fb-project-id').value.trim(),
+          authDomain: document.getElementById('fb-auth-domain').value.trim(),
+          storageBucket: document.getElementById('fb-storage-bucket').value.trim(),
+          messagingSenderId: '',
+          appId: ''
+        };
+
+        const success = await saveFirebaseConfig(config);
+        if (success) {
+          alert('Konfigurasi Firebase berhasil disimpan dan terhubung!');
+          populateFirebaseModalForm();
+          if (fbModal) fbModal.classList.remove('active');
+        } else {
+          alert('Gagal menyambungkan ke Firebase. Periksa kembali API Key dan Project ID Anda.');
+          populateFirebaseModalForm();
+        }
+      });
+    }
+
+    if (btnResetFb) {
+      btnResetFb.addEventListener('click', () => {
+        if (confirm('Yakin ingin mereset konfigurasi Firebase dan kembali ke penyimpanan lokal?')) {
+          resetFirebaseConfig();
+          populateFirebaseModalForm();
+          alert('Konfigurasi Firebase telah direset.');
+        }
+      });
+    }
+
+    if (btnTestFb) {
+      btnTestFb.addEventListener('click', async () => {
+        const config = {
+          apiKey: document.getElementById('fb-api-key').value.trim(),
+          projectId: document.getElementById('fb-project-id').value.trim(),
+          authDomain: document.getElementById('fb-auth-domain').value.trim(),
+          storageBucket: document.getElementById('fb-storage-bucket').value.trim()
+        };
+        const ok = await initFirebase(config);
+        populateFirebaseModalForm();
+        alert(ok ? 'Koneksi ke Firebase Cloud berhasil!' : 'Koneksi gagal. Periksa konfigurasi proyek Firebase Anda.');
+      });
+    }
+  </script>
+</body>
+</html>

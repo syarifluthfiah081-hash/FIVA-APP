@@ -1,0 +1,377 @@
+/* Virtual Lab Layout */
+.lab-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1.1fr;
+  gap: 24px;
+  padding: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1200px) {
+  .lab-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lab-main-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.lab-canvas-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: 420px;
+  background-color: #1e293b;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.lab-canvas-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.lab-viewport-overlay {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.lab-viewport-stats {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.lab-stat-badge {
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  border: 1px solid rgba(255,255,255,0.1);
+  text-align: right;
+}
+
+.lab-stat-badge span {
+  color: var(--brand-orange);
+  font-weight: bold;
+}
+
+/* Control Panel Column */
+.lab-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 500px;
+}
+
+.lab-panel-tabs {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 12px 12px 0 0;
+  padding: 6px 6px 0 6px;
+}
+
+[data-theme="dark"] .lab-panel-tabs {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.lab-tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.lab-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.lab-tab-btn.active {
+  background-color: var(--bg-secondary);
+  color: var(--brand-blue);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.02);
+}
+
+.lab-panel-content {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Action Controls Bar */
+.lab-controls-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.lab-controls-bar .btn {
+  padding: 10px 8px;
+  font-size: 0.85rem;
+}
+
+/* Sliders and Parameters */
+.parameter-slider-group {
+  margin-bottom: 20px;
+}
+
+.parameter-label-container {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.parameter-value-badge {
+  background-color: var(--accent-blue-light);
+  color: var(--brand-blue);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-family: monospace;
+}
+
+.parameter-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 5px;
+  background: rgba(100, 116, 139, 0.15);
+  outline: none;
+  transition: background 0.2s;
+}
+
+.parameter-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand-orange);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.parameter-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--brand-orange-hover);
+}
+
+/* Graph Plotter Wrapper */
+.lab-graph-container {
+  position: relative;
+  width: 100%;
+  background-color: var(--bg-secondary);
+  border-radius: var(--card-radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  padding: 20px;
+}
+
+.graph-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+}
+
+.graph-canvas-wrapper canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.graph-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Simple generic placeholder widgets for unbuilt labs */
+.simple-lab-widget {
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  color: #fff;
+}
+
+.simple-lab-widget-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--brand-orange);
+}
+
+.simple-lab-controls {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* ==========================================================
+   ENHANCED JANGKA SORONG (VERNIER CALIPER) LAB STYLES
+   ========================================================== */
+.meas-chip-btn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+.meas-chip-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+.meas-chip-btn.active {
+  background: #0f2d59;
+  color: #ffffff;
+  border-color: #0f2d59;
+  box-shadow: 0 3px 8px rgba(15, 45, 89, 0.25);
+}
+.meas-chip-btn.active-orange {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+  box-shadow: 0 3px 8px rgba(234, 88, 12, 0.25);
+}
+.meas-fine-btn {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.meas-fine-btn:hover {
+  background: #f8fafc;
+  border-color: #0f2d59;
+  color: #0f2d59;
+}
+.meas-fine-btn:active {
+  transform: scale(0.96);
+}
+.meas-step-tracker {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.meas-step-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1e40af;
+  background: rgba(255,255,255,0.7);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(191, 219, 254, 0.8);
+  white-space: nowrap;
+}
+.meas-step-item.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+.meas-step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.meas-step-item.active .meas-step-num {
+  background: #ffffff;
+  color: #2563eb;
+}
+.caliper-precision-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  border: 1px solid #94a3b8;
+  color: #0f172a;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+.meas-canvas-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
