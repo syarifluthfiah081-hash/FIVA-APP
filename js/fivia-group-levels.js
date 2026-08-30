@@ -116,7 +116,14 @@ window.FIVIAGroupLevels = (function() {
     } catch (e) {}
   }
 
+  function toggleTeacherBypassMode() {
+    levelState.teacherBypassMode = !levelState.teacherBypassMode;
+    saveProgress();
+    return levelState.teacherBypassMode;
+  }
+
   function isLevelUnlocked(levelId, groupAccuracy, groupMembersPlayed) {
+    if (levelState.teacherBypassMode) return true;
     const meta = LEVEL_METADATA[levelId];
     if (!meta) return false;
     if (meta.unlockedByDefault) return true;
@@ -202,6 +209,7 @@ window.FIVIAGroupLevels = (function() {
     getLevelMetadata: getLevelMetadata,
     getLevelState: getLevelState,
     isLevelUnlocked: isLevelUnlocked,
+    toggleTeacherBypassMode: toggleTeacherBypassMode,
     startLevelSession: startLevelSession,
     deductTeamLife: deductTeamLife,
     addTeamLife: addTeamLife,

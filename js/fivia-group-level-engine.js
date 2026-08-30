@@ -1,6 +1,6 @@
 /**
  * FIVIA GROUP LEVEL ENGINE MODULE
- * Phase 10.1: Visual Level Map, Level Select Screen, Boss Challenge UI & Level Complete Screen
+ * Phase 10.1: Visual Level Map, Teacher Access Master Toggle, & Interactive Minigames Matching Solo Play
  */
 
 window.FIVIAGroupLevelEngine = (function() {
@@ -14,49 +14,55 @@ window.FIVIAGroupLevelEngine = (function() {
     const state = window.FIVIAGroupLevels.getLevelState();
     const sessionState = window.FIVIAGroupPlay ? window.FIVIAGroupPlay.getSessionState() : {};
     const activeGroup = sessionState.activeGroup || (sessionState.groups ? sessionState.groups[0] : null) || { groupName: 'GROUP NEWTON', score: 850 };
+    const isBypass = !!state.teacherBypassMode;
 
     container.innerHTML = `
-      <div style="background: rgba(15, 23, 42, 0.98); border: 3px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
+      <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
         <!-- Subtitle & Group Header -->
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2.5px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 28px; flex-wrap: wrap; gap: 14px;">
           <div>
-            <span class="fq-badge-pill" style="font-size: 0.9rem; padding: 6px 16px;"><i class="fas fa-gamepad"></i> LEVEL PROGRESSION &bull; SMARTBOARD TANTANGAN KELOMPOK</span>
-            <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 6px 0 2px 0;">🎮 FIVIA GROUP PLAY MAP</h1>
-            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem;">Selesaikan setiap level bersama kelompok Anda untuk membuka tantangan berikutnya!</div>
+            <span class="fq-badge-pill" style="font-size: 0.9rem; padding: 6px 16px;"><i class="fas fa-map-marked-alt"></i> PETA PERMAINAN KELOMPOK &bull; INTERACTIVE SMARTBOARD MODE</span>
+            <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 6px 0 2px 0;">🎮 PETA PERMAINAN KELOMPOK</h1>
+            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem;">Permainan interaktif kelompok bergiliran &bull; Besaran &bull; Satuan &bull; Dimensi &bull; Analyst &bull; Boss</div>
           </div>
-          <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-amber); border-radius: 20px; padding: 12px 24px; text-align: center;">
-            <div style="font-size: 0.8rem; color: var(--fq-text-muted); font-weight: 800;">KELOMPOK AKTIF</div>
-            <div style="font-size: 1.4rem; font-weight: 900; color: #fff;">👥 ${activeGroup.groupName}</div>
-            <div style="font-size: 1rem; font-weight: 900; color: var(--fq-amber);">${activeGroup.score || 0} XP</div>
+
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <button class="fq-btn ${isBypass ? 'fq-btn-emerald' : 'fq-btn-amber'}" style="min-height: 52px; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.toggleTeacherBypass()">
+              <i class="fas ${isBypass ? 'fa-lock-open' : 'fa-key'}"></i> ${isBypass ? '🔓 AKSES GURU: SEMUA LEVEL TERBUKA' : '🔒 MODE KELAS (DENGAN SYARAT)'}
+            </button>
+            <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-amber); border-radius: 20px; padding: 10px 20px; text-align: center;">
+              <div style="font-size: 0.75rem; color: var(--fq-text-muted); font-weight: 800;">KELOMPOK AKTIF</div>
+              <div style="font-size: 1.25rem; font-weight: 900; color: #fff;">👥 ${activeGroup.groupName}</div>
+            </div>
           </div>
         </div>
 
-        <!-- Visual Level Progression Map (Game Map Path) -->
-        <div style="background: rgba(30,41,59,0.7); border: 2px solid var(--fq-border-cyan); border-radius: 24px; padding: 24px; margin-bottom: 32px; text-align: center;">
-          <h3 style="color: var(--fq-cyan); font-size: 1.2rem; font-weight: 900; margin: 0 0 20px 0;"><i class="fas fa-map-signs"></i> ALUR PROGRESSION LEVEL KELOMPOK:</h3>
+        <!-- VISUAL GAME MAP PATH (CONNECTED NODES) -->
+        <div style="background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9)); border: 2.5px solid var(--fq-border-cyan); border-radius: 28px; padding: 32px; margin-bottom: 32px; text-align: center; position: relative;">
+          <h3 style="color: var(--fq-cyan); font-size: 1.3rem; font-weight: 900; margin: 0 0 24px 0;"><i class="fas fa-route"></i> PETA JALUR PERMAINAN KELOMPOK (LEVEL 01 &rarr; LEVEL 05):</h3>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; overflow-x: auto; padding-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; overflow-x: auto; padding: 10px 0;">
             ${Object.keys(allLevels).map((key, idx) => {
               const lvl = allLevels[key];
               const isUnlocked = window.FIVIAGroupLevels.isLevelUnlocked(lvl.id);
               const progress = state.levelProgress[lvl.id] || { completed: false, accuracy: 0 };
 
               return `
-                <div style="flex: 1; min-width: 140px; background: rgba(15,23,42,0.8); border: 2px solid ${isUnlocked ? lvl.color : 'rgba(255,255,255,0.2)'}; border-radius: 18px; padding: 16px; position: relative;">
-                  <div style="font-size: 2rem; margin-bottom: 6px;">${isUnlocked ? lvl.badge : '🔒'}</div>
-                  <div style="font-size: 0.8rem; font-weight: 900; color: ${lvl.color};">${lvl.code}</div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: #fff; margin: 2px 0;">${lvl.title}</div>
-                  <div style="font-size: 0.75rem; color: var(--fq-text-muted); font-weight: 700; margin-top: 6px;">
-                    ${progress.completed ? '✅ SLESAI (' + progress.accuracy + '%)' : (isUnlocked ? '🟢 TERBUKA' : '🔒 TERKUNCI')}
+                <div style="flex: 1; min-width: 150px; background: rgba(15,23,42,0.9); border: 3px solid ${isUnlocked ? lvl.color : 'rgba(255,255,255,0.2)'}; border-radius: 22px; padding: 20px 14px; position: relative; box-shadow: ${isUnlocked ? '0 0 25px ' + lvl.color : 'none'}; cursor: ${isUnlocked ? 'pointer' : 'not-allowed'};" onclick="${isUnlocked ? "window.FIVIAGroupLevelEngine.startLevel('" + lvl.id + "')" : ""}">
+                  <div style="font-size: 2.5rem; margin-bottom: 6px;">${isUnlocked ? lvl.badge : '🔒'}</div>
+                  <div style="font-size: 0.85rem; font-weight: 900; color: ${lvl.color};">${lvl.code}</div>
+                  <div style="font-size: 1rem; font-weight: 900; color: #fff; margin: 4px 0;">${lvl.title}</div>
+                  <div style="font-size: 0.78rem; font-weight: 800; color: ${progress.completed ? 'var(--fq-emerald)' : (isUnlocked ? 'var(--fq-cyan)' : 'var(--fq-rose)')}; margin-top: 8px;">
+                    ${progress.completed ? '⭐ SLESAI (' + progress.accuracy + '%)' : (isUnlocked ? '🟢 TERBUKA' : '🔒 TERKUNCI')}
                   </div>
                 </div>
-                ${idx < 4 ? '<div style="font-size: 1.5rem; color: var(--fq-cyan); font-weight: 900;">&rarr;</div>' : ''}
+                ${idx < 4 ? '<div style="font-size: 1.8rem; color: var(--fq-cyan); font-weight: 900;">&rarr;</div>' : ''}
               `;
             }).join('')}
           </div>
         </div>
 
-        <!-- Level Cards Grid -->
+        <!-- LEVEL CARDS GRID -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
           ${Object.keys(allLevels).map(key => {
             const lvl = allLevels[key];
@@ -80,7 +86,7 @@ window.FIVIAGroupLevelEngine = (function() {
                 <div>
                   ${!isUnlocked ? `
                     <div style="background: rgba(15,23,42,0.6); border: 1px dashed var(--fq-rose); border-radius: 12px; padding: 10px; font-size: 0.8rem; color: var(--fq-rose); font-weight: 700; margin-bottom: 14px;">
-                      🔒 Syarat: Menyelesaikan ${lvl.prerequisite || 'Level Sebelumnya'} dengan Akurasi minimal ${lvl.minAccuracyToUnlockNext || 70}%
+                      🔒 Syarat: Menyelesaikan ${lvl.prerequisite || 'Level Sebelumnya'} (Akurasi minimal ${lvl.minAccuracyToUnlockNext || 70}%)
                     </div>
                   ` : `
                     <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--fq-emerald); border-radius: 12px; padding: 10px; font-size: 0.82rem; color: var(--fq-emerald); font-weight: 700; margin-bottom: 14px;">
@@ -89,7 +95,7 @@ window.FIVIAGroupLevelEngine = (function() {
                   `}
 
                   <button class="fq-btn ${isUnlocked ? 'fq-btn-cyan' : 'fq-btn-outline'}" style="width: 100%; min-height: 56px; font-size: 1.1rem; font-weight: 800;" ${!isUnlocked ? 'disabled' : ''} onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')">
-                    ${isUnlocked ? '🚀 MULAI TANTANGAN LEVEL' : '🔒 TERKUNCI'}
+                    ${isUnlocked ? '🚀 MAINKAN GAME KELOMPOK' : '🔒 TERKUNCI'}
                   </button>
                 </div>
               </div>
@@ -98,6 +104,12 @@ window.FIVIAGroupLevelEngine = (function() {
         </div>
       </div>
     `;
+  }
+
+  function toggleTeacherBypass() {
+    const isBypass = window.FIVIAGroupLevels.toggleTeacherBypassMode();
+    alert(isBypass ? '🔓 MODE GURU AKTIF: Seluruh level berhasil dibuka untuk uji coba!' : '🔒 MODE KELAS AKTIF: Pembukaan level kembali berdasarkan syarat akurasi.');
+    renderLevelMapUI();
   }
 
   function startLevel(levelId) {
@@ -119,7 +131,6 @@ window.FIVIAGroupLevelEngine = (function() {
     const qIdx = state.currentQuestionIndex % Math.max(1, questions.length);
     const q = questions[qIdx];
 
-    // Team Lives HTML
     const livesHtml = Array.from({ length: state.maxLives }).map((_, i) => i < state.teamLives ? '❤️' : '🖤').join(' ');
 
     container.innerHTML = `
@@ -134,21 +145,19 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
 
           <div style="display: flex; align-items: center; gap: 16px;">
-            <!-- Team Lives Badge -->
             <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-rose); border-radius: 20px; padding: 10px 20px; text-align: center;">
               <div style="font-size: 0.75rem; color: var(--fq-text-muted); font-weight: 800;">TEAM LIVES</div>
               <div style="font-size: 1.5rem;">${livesHtml}</div>
             </div>
 
-            <!-- Combo Badge -->
             ${state.comboStreak > 1 ? `
-              <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-amber); border-radius: 20px; padding: 10px 20px; text-align: center; animation: pulse 1s infinite;">
+              <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-amber); border-radius: 20px; padding: 10px 20px; text-align: center;">
                 <div style="font-size: 0.75rem; color: var(--fq-amber); font-weight: 800;">COMBO STREAK</div>
                 <div style="font-size: 1.4rem; font-weight: 900; color: var(--fq-amber);">🔥 COMBO x${state.comboStreak}</div>
               </div>
             ` : ''}
 
-            <button class="fq-btn fq-btn-outline" style="min-height: 56px; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-map"></i> LEVEL MAP</button>
+            <button class="fq-btn fq-btn-outline" style="min-height: 56px; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-map"></i> PETA KELOMPOK</button>
           </div>
         </div>
 
@@ -161,11 +170,11 @@ window.FIVIAGroupLevelEngine = (function() {
             👨‍🎓 ${activePlayer.studentName}
           </h1>
           <div style="font-size: 1rem; color: var(--fq-cyan); font-weight: 800;">
-            👥 ${activeGroup.groupName} &bull; SOAL ${qIdx + 1} / ${questions.length} &bull; KODE: ${activePlayer.studentCode || ''}
+            👥 ${activeGroup.groupName} &bull; TANTANGAN ${qIdx + 1} / ${questions.length} &bull; KODE: ${activePlayer.studentCode || ''}
           </div>
         </div>
 
-        <!-- Question Card Display -->
+        <!-- Game Challenge Display Container -->
         <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-border-cyan); border-radius: 24px; padding: 28px; margin-bottom: 28px;">
           <div style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.4; margin-bottom: 20px;">
             ${q.question}
@@ -183,7 +192,7 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
         </div>
 
-        <!-- Teacher Floating Controller Overlay -->
+        <!-- Teacher Controller Floating Overlay Bar -->
         <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="font-weight: 800; color: #fff; font-size: 1rem;">
             🎮 CONTROLLER GURU: <span style="color: var(--fq-cyan);">${activePlayer.studentName} (${activeGroup.groupName})</span>
@@ -252,6 +261,7 @@ window.FIVIAGroupLevelEngine = (function() {
 
   return {
     renderLevelMapUI: renderLevelMapUI,
+    toggleTeacherBypass: toggleTeacherBypass,
     startLevel: startLevel,
     renderActiveLevelBoardUI: renderActiveLevelBoardUI,
     submitAnswer: submitAnswer,
