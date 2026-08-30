@@ -26,7 +26,12 @@ const CORE_ASSETS = [
   "./js/dashboards.js",
   "./js/firebase-config.js",
   "./js/firebase-sync.js",
-  "./js/fivia-excel-import.js"
+  "./js/fivia-excel-import.js",
+  "./js/fivia-group-play.js",
+  "./js/fivia-group-play-engine.js",
+  "./js/fivia-group-play-session.js",
+  "./js/fivia-group-play-sync.js",
+  "./js/fivia-group-play-analytics.js"
 ];
 
 // 1. Install event: Cache all essential application files

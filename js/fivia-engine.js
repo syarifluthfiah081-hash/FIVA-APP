@@ -205,6 +205,7 @@ window.FIVIAQuest = (function() {
     if (viewName === 'activity-launcher') window.FIVIAClassroomEngine.renderActivityLauncherUI();
     if (viewName === 'classroom-setup') renderClassroomSetupUI();
     if (viewName === 'arena-preview') renderActiveArenaUI();
+    if (viewName === 'group-play') window.FIVIAGroupPlayEngine.renderGroupPlayUI();
 
     window.scrollTo(0, 0);
   }

@@ -23,6 +23,7 @@ window.FIVIAClassroomEngine = (function() {
             <div style="color: var(--fq-cyan); font-weight: 700;">Kelola roster, import dari Excel, cetak kartu akses &amp; pantau progress.</div>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-violet" onclick="window.location.hash='#quest/group-play'"><i class="fas fa-users-line"></i> 👥 GROUP PLAY</button>
             <button class="fq-btn fq-btn-cyan" onclick="window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
             <button class="fq-btn fq-btn-outline" onclick="window.FIVIAExcelImport.downloadExcelTemplate()"><i class="fas fa-file-download"></i> 📄 DOWNLOAD TEMPLATE</button>
             <button class="fq-btn fq-btn-emerald" onclick="window.FIVIAExcelImport.printStudentCards()"><i class="fas fa-print"></i> 🖨️ CETAK KARTU</button>
