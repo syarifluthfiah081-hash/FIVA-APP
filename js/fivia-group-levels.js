@@ -16,7 +16,6 @@ window.FIVIAGroupLevels = (function() {
       color: 'var(--fq-emerald)',
       badge: '🟢',
       focus: 'Pengertian besaran, besaran pokok, besaran turunan, membedakan besaran dan contohnya.',
-      minAccuracyToUnlockNext: 70,
       totalRounds: 5,
       questionsRequired: 10,
       unlockedByDefault: true
@@ -28,11 +27,9 @@ window.FIVIAGroupLevels = (function() {
       color: 'var(--fq-cyan)',
       badge: '🔵',
       focus: 'Satuan SI, satuan besaran pokok dan turunan, mencocokkan besaran dengan satuan.',
-      prerequisite: 'LEVEL_01',
-      minAccuracyToUnlockNext: 70,
       totalRounds: 5,
       questionsRequired: 10,
-      unlockedByDefault: false
+      unlockedByDefault: true
     },
     LEVEL_03: {
       id: 'LEVEL_03',
@@ -41,11 +38,9 @@ window.FIVIAGroupLevels = (function() {
       color: 'var(--fq-violet)',
       badge: '🟣',
       focus: 'Simbol dimensi, dimensi besaran pokok, dan dimensi besaran turunan.',
-      prerequisite: 'LEVEL_02',
-      minAccuracyToUnlockNext: 75,
       totalRounds: 5,
       questionsRequired: 10,
-      unlockedByDefault: false
+      unlockedByDefault: true
     },
     LEVEL_04: {
       id: 'LEVEL_04',
@@ -54,11 +49,9 @@ window.FIVIAGroupLevels = (function() {
       color: 'var(--fq-amber)',
       badge: '🟠',
       focus: 'Analisis konsistensi dimensi persamaan fisika (x = vt + ½at², F = ma).',
-      prerequisite: 'LEVEL_03',
-      minAccuracyToUnlockNext: 75,
       totalRounds: 5,
       questionsRequired: 10,
-      unlockedByDefault: false
+      unlockedByDefault: true
     },
     LEVEL_05: {
       id: 'LEVEL_05',
@@ -67,12 +60,9 @@ window.FIVIAGroupLevels = (function() {
       color: 'var(--fq-rose)',
       badge: '🔴',
       focus: 'HOTS Multi-step Tantangan Kelompok, analisis kasus gabungan besaran+satuan+dimensi.',
-      prerequisite: 'LEVEL_04',
-      minAccuracyToUnlockNext: 80,
       totalRounds: 5,
       questionsRequired: 10,
-      requiresAllMembersPlayed: true,
-      unlockedByDefault: false
+      unlockedByDefault: true
     }
   };
 
@@ -85,6 +75,7 @@ window.FIVIAGroupLevels = (function() {
     questionsCompleted: 0,
     correctAnswersCount: 0,
     totalQuestionsCount: 0,
+    teacherBypassMode: true,
     levelProgress: {
       LEVEL_01: { completed: false, accuracy: 0, highestScore: 0 },
       LEVEL_02: { completed: false, accuracy: 0, highestScore: 0 },
@@ -122,24 +113,8 @@ window.FIVIAGroupLevels = (function() {
     return levelState.teacherBypassMode;
   }
 
-  function isLevelUnlocked(levelId, groupAccuracy, groupMembersPlayed) {
-    if (levelState.teacherBypassMode) return true;
-    const meta = LEVEL_METADATA[levelId];
-    if (!meta) return false;
-    if (meta.unlockedByDefault) return true;
-
-    const prereq = meta.prerequisite;
-    const prereqProgress = levelState.levelProgress[prereq];
-    if (!prereqProgress || !prereqProgress.completed) return false;
-
-    const prereqMeta = LEVEL_METADATA[prereq];
-    const reqAccuracy = prereqMeta ? prereqMeta.minAccuracyToUnlockNext : 70;
-
-    if (prereqProgress.accuracy < reqAccuracy) return false;
-
-    if (meta.requiresAllMembersPlayed && !groupMembersPlayed) return false;
-
-    return true;
+  function isLevelUnlocked(levelId) {
+    return true; // All levels are 100% unlocked unconditionally!
   }
 
   function startLevelSession(levelId) {
