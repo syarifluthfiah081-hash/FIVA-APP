@@ -108,6 +108,7 @@ function getMenuForRole(role) {
   } else if (role === "guru") {
     menuHtml = `
       <li class="sidebar-menu-item" id="menu-guru-dashboard"><a href="#dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard Guru</span></a></li>
+      <li class="sidebar-menu-item" id="menu-guru-group-play"><a href="#quest/group-play"><i class="fas fa-users-line" style="color: var(--fq-cyan);"></i> <span>👥 Group Play</span></a></li>
       <li class="sidebar-menu-item" id="menu-quest"><a href="#quest"><i class="fas fa-gamepad" style="color: var(--brand-orange);"></i> <span>Physics Quest</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-kelas"><a href="#kelas"><i class="fas fa-users"></i> <span>Manajemen Kelas</span></a></li>

@@ -223,20 +223,20 @@
               </div>
 
               <div class="fq-mode-grid" style="grid-template-columns: 1fr;">
-                <div class="fq-mode-card arena" onclick="window.location.hash='#quest/classroom-setup'" style="border: 3px solid var(--fq-cyan);">
+                <div class="fq-mode-card arena" onclick="window.location.hash='#quest/group-play'" style="border: 3px solid var(--fq-cyan);">
                   <div class="fq-mode-icon arena">
-                    <i class="fas fa-users-viewfinder"></i>
+                    <i class="fas fa-users-line"></i>
                   </div>
-                  <div class="fq-mode-title" style="font-size: 1.8rem;">🚀 MAINKAN GAME KELOMPOK</div>
-                  <div class="fq-mode-desc" style="font-size: 1rem;">Mulai kompetisi kelompok! Anggota tim diambil langsung dari database siswa. Setiap kelompok menjawab tantangan secara bergiliran.</div>
-                  <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; font-size: 1.2rem; min-height: 54px;"><i class="fas fa-play"></i> 🚀 MULAI GAME BERKELOMPOK</button>
+                  <div class="fq-mode-title" style="font-size: 1.8rem;">👥 FIVIA GROUP PLAY (ROTATING PLAYER)</div>
+                  <div class="fq-mode-desc" style="font-size: 1rem;">Mode pergiliran kelompok interaktif! Anggota kelompok dari database Firebase bergiliran maju ke depan layar secara adil (Round-Robin).</div>
+                  <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; font-size: 1.2rem; min-height: 54px;"><i class="fas fa-play"></i> 👥 MULAI FIVIA GROUP PLAY</button>
                 </div>
               </div>
 
               <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
-                <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/classroom-setup'"><i class="fas fa-users-cog"></i> ATUR KELOMPOK &amp; ANGGOTA</button>
+                <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/group-play'"><i class="fas fa-users-cog"></i> 👥 ATUR KELOMPOK &amp; ANGGOTA</button>
                 <button class="fq-btn fq-btn-outline" onclick="window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT SISWA EXCEL</button>
-                <button class="fq-btn fq-btn-outline" onclick="window.FIVIAExcelImport.downloadExcelTemplate()"><i class="fas fa-file-download"></i> 📄 DOWNLOAD TEMPLATE EXCEL</button>
+                <button class="fq-btn fq-btn-outline" onclick="window.FIVIAExcelImport.downloadExcelTemplate()"><i class="fas fa-file-download"></i> 📄 DOWNLOAD TEMPLATE EXCEL (.XLSX)</button>
               </div>
             </div>
           </div>

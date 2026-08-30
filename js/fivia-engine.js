@@ -162,6 +162,7 @@ window.FIVIAQuest = (function() {
     else if (subRoute === 'join-session') renderView('join-session');
     else if (subRoute === 'classroom-setup') renderView('classroom-setup');
     else if (subRoute === 'arena-preview') renderView('arena-preview');
+    else if (subRoute === 'group-play') renderView('group-play');
     else renderView('access');
   }
 
