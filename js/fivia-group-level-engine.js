@@ -6,8 +6,8 @@
 window.FIVIAGroupLevelEngine = (function() {
   'use strict';
 
-  function renderLevelMapUI() {
-    const container = document.getElementById('fq-group-levels-container');
+  function renderLevelMapUI(targetContainerId) {
+    const container = document.getElementById(targetContainerId || 'fq-group-levels-container') || document.getElementById('fq-group-play-container');
     if (!container) return;
 
     const allLevels = window.FIVIAGroupLevels.getAllLevels();
@@ -62,7 +62,7 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
         </div>
 
-        <!-- LEVEL CARDS GRID -->
+        <!-- LEVEL CARDS GRID (MINIGAME MODES MATCHING SOLO PLAY) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
           ${Object.keys(allLevels).map(key => {
             const lvl = allLevels[key];
@@ -118,7 +118,7 @@ window.FIVIAGroupLevelEngine = (function() {
   }
 
   function renderActiveLevelBoardUI() {
-    const container = document.getElementById('fq-group-levels-container');
+    const container = document.getElementById('fq-group-levels-container') || document.getElementById('fq-group-play-container');
     if (!container) return;
 
     const state = window.FIVIAGroupLevels.getLevelState();
@@ -132,6 +132,9 @@ window.FIVIAGroupLevelEngine = (function() {
     const q = questions[qIdx];
 
     const livesHtml = Array.from({ length: state.maxLives }).map((_, i) => i < state.teamLives ? '❤️' : '🖤').join(' ');
+
+    // Calculate Boss HP for Level 05
+    const bossHP = state.activeLevelId === 'LEVEL_05' ? Math.max(0, 100 - (state.correctAnswersCount * 20)) : 100;
 
     container.innerHTML = `
       <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid ${meta.color}; border-radius: 32px; padding: 32px; text-align: left; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
@@ -161,6 +164,19 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
         </div>
 
+        <!-- LEVEL 05 PHYSICS BOSS HP BAR OVERLAY -->
+        ${state.activeLevelId === 'LEVEL_05' ? `
+          <div style="background: rgba(225,29,72,0.2); border: 2.5px solid var(--fq-rose); border-radius: 20px; padding: 18px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 30px rgba(225,29,72,0.4);">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; color: var(--fq-rose); font-size: 1.1rem; margin-bottom: 6px;">
+              <span>👾 MECHA PHYSICS BOSS</span>
+              <span>${bossHP} / 100 HP</span>
+            </div>
+            <div style="width: 100%; background: rgba(15,23,42,0.8); height: 20px; border-radius: 10px; overflow: hidden; border: 1px solid var(--fq-rose);">
+              <div style="width: ${bossHP}%; background: linear-gradient(90deg, #f43f5e, #fb7185); height: 100%; transition: width 0.5s ease;"></div>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- PLAYER TURN BANNER (SANGAT BESAR & HIGH CONTRAST) -->
         <div style="background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25)); border: 3px solid var(--fq-cyan); border-radius: 24px; padding: 22px; text-align: center; margin-bottom: 28px;">
           <div style="font-size: 1.1rem; font-weight: 900; color: var(--fq-amber); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">
@@ -174,7 +190,7 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
         </div>
 
-        <!-- Game Challenge Display Container -->
+        <!-- Minigame Interactive Challenge Card Display -->
         <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-border-cyan); border-radius: 24px; padding: 28px; margin-bottom: 28px;">
           <div style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.4; margin-bottom: 20px;">
             ${q.question}
@@ -182,7 +198,7 @@ window.FIVIAGroupLevelEngine = (function() {
 
           <div id="fq-gl-feedback" style="display: none; margin-bottom: 24px; padding: 22px; border-radius: 20px; font-size: 1.1rem;"></div>
 
-          <!-- Touch Target Option Buttons >= 72px Height -->
+          <!-- Interactive Minigame Buttons (Touch Target >= 72px) -->
           <div id="fq-gl-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             ${(q.options || []).map(opt => `
               <button class="fq-btn fq-btn-outline fq-btn-lg" style="min-height: 76px; padding: 20px; font-size: 1.25rem; font-weight: 800; text-align: left; border-width: 2.5px;" onclick="window.FIVIAGroupLevelEngine.submitAnswer('${opt.id}')">

@@ -7,6 +7,10 @@ window.FIVIAGroupPlayEngine = (function() {
   'use strict';
 
   function renderGroupPlayUI() {
+    if (window.FIVIAGroupLevelEngine && typeof window.FIVIAGroupLevelEngine.renderLevelMapUI === 'function') {
+      window.FIVIAGroupLevelEngine.renderLevelMapUI('fq-group-play-container');
+      return;
+    }
     const container = document.getElementById('fq-group-play-container');
     if (!container) return;
 
