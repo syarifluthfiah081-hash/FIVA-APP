@@ -6,10 +6,15 @@
 window.FIVIAGroupLevelEngine = (function() {
   'use strict';
 
-  function renderLevelMapUI(targetContainerId) {
-    const container = document.getElementById(targetContainerId || 'fq-group-levels-container') || document.getElementById('fq-group-play-container');
-    if (!container) return;
+  function renderToContainers(html) {
+    const c1 = document.getElementById('fq-group-levels-container');
+    const c2 = document.getElementById('fq-group-play-container');
+    if (c1) c1.innerHTML = html;
+    if (c2) c2.innerHTML = html;
+    window.scrollTo(0, 0);
+  }
 
+  function renderLevelMapUI() {
     // Ensure session and roster are initialized
     if (window.FIVIAGroupPlay) {
       const gpState = window.FIVIAGroupPlay.getSessionState();
@@ -25,7 +30,7 @@ window.FIVIAGroupLevelEngine = (function() {
     const activeCls = classes.find(c => c.id === sessionState.classroomId) || classes[0] || { id: 'cls_xf1', name: 'XI FASE F' };
     const groups = sessionState.groups || [];
 
-    container.innerHTML = `
+    const html = `
       <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
         <!-- Top Title Header -->
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2.5px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 28px; flex-wrap: wrap; gap: 14px;">
@@ -82,7 +87,6 @@ window.FIVIAGroupLevelEngine = (function() {
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; overflow-x: auto; padding: 10px 0;">
             ${Object.keys(allLevels).map((key, idx) => {
               const lvl = allLevels[key];
-              const progress = state.levelProgress[lvl.id] || { completed: false, accuracy: 0 };
 
               return `
                 <div style="flex: 1; min-width: 150px; background: rgba(15,23,42,0.9); border: 3px solid ${lvl.color}; border-radius: 22px; padding: 20px 14px; position: relative; box-shadow: 0 0 20px ${lvl.color}; cursor: pointer; transition: transform 0.2s ease;" onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -103,7 +107,6 @@ window.FIVIAGroupLevelEngine = (function() {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
           ${Object.keys(allLevels).map(key => {
             const lvl = allLevels[key];
-            const progress = state.levelProgress[lvl.id] || { completed: false, accuracy: 0 };
 
             return `
               <div style="background: rgba(30,41,59,0.85); border: 3px solid ${lvl.color}; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 0 25px rgba(0,0,0,0.3);">
@@ -134,6 +137,8 @@ window.FIVIAGroupLevelEngine = (function() {
         </div>
       </div>
     `;
+
+    renderToContainers(html);
   }
 
   function selectClass(classId) {
@@ -169,9 +174,6 @@ window.FIVIAGroupLevelEngine = (function() {
   }
 
   function renderActiveLevelBoardUI() {
-    const container = document.getElementById('fq-group-levels-container') || document.getElementById('fq-group-play-container');
-    if (!container) return;
-
     const state = window.FIVIAGroupLevels.getLevelState();
     const meta = window.FIVIAGroupLevels.getLevelMetadata(state.activeLevelId);
     const sessionState = window.FIVIAGroupPlay ? window.FIVIAGroupPlay.getSessionState() : {};
@@ -187,7 +189,7 @@ window.FIVIAGroupLevelEngine = (function() {
     // Calculate Boss HP for Level 05
     const bossHP = state.activeLevelId === 'LEVEL_05' ? Math.max(0, 100 - (state.correctAnswersCount * 20)) : 100;
 
-    container.innerHTML = `
+    const html = `
       <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid ${meta.color}; border-radius: 32px; padding: 32px; text-align: left; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
         <!-- Smartboard Level Top Header Bar -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
@@ -273,6 +275,8 @@ window.FIVIAGroupLevelEngine = (function() {
         </div>
       </div>
     `;
+
+    renderToContainers(html);
   }
 
   function submitAnswer(optId) {
