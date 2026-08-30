@@ -1,6 +1,6 @@
 /**
  * FIVIA GROUP LEVEL ENGINE MODULE
- * Phase 10.1: Visual Level Map, Teacher Access Master Toggle, & Interactive Minigames Matching Solo Play
+ * Phase 10.1: Unified Group Setup, Level Map & Interactive Minigames with 100% Unconditional Unlock
  */
 
 window.FIVIAGroupLevelEngine = (function() {
@@ -10,50 +10,87 @@ window.FIVIAGroupLevelEngine = (function() {
     const container = document.getElementById(targetContainerId || 'fq-group-levels-container') || document.getElementById('fq-group-play-container');
     if (!container) return;
 
+    // Ensure session and roster are initialized
+    if (window.FIVIAGroupPlay) {
+      const gpState = window.FIVIAGroupPlay.getSessionState();
+      if (!gpState.groups || gpState.groups.length === 0) {
+        window.FIVIAGroupPlay.autoGroupStudents(gpState.classroomId || 'cls_xf1', 4);
+      }
+    }
+
     const allLevels = window.FIVIAGroupLevels.getAllLevels();
     const state = window.FIVIAGroupLevels.getLevelState();
     const sessionState = window.FIVIAGroupPlay ? window.FIVIAGroupPlay.getSessionState() : {};
-    const activeGroup = sessionState.activeGroup || (sessionState.groups ? sessionState.groups[0] : null) || { groupName: 'GROUP NEWTON', score: 850 };
-    const isBypass = !!state.teacherBypassMode;
+    const classes = window.FIVIAGroupPlay ? window.FIVIAGroupPlay.getClassrooms() : [];
+    const activeCls = classes.find(c => c.id === sessionState.classroomId) || classes[0] || { id: 'cls_xf1', name: 'XI FASE F' };
+    const groups = sessionState.groups || [];
 
     container.innerHTML = `
       <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
-        <!-- Subtitle & Group Header -->
+        <!-- Top Title Header -->
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2.5px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 28px; flex-wrap: wrap; gap: 14px;">
           <div>
-            <span class="fq-badge-pill" style="font-size: 0.9rem; padding: 6px 16px;"><i class="fas fa-map-marked-alt"></i> PETA PERMAINAN KELOMPOK &bull; INTERACTIVE SMARTBOARD MODE</span>
-            <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 6px 0 2px 0;">🎮 PETA PERMAINAN KELOMPOK</h1>
-            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem;">Permainan interaktif kelompok bergiliran &bull; Besaran &bull; Satuan &bull; Dimensi &bull; Analyst &bull; Boss</div>
+            <span class="fq-badge-pill" style="font-size: 0.9rem; padding: 6px 16px;"><i class="fas fa-users-cog"></i> FIVIA GROUP PLAY &bull; PETA PERMAINAN KELOMPOK</span>
+            <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 6px 0 2px 0;">🎮 PETA LEVEL PERMAINAN KELOMPOK</h1>
+            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem;">Atur kelompok, pilih level, dan mainkan tantangan fisika interaktif secara bergiliran!</div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-            <button class="fq-btn ${isBypass ? 'fq-btn-emerald' : 'fq-btn-amber'}" style="min-height: 52px; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.toggleTeacherBypass()">
-              <i class="fas ${isBypass ? 'fa-lock-open' : 'fa-key'}"></i> ${isBypass ? '🔓 AKSES GURU: SEMUA LEVEL TERBUKA' : '🔒 MODE KELAS (DENGAN SYARAT)'}
-            </button>
-            <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-amber); border-radius: 20px; padding: 10px 20px; text-align: center;">
-              <div style="font-size: 0.75rem; color: var(--fq-text-muted); font-weight: 800;">KELOMPOK AKTIF</div>
-              <div style="font-size: 1.25rem; font-weight: 900; color: #fff;">👥 ${activeGroup.groupName}</div>
-            </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
+            <button class="fq-btn fq-btn-amber" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.autoGroup()"><i class="fas fa-random"></i> 🔀 BAGI KELOMPOK</button>
+            <button class="fq-btn fq-btn-cyan" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.startLevel('LEVEL_01')"><i class="fas fa-play"></i> ▶ MULAI LEVEL 01</button>
           </div>
         </div>
 
-        <!-- VISUAL GAME MAP PATH (CONNECTED NODES) -->
-        <div style="background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9)); border: 2.5px solid var(--fq-border-cyan); border-radius: 28px; padding: 32px; margin-bottom: 32px; text-align: center; position: relative;">
-          <h3 style="color: var(--fq-cyan); font-size: 1.3rem; font-weight: 900; margin: 0 0 24px 0;"><i class="fas fa-route"></i> PETA JALUR PERMAINAN KELOMPOK (LEVEL 01 &rarr; LEVEL 05):</h3>
+        <!-- 1. PENGATURAN KELOMPOK & DATABASE SISWA (ALWAYS VISIBLE & CONFIGURED) -->
+        <div style="background: rgba(30,41,59,0.85); border: 2px solid var(--fq-border-cyan); border-radius: 24px; padding: 24px; margin-bottom: 32px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="color: var(--fq-cyan); font-size: 1.2rem; font-weight: 900; margin: 0;"><i class="fas fa-chalkboard"></i> PENGATURAN KELAS &amp; KELOMPOK (${groups.length} Kelompok Terdaftar):</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              ${classes.map(cls => `
+                <button class="fq-btn ${cls.id === activeCls.id ? 'fq-btn-cyan' : 'fq-btn-outline'}" style="padding: 6px 16px; font-weight: 800; font-size: 0.9rem;" onclick="window.FIVIAGroupLevelEngine.selectClass('${cls.id}')">
+                  📘 ${cls.name}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Group Member Cards Preview -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px;">
+            ${groups.map((grp, gIdx) => `
+              <div style="background: rgba(15,23,42,0.7); border: 1.5px solid var(--fq-border-cyan); border-radius: 16px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fq-border-cyan); padding-bottom: 8px; margin-bottom: 10px;">
+                  <strong style="color: var(--fq-amber); font-size: 1.05rem;">👥 ${grp.groupName}</strong>
+                  <span class="fq-badge-pill" style="margin: 0; font-size: 0.75rem;">${grp.members.length} Siswa</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #fff; display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto;">
+                  ${grp.members.map((m, mIdx) => `
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="color: var(--fq-cyan); font-weight: 800;">${mIdx + 1}.</span> ${m.studentName}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 2. VISUAL GAME MAP PATH (CONNECTED NODES) -->
+        <div style="background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9)); border: 2.5px solid var(--fq-border-cyan); border-radius: 28px; padding: 28px; margin-bottom: 32px; text-align: center; position: relative;">
+          <h3 style="color: var(--fq-cyan); font-size: 1.3rem; font-weight: 900; margin: 0 0 20px 0;"><i class="fas fa-route"></i> PETA JALUR PERMAINAN KELOMPOK (KLIK UNTUK MAINKAN):</h3>
 
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; overflow-x: auto; padding: 10px 0;">
             ${Object.keys(allLevels).map((key, idx) => {
               const lvl = allLevels[key];
-              const isUnlocked = window.FIVIAGroupLevels.isLevelUnlocked(lvl.id);
               const progress = state.levelProgress[lvl.id] || { completed: false, accuracy: 0 };
 
               return `
-                <div style="flex: 1; min-width: 150px; background: rgba(15,23,42,0.9); border: 3px solid ${isUnlocked ? lvl.color : 'rgba(255,255,255,0.2)'}; border-radius: 22px; padding: 20px 14px; position: relative; box-shadow: ${isUnlocked ? '0 0 25px ' + lvl.color : 'none'}; cursor: ${isUnlocked ? 'pointer' : 'not-allowed'};" onclick="${isUnlocked ? "window.FIVIAGroupLevelEngine.startLevel('" + lvl.id + "')" : ""}">
-                  <div style="font-size: 2.5rem; margin-bottom: 6px;">${isUnlocked ? lvl.badge : '🔒'}</div>
+                <div style="flex: 1; min-width: 150px; background: rgba(15,23,42,0.9); border: 3px solid ${lvl.color}; border-radius: 22px; padding: 20px 14px; position: relative; box-shadow: 0 0 20px ${lvl.color}; cursor: pointer; transition: transform 0.2s ease;" onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                  <div style="font-size: 2.5rem; margin-bottom: 6px;">${lvl.badge}</div>
                   <div style="font-size: 0.85rem; font-weight: 900; color: ${lvl.color};">${lvl.code}</div>
-                  <div style="font-size: 1rem; font-weight: 900; color: #fff; margin: 4px 0;">${lvl.title}</div>
-                  <div style="font-size: 0.78rem; font-weight: 800; color: ${progress.completed ? 'var(--fq-emerald)' : (isUnlocked ? 'var(--fq-cyan)' : 'var(--fq-rose)')}; margin-top: 8px;">
-                    ${progress.completed ? '⭐ SLESAI (' + progress.accuracy + '%)' : (isUnlocked ? '🟢 TERBUKA' : '🔒 TERKUNCI')}
+                  <div style="font-size: 1.05rem; font-weight: 900; color: #fff; margin: 4px 0;">${lvl.title}</div>
+                  <div style="font-size: 0.78rem; font-weight: 800; color: var(--fq-emerald); margin-top: 8px;">
+                    🟢 TERBUKA (MAINKAN)
                   </div>
                 </div>
                 ${idx < 4 ? '<div style="font-size: 1.8rem; color: var(--fq-cyan); font-weight: 900;">&rarr;</div>' : ''}
@@ -62,20 +99,19 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
         </div>
 
-        <!-- LEVEL CARDS GRID (MINIGAME MODES MATCHING SOLO PLAY) -->
+        <!-- 3. LEVEL CARDS GRID (MINIGAME MODES) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
           ${Object.keys(allLevels).map(key => {
             const lvl = allLevels[key];
-            const isUnlocked = window.FIVIAGroupLevels.isLevelUnlocked(lvl.id);
             const progress = state.levelProgress[lvl.id] || { completed: false, accuracy: 0 };
 
             return `
-              <div style="background: rgba(30,41,59,0.85); border: 3px solid ${isUnlocked ? lvl.color : 'rgba(255,255,255,0.15)'}; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="background: rgba(30,41,59,0.85); border: 3px solid ${lvl.color}; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 0 25px rgba(0,0,0,0.3);">
                 <div>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <span class="fq-badge-pill" style="border-color: ${lvl.color}; color: ${lvl.color}; font-weight: 900;">${lvl.badge} ${lvl.code}</span>
-                    <span class="fq-badge-pill" style="margin: 0; color: ${isUnlocked ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; border-color: ${isUnlocked ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; font-weight: 900;">
-                      ${isUnlocked ? '✅ TERBUKA' : '🔒 TERKUNCI'}
+                    <span class="fq-badge-pill" style="margin: 0; color: var(--fq-emerald); border-color: var(--fq-emerald); font-weight: 900;">
+                      ✅ TERBUKA
                     </span>
                   </div>
 
@@ -84,18 +120,12 @@ window.FIVIAGroupLevelEngine = (function() {
                 </div>
 
                 <div>
-                  ${!isUnlocked ? `
-                    <div style="background: rgba(15,23,42,0.6); border: 1px dashed var(--fq-rose); border-radius: 12px; padding: 10px; font-size: 0.8rem; color: var(--fq-rose); font-weight: 700; margin-bottom: 14px;">
-                      🔒 Syarat: Menyelesaikan ${lvl.prerequisite || 'Level Sebelumnya'} (Akurasi minimal ${lvl.minAccuracyToUnlockNext || 70}%)
-                    </div>
-                  ` : `
-                    <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--fq-emerald); border-radius: 12px; padding: 10px; font-size: 0.82rem; color: var(--fq-emerald); font-weight: 700; margin-bottom: 14px;">
-                      🎯 Akurasi Tertinggi: ${progress.accuracy}% (Target: ${lvl.minAccuracyToUnlockNext || 70}%)
-                    </div>
-                  `}
+                  <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--fq-emerald); border-radius: 12px; padding: 10px; font-size: 0.82rem; color: var(--fq-emerald); font-weight: 700; margin-bottom: 14px;">
+                    🎮 Status: Siap Dimainkan Berkelompok (Round-Robin)
+                  </div>
 
-                  <button class="fq-btn ${isUnlocked ? 'fq-btn-cyan' : 'fq-btn-outline'}" style="width: 100%; min-height: 56px; font-size: 1.1rem; font-weight: 800;" ${!isUnlocked ? 'disabled' : ''} onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')">
-                    ${isUnlocked ? '🚀 MAINKAN GAME KELOMPOK' : '🔒 TERKUNCI'}
+                  <button class="fq-btn fq-btn-cyan" style="width: 100%; min-height: 56px; font-size: 1.15rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')">
+                    🚀 MAINKAN ${lvl.code}
                   </button>
                 </div>
               </div>
@@ -106,14 +136,35 @@ window.FIVIAGroupLevelEngine = (function() {
     `;
   }
 
-  function toggleTeacherBypass() {
-    const isBypass = window.FIVIAGroupLevels.toggleTeacherBypassMode();
-    alert(isBypass ? '🔓 MODE GURU AKTIF: Seluruh level berhasil dibuka untuk uji coba!' : '🔒 MODE KELAS AKTIF: Pembukaan level kembali berdasarkan syarat akurasi.');
+  function selectClass(classId) {
+    if (window.FIVIAGroupPlay) {
+      window.FIVIAGroupPlay.autoGroupStudents(classId, 4);
+    }
     renderLevelMapUI();
   }
 
+  function autoGroup() {
+    if (window.FIVIAGroupPlay) {
+      const state = window.FIVIAGroupPlay.getSessionState();
+      window.FIVIAGroupPlay.autoGroupStudents(state.classroomId || 'cls_xf1', 4);
+    }
+    renderLevelMapUI();
+    alert('🎉 KELOMPOK BERHASIL DIBAGI OTOMATIS DARI DATABASE SISWA!');
+  }
+
   function startLevel(levelId) {
+    // 1. Ensure Group Play session is active with valid groups & active player
+    if (window.FIVIAGroupPlay) {
+      const gpState = window.FIVIAGroupPlay.getSessionState();
+      if (!gpState.groups || gpState.groups.length === 0 || !gpState.activePlayer) {
+        window.FIVIAGroupPlay.startSession(gpState.classroomId || 'cls_xf1');
+      }
+    }
+
+    // 2. Start Level Session
     window.FIVIAGroupLevels.startLevelSession(levelId);
+
+    // 3. Render Active Interactive Board UI
     renderActiveLevelBoardUI();
   }
 
@@ -277,7 +328,8 @@ window.FIVIAGroupLevelEngine = (function() {
 
   return {
     renderLevelMapUI: renderLevelMapUI,
-    toggleTeacherBypass: toggleTeacherBypass,
+    selectClass: selectClass,
+    autoGroup: autoGroup,
     startLevel: startLevel,
     renderActiveLevelBoardUI: renderActiveLevelBoardUI,
     submitAnswer: submitAnswer,
