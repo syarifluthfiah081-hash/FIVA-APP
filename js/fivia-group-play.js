@@ -56,15 +56,31 @@ window.FIVIAGroupPlay = (function() {
 
   function getClassrooms() {
     let classes = [];
-    if (window.FIVIAClassroom && typeof window.FIVIAClassroom.getClassrooms === 'function') {
-      classes = window.FIVIAClassroom.getClassrooms();
-    } else if (window.db && typeof window.db.getTable === 'function') {
-      classes = window.db.getTable('classes');
+
+    // 1. Try window.db.getTable('classes')
+    if (window.db && typeof window.db.getTable === 'function') {
+      classes = window.db.getTable('classes') || [];
     }
+
+    // 2. Try FIVIAClassroom
+    if ((!classes || classes.length === 0) && window.FIVIAClassroom && typeof window.FIVIAClassroom.getClassrooms === 'function') {
+      classes = window.FIVIAClassroom.getClassrooms();
+    }
+
+    // 3. Try localStorage
+    if (!classes || classes.length === 0) {
+      try {
+        const saved = localStorage.getItem('vlab_fisika_classes') || localStorage.getItem('fivia_classrooms');
+        if (saved) classes = JSON.parse(saved);
+      } catch (e) {}
+    }
+
     if (!classes || classes.length === 0) {
       classes = [
-        { id: 'cls_xf1', name: 'XI FASE F', code: 'FIVIA-XF1', studentCount: 36 },
-        { id: 'cls_xe1', name: 'X FASE E', code: 'FIVIA-XE1', studentCount: 32 }
+        { id: "cls_x1", name: "Kelas X-1" },
+        { id: "cls_x2", name: "Kelas X-2" },
+        { id: "cls_xi1", name: "Kelas XI IPA-1" },
+        { id: "cls_xi2", name: "Kelas XI IPA-2" }
       ];
     }
     return classes;
@@ -72,15 +88,74 @@ window.FIVIAGroupPlay = (function() {
 
   function getRosterForClass(classId) {
     let roster = [];
+
+    // 1. Try FIVIAExcelImport
     if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === 'function') {
       roster = window.FIVIAExcelImport.getExistingRoster();
-    } else if (window.db && typeof window.db.getTable === 'function') {
-      roster = window.db.getTable('students');
     }
+
+    // 2. Try window.db.getTable('students')
+    if ((!roster || roster.length === 0) && window.db && typeof window.db.getTable === 'function') {
+      const dbStudents = window.db.getTable('students') || [];
+      if (dbStudents.length > 0) {
+        roster = dbStudents.map(s => ({
+          studentId: s.id || s.studentId,
+          name: s.name || s.studentName,
+          studentName: s.name || s.studentName,
+          classId: s.classId || 'cls_x1',
+          className: s.className || 'Kelas X-1',
+          studentCode: s.studentCode || s.nis || ('STD-' + s.id)
+        }));
+      }
+    }
+
+    // 3. Try window.db.getTable('users') for role === 'siswa'
+    if ((!roster || roster.length === 0) && window.db && typeof window.db.getTable === 'function') {
+      const dbUsers = (window.db.getTable('users') || []).filter(u => u.role === 'siswa');
+      if (dbUsers.length > 0) {
+        roster = dbUsers.map(s => ({
+          studentId: s.id || s.studentId,
+          name: s.name || s.studentName,
+          studentName: s.name || s.studentName,
+          classId: s.classId || 'cls_x1',
+          className: s.className || 'Kelas X-1',
+          studentCode: s.studentCode || ('STD-' + s.id)
+        }));
+      }
+    }
+
+    // 4. Try localStorage 'fivia_student_roster'
+    if (!roster || roster.length === 0) {
+      try {
+        const saved = localStorage.getItem('fivia_student_roster');
+        if (saved) roster = JSON.parse(saved);
+      } catch (e) {}
+    }
+
+    // 5. Try localStorage 'vlab_fisika_students'
+    if (!roster || roster.length === 0) {
+      try {
+        const saved = localStorage.getItem('vlab_fisika_students');
+        if (saved) roster = JSON.parse(saved);
+      } catch (e) {}
+    }
+
+    roster = (roster || []).filter(s => s && (s.name || s.studentName) && s.status !== 'ARCHIVED');
+
+    // Filter by class ONLY if matching records exist
     if (classId && classId !== 'ALL') {
-      roster = roster.filter(s => s.classId === classId || s.className === classId || (s.classId || '').includes(classId));
+      const filtered = roster.filter(s =>
+        s.classId === classId ||
+        s.className === classId ||
+        (s.classId || '').toLowerCase().includes((classId || '').toLowerCase()) ||
+        (s.className || '').toLowerCase().includes((classId || '').toLowerCase())
+      );
+      if (filtered.length > 0) {
+        return filtered;
+      }
     }
-    return roster.filter(s => s.status !== 'ARCHIVED');
+
+    return roster;
   }
 
   function autoGroupStudents(classId, numGroups) {
@@ -103,35 +178,16 @@ window.FIVIAGroupPlay = (function() {
     if (roster.length > 0) {
       roster.forEach((student, idx) => {
         const groupIdx = idx % numGroups;
+        const studentName = student.name || student.studentName || 'Siswa ' + (idx + 1);
         groups[groupIdx].members.push({
-          studentId: student.studentId || student.id,
-          studentName: student.name,
-          studentCode: student.studentCode || student.nis || ('STD-' + (idx + 1)),
+          studentId: student.studentId || student.id || ('std_' + (idx + 1)),
+          studentName: studentName,
+          studentCode: student.studentCode || student.nis || ('FIVIA-STD-' + (idx + 1)),
           turnsPlayed: 0,
           xpContributed: 0,
           status: 'READY'
         });
       });
-    } else {
-      const sampleNames = [
-        ['Ahmad Fauzan', 'Budi Santoso', 'Citra Dewi', 'Dinda Putri'],
-        ['Eko Prasetyo', 'Fajar Ramadhan', 'Gita Gutawa', 'Hadi Wijaya'],
-        ['Indah Permata', 'Joko Widodo', 'Kiki Amalia', 'Lia Lestari'],
-        ['Miftah Hidayat', 'Nabila Syakieb', 'Oki Setiana', 'Putri Marino']
-      ];
-      for (let g = 0; g < numGroups; g++) {
-        const names = sampleNames[g % 4];
-        names.forEach(n => {
-          groups[g].members.push({
-            studentId: 'std_' + Math.random().toString(36).substring(2, 8),
-            studentName: n,
-            studentCode: 'FIVIA-STD-' + Math.floor(Math.random() * 900 + 100),
-            turnsPlayed: 0,
-            xpContributed: 0,
-            status: 'READY'
-          });
-        });
-      }
     }
 
     sessionState.groups = groups;
