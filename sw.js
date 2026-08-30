@@ -25,7 +25,8 @@ const CORE_ASSETS = [
   "./js/ai-tutor.js",
   "./js/dashboards.js",
   "./js/firebase-config.js",
-  "./js/firebase-sync.js"
+  "./js/firebase-sync.js",
+  "./js/fivia-excel-import.js"
 ];
 
 // 1. Install event: Cache all essential application files

@@ -10,65 +10,88 @@ window.FIVIAClassroomEngine = (function() {
     const container = document.getElementById('fq-classroom-container');
     if (!container) return;
 
-    const classrooms = window.FIVIAClassroom.getClassrooms();
-    const activeCls = classrooms[0] || {};
-    const roster = window.FIVIAClassroom.getRoster(activeCls.id);
+    const roster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
+    const activeCount = roster.filter(s => s.status !== 'ARCHIVED').length;
+    const activeTodayCount = Math.min(activeCount, Math.ceil(activeCount * 0.8));
 
     container.innerHTML = `
       <div style="background: rgba(15, 23, 42, 0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 32px; text-align: left;">
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
           <div>
-            <span class="fq-badge-pill"><i class="fas fa-chalkboard-teacher"></i> TEACHER COMMAND CENTER</span>
-            <h1 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 4px 0;">MANAGEMENT KELAS FISIKA</h1>
-            <div style="color: var(--fq-cyan); font-weight: 700;">Kode Sesi Kelas: <strong style="color: var(--fq-amber); font-size: 1.2rem;">${activeCls.code || 'FIVIA-XIF-2045'}</strong></div>
+            <span class="fq-badge-pill"><i class="fas fa-users-cog"></i> TEACHER COMMAND CENTER &bull; DATA SISWA</span>
+            <h1 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 4px 0;">👨🎓 MANAJEMEN DATA SISWA</h1>
+            <div style="color: var(--fq-cyan); font-weight: 700;">Kelola roster, import dari Excel, cetak kartu akses &amp; pantau progress.</div>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="fq-btn fq-btn-cyan" onclick="window.FIVIAClassroomEngine.showCreateClassModal()"><i class="fas fa-plus-circle"></i> BUAT KELAS BARU</button>
-            <button class="fq-btn fq-btn-emerald" onclick="window.FIVIAClassroomReports.exportClassroomCSV('${activeCls.id}')"><i class="fas fa-file-csv"></i> EKSPOR CSV</button>
-            <button class="fq-btn fq-btn-amber" onclick="window.FIVIAClassroomReports.printClassroomReport('${activeCls.id}')"><i class="fas fa-print"></i> CETAK LAPORAN</button>
+            <button class="fq-btn fq-btn-cyan" onclick="window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
+            <button class="fq-btn fq-btn-outline" onclick="window.FIVIAExcelImport.downloadExcelTemplate()"><i class="fas fa-file-download"></i> 📄 DOWNLOAD TEMPLATE</button>
+            <button class="fq-btn fq-btn-emerald" onclick="window.FIVIAExcelImport.printStudentCards()"><i class="fas fa-print"></i> 🖨️ CETAK KARTU</button>
+            <button class="fq-btn fq-btn-amber" onclick="window.FIVIAClassroomEngine.showAddStudentModal()"><i class="fas fa-plus-circle"></i> ➕ TAMBAH SISWA</button>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px;">
           <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 18px; padding: 18px;">
             <div style="font-size: 0.8rem; color: var(--fq-text-muted);">TOTAL SISWA TERDAFTAR</div>
-            <div style="font-size: 1.8rem; font-weight: 900; color: #fff;">${roster.length} Siswa</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: #fff;">${activeCount} Siswa</div>
           </div>
           <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 18px; padding: 18px;">
-            <div style="font-size: 0.8rem; color: var(--fq-text-muted);">SISWA AKTIF HARI INI</div>
-            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-emerald);">4 Siswa</div>
+            <div style="font-size: 0.8rem; color: var(--fq-text-muted);">AKTIF HARI INI</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-emerald);">${activeTodayCount} Siswa</div>
           </div>
           <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 18px; padding: 18px;">
-            <div style="font-size: 0.8rem; color: var(--fq-text-muted);">RATA-RATA AKURASI KELAS</div>
-            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-cyan);">85.4%</div>
+            <div style="font-size: 0.8rem; color: var(--fq-text-muted);">RATA-RATA MASTERY</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-cyan);">78%</div>
+          </div>
+          <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 18px; padding: 18px;">
+            <div style="font-size: 0.8rem; color: var(--fq-text-muted);">PERLU INTERVENSI</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-amber);">0 Siswa</div>
           </div>
         </div>
 
-        <h3 style="color: var(--fq-cyan); font-size: 1.2rem; margin: 0 0 16px 0;"><i class="fas fa-users"></i> DAFTAR SISWA ANGGOTA KELAS (${activeCls.name || 'XI Fase F'}):</h3>
+        <!-- Filter & Search Bar -->
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+          <input type="text" id="fq-roster-search" class="fq-input" placeholder="🔍 Cari nama, NIS, atau Kode Siswa..." style="flex: 2; min-width: 200px;" oninput="window.FIVIAClassroomEngine.filterRosterTable()">
+          <select id="fq-roster-class-filter" class="fq-select" style="flex: 1; min-width: 140px;" onchange="window.FIVIAClassroomEngine.filterRosterTable()">
+            <option value="ALL">Semua Kelas</option>
+            ${Array.from(new Set(roster.map(s => s.className || s.classId))).map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
+
+        <h3 style="color: var(--fq-cyan); font-size: 1.2rem; margin: 0 0 16px 0;"><i class="fas fa-users"></i> DAFTAR ROSTER SISWA:</h3>
         <div style="overflow-x: auto;">
-          <table class="fq-student-table">
+          <table class="fq-student-table" id="fq-roster-table">
             <thead>
               <tr>
                 <th>NO</th>
                 <th>NAMA SISWA</th>
+                <th>NIS</th>
+                <th>KELAS</th>
+                <th>KODE SISWA</th>
                 <th>TOTAL XP</th>
-                <th>AKURASI MASTERY</th>
-                <th>PRAKTIKUM LAB</th>
-                <th>PROYEK REAL-WORLD</th>
+                <th>STATUS</th>
                 <th>AKSI</th>
               </tr>
             </thead>
-            <tbody>
-              ${roster.map((s, idx) => `
+            <tbody id="fq-roster-tbody">
+              ${roster.length === 0 ? `
                 <tr>
+                  <td colspan="8" style="text-align: center; padding: 24px; color: var(--fq-text-muted);">
+                    Belum ada data siswa. Silakan klik tombol <strong>📥 IMPORT EXCEL</strong> atau <strong>➕ TAMBAH SISWA</strong>.
+                  </td>
+                </tr>
+              ` : roster.map((s, idx) => `
+                <tr data-name="${(s.name||'').toLowerCase()}" data-nis="${s.nis||''}" data-code="${(s.studentCode||'').toLowerCase()}" data-class="${s.className||s.classId||''}">
                   <td>${idx + 1}</td>
-                  <td><strong>${s.displayName}</strong></td>
-                  <td><span class="fq-badge-pill" style="margin: 0; color: var(--fq-amber); border-color: var(--fq-amber);">${s.totalXP} XP</span></td>
-                  <td>${s.mastery}</td>
-                  <td>${s.labProgress}</td>
-                  <td>${s.projectProgress}</td>
+                  <td><strong>${s.name}</strong></td>
+                  <td><code style="color: var(--fq-amber); font-weight: bold;">${s.nis}</code></td>
+                  <td>${s.className || s.classId}</td>
+                  <td><code style="color: var(--fq-cyan); font-weight: bold;">${s.studentCode}</code></td>
+                  <td><span class="fq-badge-pill" style="margin: 0; color: var(--fq-amber); border-color: var(--fq-amber);">${s.xp || 0} XP</span></td>
+                  <td><span class="fq-badge-pill" style="margin: 0; color: var(--fq-emerald); border-color: var(--fq-emerald);">${s.status || 'ACTIVE'}</span></td>
                   <td>
-                    <button class="fq-btn fq-btn-outline" style="min-height: 34px; padding: 4px 10px; font-size: 0.78rem;" onclick="alert('Membuka detail analitik individual ${s.displayName}')">DETAIL</button>
+                    <button class="fq-btn fq-btn-outline" style="min-height: 32px; padding: 4px 8px; font-size: 0.75rem;" onclick="window.FIVIAClassroomEngine.editStudent('${s.studentId}')">✏️ EDIT</button>
+                    <button class="fq-btn fq-btn-danger" style="min-height: 32px; padding: 4px 8px; font-size: 0.75rem;" onclick="window.FIVIAClassroomEngine.archiveStudent('${s.studentId}')">🗑️ ARCHIVE</button>
                   </td>
                 </tr>
               `).join('')}
@@ -78,6 +101,7 @@ window.FIVIAClassroomEngine = (function() {
       </div>
     `;
   }
+
 
   function renderStudentMyClassroomUI() {
     const container = document.getElementById('fq-my-classroom-container');
@@ -253,6 +277,121 @@ window.FIVIAClassroomEngine = (function() {
     `;
   }
 
+  function triggerExcelImport() {
+    const modal = document.getElementById('fq-excel-import-modal');
+    if (modal) {
+      modal.classList.add('active');
+    } else {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.xlsx,.xls,.csv';
+      fileInput.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const rawRows = await window.FIVIAExcelImport.parseFile(file);
+          const processRes = window.FIVIAExcelImport.processRows(rawRows);
+          
+          if (!processRes.valid) {
+            alert(processRes.error);
+            return;
+          }
+
+          const dupMode = confirm(`📊 HASIL ANALISIS EXCEL:\n\n• Total Baris: ${processRes.totalRows}\n• Valid: ${processRes.validCount}\n• Duplikat: ${processRes.duplicateCount}\n• Invalid: ${processRes.invalidCount}\n\nTekan OK untuk SKIP DUPLIKAT (Default), atau CANCEL untuk UPDATE DATA SISWA LAMA.`) ? 'SKIP' : 'UPDATE';
+
+          const importRes = window.FIVIAExcelImport.executeImport(processRes.parsedData, dupMode);
+          alert(`🎉 IMPORT SELESAI!\n\n• Siswa Berhasil Diimport: ${importRes.totalImported}\n• Baris Dilewati: ${importRes.skipped}\n• Total Roster Siswa: ${importRes.totalInRoster}`);
+          renderTeacherClassroomUI();
+        } catch (err) {
+          alert('❌ GAGAL MENGIMPORT EXCEL: ' + err.message);
+        }
+      };
+      fileInput.click();
+    }
+  }
+
+  function filterRosterTable() {
+    const searchVal = (document.getElementById('fq-roster-search') || {}).value || '';
+    const classVal = (document.getElementById('fq-roster-class-filter') || {}).value || 'ALL';
+    const tbody = document.getElementById('fq-roster-tbody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(tr => {
+      const name = tr.getAttribute('data-name') || '';
+      const nis = tr.getAttribute('data-nis') || '';
+      const code = tr.getAttribute('data-code') || '';
+      const cls = tr.getAttribute('data-class') || '';
+
+      const query = searchVal.toLowerCase().trim();
+      const matchesSearch = !query || name.includes(query) || nis.includes(query) || code.includes(query);
+      const matchesClass = classVal === 'ALL' || cls === classVal;
+
+      tr.style.display = (matchesSearch && matchesClass) ? '' : 'none';
+    });
+  }
+
+  function showAddStudentModal() {
+    const name = prompt('Masukkan Nama Lengkap Siswa:', 'Ahmad Fauzan');
+    if (!name) return;
+    const nis = prompt('Masukkan NIS Siswa (String):', '001');
+    if (!nis) return;
+    const className = prompt('Masukkan Kelas Siswa:', 'X.F.1');
+    if (!className) return;
+
+    const studentCode = window.FIVIAExcelImport.generateStudentCode(nis, className);
+    const parsedData = [{
+      status: 'READY',
+      studentId: 'STD-' + Date.now().toString(36),
+      studentCode,
+      name,
+      nis,
+      className,
+      classId: window.FIVIAExcelImport.normalizeClassCode(className)
+    }];
+
+    window.FIVIAExcelImport.executeImport(parsedData, 'SKIP');
+    alert(`🎉 SISWA BERHASIL DITAMBAHKAN!\n\nKode Siswa: ${studentCode}`);
+    renderTeacherClassroomUI();
+  }
+
+  function editStudent(studentId) {
+    const roster = window.FIVIAExcelImport.getExistingRoster();
+    const student = roster.find(s => s.studentId === studentId);
+    if (!student) return;
+
+    const newName = prompt('Edit Nama Siswa:', student.name);
+    if (newName === null) return;
+    const newNis = prompt('Edit NIS Siswa:', student.nis);
+    if (newNis === null) return;
+    const newClass = prompt('Edit Kelas Siswa:', student.className);
+    if (newClass === null) return;
+
+    student.name = newName.trim() || student.name;
+    student.nis = newNis.trim() || student.nis;
+    student.className = newClass.trim() || student.className;
+    student.classId = window.FIVIAExcelImport.normalizeClassCode(student.className);
+    student.updatedAt = new Date().toISOString();
+
+    window.FIVIAExcelImport.saveRoster(roster);
+    alert('✅ DATA SISWA BERHASIL DIPERBARUI!');
+    renderTeacherClassroomUI();
+  }
+
+  function archiveStudent(studentId) {
+    const roster = window.FIVIAExcelImport.getExistingRoster();
+    const student = roster.find(s => s.studentId === studentId);
+    if (!student) return;
+
+    if (confirm(`🗑️ NONAKTIFKAN SISWA?\n\nApakah Anda yakin ingin menonaktifkan siswa "${student.name}" (${student.studentCode})?\nProgress siswa tetap tersimpan aman di database.`)) {
+      student.status = 'ARCHIVED';
+      student.updatedAt = new Date().toISOString();
+      window.FIVIAExcelImport.saveRoster(roster);
+      alert('✅ SISWA BERHASIL DINONAKTIFKAN.');
+      renderTeacherClassroomUI();
+    }
+  }
+
   function showCreateClassModal() {
     const name = prompt('Masukkan Nama Kelas Baru:', 'XI Fase F — Fisika 2');
     if (name) {
@@ -279,6 +418,12 @@ window.FIVIAClassroomEngine = (function() {
     renderInterventionUI: renderInterventionUI,
     renderActivityLauncherUI: renderActivityLauncherUI,
     showCreateClassModal: showCreateClassModal,
-    showCreateAssignmentModal: showCreateAssignmentModal
+    showCreateAssignmentModal: showCreateAssignmentModal,
+    triggerExcelImport: triggerExcelImport,
+    filterRosterTable: filterRosterTable,
+    showAddStudentModal: showAddStudentModal,
+    editStudent: editStudent,
+    archiveStudent: archiveStudent
   };
 })();
+

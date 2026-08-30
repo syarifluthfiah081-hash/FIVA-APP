@@ -186,6 +186,12 @@ window.FIVIAQuest = (function() {
     if (viewName === 'projector') window.FIVIAProjector.renderProjectorUI();
     if (viewName === 'data-health') window.FIVIADataHealth.renderDataHealthUI();
     if (viewName === 'student-dashboard') updateStudentDashboardUI();
+    if (viewName === 'game-map') updateGameMapUI();
+    if (viewName === 'besaran-hunter') renderBesaranHunterCard();
+    if (viewName === 'unit-master') renderUnitMasterCard();
+    if (viewName === 'si-explorer') renderSIExplorerCard();
+    if (viewName === 'dimension-detective') renderDimensionDetectiveCard();
+    if (viewName === 'dimension-boss') renderDimensionBossCard();
     if (viewName === 'virtual-lab') updateVirtualLabUI();
     if (viewName === 'lab-lkpd') window.FIVIALabLKPD.renderLKPDFormUI();
     if (viewName === 'project-mission') updateProjectMissionUI();
@@ -199,6 +205,107 @@ window.FIVIAQuest = (function() {
     if (viewName === 'activity-launcher') window.FIVIAClassroomEngine.renderActivityLauncherUI();
 
     window.scrollTo(0, 0);
+  }
+
+  /**
+   * Validates level accessibility and launches level gameplay
+   */
+  function startLevel(levelNum) {
+    const student = window.FIVIAStudent.getStudentProfile();
+    const isUnlocked = levelNum === 1 || 
+                       (student.levelsCompleted && student.levelsCompleted[`level${levelNum-1}`]) || 
+                       (student.level && student.level >= levelNum);
+
+    if (!isUnlocked) {
+      alert(`🔒 LEVEL ${levelNum} TERKUNCI\n\nSelesaikan Level 0${levelNum-1} terlebih dahulu untuk membuka level ini.`);
+      return;
+    }
+
+    if (levelNum === 1) startSoloBesaranHunter();
+    else if (levelNum === 2) startSoloUnitMaster();
+    else if (levelNum === 3) startSoloSIExplorer();
+    else if (levelNum === 4) startSoloDimensionDetective();
+    else if (levelNum === 5) startSoloDimensionBoss();
+  }
+
+  /**
+   * Updates Game Map UI (Locks / Unlocks Level Nodes dynamically)
+   */
+  function updateGameMapUI() {
+    const student = window.FIVIAStudent.getStudentProfile();
+    const completed = student.levelsCompleted || {};
+    const lvl = student.level || 1;
+
+    // Level 1
+    const n1 = document.getElementById('fq-map-level-1');
+    if (n1) {
+      n1.className = 'fq-map-node available';
+      n1.onclick = () => startLevel(1);
+    }
+
+    // Level 2
+    const n2 = document.getElementById('fq-map-level-2');
+    if (n2) {
+      const ok2 = completed.level1 || lvl >= 2;
+      n2.className = ok2 ? 'fq-map-node available' : 'fq-map-node locked';
+      n2.innerHTML = `
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; color: ${ok2 ? 'var(--fq-cyan)' : 'var(--fq-rose)'}; letter-spacing: 1px;">LEVEL 02 &bull; ${ok2 ? 'AVAILABLE' : 'LOCKED 🔒'}</span>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">UNIT MASTER</h3>
+          <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Touch Matching: Pasangkan Besaran dengan Satuan SI yang tepat</p>
+        </div>
+        ${ok2 ? '<button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 8px 16px; font-size: 0.85rem;"><i class="fas fa-play"></i> MAIN</button>' : '<span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>'}
+      `;
+      n2.onclick = () => startLevel(2);
+    }
+
+    // Level 3
+    const n3 = document.getElementById('fq-map-level-3');
+    if (n3) {
+      const ok3 = completed.level2 || lvl >= 3;
+      n3.className = ok3 ? 'fq-map-node available' : 'fq-map-node locked';
+      n3.innerHTML = `
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; color: ${ok3 ? 'var(--fq-cyan)' : 'var(--fq-rose)'}; letter-spacing: 1px;">LEVEL 03 &bull; ${ok3 ? 'AVAILABLE' : 'LOCKED 🔒'}</span>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">SI EXPLORER</h3>
+          <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Virtual Lab: Gunakan instrumen penggaris, neraca, stopwatch, & termometer</p>
+        </div>
+        ${ok3 ? '<button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 8px 16px; font-size: 0.85rem;"><i class="fas fa-play"></i> MAIN</button>' : '<span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>'}
+      `;
+      n3.onclick = () => startLevel(3);
+    }
+
+    // Level 4
+    const n4 = document.getElementById('fq-map-level-4');
+    if (n4) {
+      const ok4 = completed.level3 || lvl >= 4;
+      n4.className = ok4 ? 'fq-map-node available' : 'fq-map-node locked';
+      n4.innerHTML = `
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; color: ${ok4 ? 'var(--fq-cyan)' : 'var(--fq-rose)'}; letter-spacing: 1px;">LEVEL 04 &bull; ${ok4 ? 'AVAILABLE' : 'LOCKED 🔒'}</span>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">DIMENSION DETECTIVE</h3>
+          <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Dimension Puzzle: Susun simbol dimensi [M], [L], [T] untuk besaran turunan</p>
+        </div>
+        ${ok4 ? '<button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 8px 16px; font-size: 0.85rem;"><i class="fas fa-play"></i> MAIN</button>' : '<span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>'}
+      `;
+      n4.onclick = () => startLevel(4);
+    }
+
+    // Level 5
+    const n5 = document.getElementById('fq-map-level-5');
+    if (n5) {
+      const ok5 = completed.level4 || lvl >= 5;
+      n5.className = ok5 ? 'fq-map-node available' : 'fq-map-node locked';
+      n5.innerHTML = `
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; color: ${ok5 ? 'var(--fq-cyan)' : 'var(--fq-rose)'}; letter-spacing: 1px;">LEVEL 05 &bull; ${ok5 ? 'AVAILABLE' : 'LOCKED 🔒'}</span>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">DIMENSION BOSS</h3>
+          <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Boss Battle: Analisis dimensi persamaan Fisika dan temukan error</p>
+        </div>
+        ${ok5 ? '<button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 8px 16px; font-size: 0.85rem;"><i class="fas fa-play"></i> MAIN</button>' : '<span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>'}
+      `;
+      n5.onclick = () => startLevel(5);
+    }
   }
 
   function updateStudentDashboardUI() {
@@ -224,15 +331,15 @@ window.FIVIAQuest = (function() {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px;">
           <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 18px; padding: 18px;">
             <div style="font-size: 0.8rem; color: var(--fq-text-muted);">TOTAL PEROLEHAN XP</div>
-            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-amber);">${student.xp || 350} XP</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-amber);">${student.xp || 0} XP</div>
           </div>
           <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 18px; padding: 18px;">
             <div style="font-size: 0.8rem; color: var(--fq-text-muted);">JUMLAH LENCANA</div>
-            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-cyan);">${(student.badges || []).length || 5} Badges</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-cyan);">${(student.badges || []).length} Badges</div>
           </div>
           <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 18px; padding: 18px;">
-            <div style="font-size: 0.8rem; color: var(--fq-text-muted);">AKURASI MASTERY</div>
-            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-emerald);">88%</div>
+            <div style="font-size: 0.8rem; color: var(--fq-text-muted);">STATUS LEVEL</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-emerald);">Lvl ${student.level || 1}</div>
           </div>
         </div>
 
@@ -248,7 +355,7 @@ window.FIVIAQuest = (function() {
   }
 
   function updateVirtualLabUI() {
-    const experiments = window.FIVIAVirtualLabData.getAllExperiments();
+    const experiments = window.FIVIAVirtualLabData ? window.FIVIAVirtualLabData.getAllExperiments() : [];
     const container = document.getElementById('fq-virtual-lab-grid-container');
     if (!container) return;
     container.innerHTML = experiments.map(exp => `
@@ -271,7 +378,7 @@ window.FIVIAQuest = (function() {
   }
 
   function updateProjectMissionUI() {
-    const projects = window.FIVIAProjectsData.getAllProjects();
+    const projects = window.FIVIAProjectsData ? window.FIVIAProjectsData.getAllProjects() : [];
     const container = document.getElementById('fq-project-mission-grid-container');
     if (!container) return;
     container.innerHTML = projects.map(proj => `
@@ -294,11 +401,527 @@ window.FIVIAQuest = (function() {
     `).join('');
   }
 
-  function startSoloBesaranHunter() { state.besaranHunter.cards = window.FIVIAQuestBesaranHunter.getSessionCards(10); renderView('besaran-hunter'); }
-  function startSoloUnitMaster() { state.unitMaster.challenges = window.FIVIAQuestUnitMaster.getSoloSessionChallenges(10); renderView('unit-master'); }
-  function startSoloSIExplorer() { state.siExplorer.challenges = window.FIVIAQuestSIExplorer.getSoloSessionChallenges(10); renderView('si-explorer'); }
-  function startSoloDimensionDetective() { state.dimensionDetective.challenges = window.FIVIAQuestDimensionDetective.getSoloSessionChallenges(10); renderView('dimension-detective'); }
-  function startSoloDimensionBoss() { state.dimensionBoss.challenges = window.FIVIAQuestDimensionBoss.getSoloSessionChallenges(10); renderView('dimension-boss'); }
+  /**
+   * LEVEL 01: BESARAN HUNTER GAME BOARD RENDERER
+   */
+  function renderBesaranHunterCard() {
+    const container = document.getElementById('fq-besaran-board-container');
+    if (!container) return;
+
+    const cards = state.besaranHunter.cards;
+    const idx = state.besaranHunter.currentIndex;
+
+    if (!cards || cards.length === 0 || idx >= cards.length) {
+      // Completed Level 01 Screen
+      window.FIVIAStudent.completeLevel(1);
+      window.FIVIAStudent.awardBadge('🎯 BESARAN HUNTER');
+
+      container.innerHTML = `
+        <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 36px; text-align: center;">
+          <div style="font-size: 4rem; margin-bottom: 12px;">🎉</div>
+          <span class="fq-badge-pill"><i class="fas fa-trophy"></i> LEVEL 01 COMPLETE</span>
+          <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 8px 0;">BESARAN HUNTER SELESAI!</h1>
+          <p style="color: var(--fq-text-muted); margin-bottom: 24px;">Selamat! Anda berhasil mengelompokkan Besaran Pokok dan Besaran Turunan dengan baik.</p>
+          
+          <div style="display: flex; gap: 16px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap;">
+            <div style="background: rgba(30,41,59,0.8); border: 1px solid var(--fq-border-cyan); padding: 18px 28px; border-radius: 18px;">
+              <div style="font-size: 0.8rem; color: var(--fq-text-muted);">BONUS XP</div>
+              <div style="font-size: 1.8rem; font-weight: 900; color: var(--fq-amber);">+150 XP</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.8); border: 1px solid var(--fq-border-cyan); padding: 18px 28px; border-radius: 18px;">
+              <div style="font-size: 0.8rem; color: var(--fq-text-muted);">BADGE DIRAIH</div>
+              <div style="font-size: 1.2rem; font-weight: 900; color: var(--fq-cyan);">🎯 BESARAN HUNTER</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.FIVIAQuest.startLevel(1)"><i class="fas fa-redo"></i> MAIN LAGI</button>
+            <button class="fq-btn fq-btn-cyan fq-btn-lg" onclick="window.FIVIAQuest.startLevel(2)"><i class="fas fa-play"></i> LANJUT LEVEL 02 (UNIT MASTER)</button>
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-map-marked-alt"></i> KEMBALI KE MAP</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const currentCard = cards[idx];
+    container.innerHTML = `
+      <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 28px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 14px; margin-bottom: 24px;">
+          <div>
+            <span class="fq-badge-pill"><i class="fas fa-bullseye"></i> LEVEL 01 &bull; KARTU ${idx + 1} / ${cards.length}</span>
+            <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0 0 0;">BESARAN HUNTER</h2>
+          </div>
+          <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-times"></i> KELUAR</button>
+        </div>
+
+        <div style="background: rgba(30,41,59,0.7); border: 1.5px solid var(--fq-border-cyan); border-radius: 20px; padding: 28px; text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--fq-cyan); letter-spacing: 2px;">IDENTIFIKASI BESARAN:</span>
+          <h1 style="font-size: 2.8rem; font-weight: 900; color: #fff; margin: 8px 0;">${currentCard.name}</h1>
+          <div style="font-size: 1.1rem; color: var(--fq-text-muted);">Simbol: <strong style="color: var(--fq-amber);">${currentCard.symbol}</strong> | Satuan: <strong style="color: var(--fq-emerald);">${currentCard.unit} (${currentCard.unitSymbol})</strong> | Dimensi: <strong>${currentCard.dimension}</strong></div>
+        </div>
+
+        <div id="fq-bh-feedback" style="display: none; margin-bottom: 20px; padding: 18px; border-radius: 16px;"></div>
+
+        <div id="fq-bh-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="padding: 20px; font-size: 1.1rem;" onclick="window.FIVIAQuest.submitBesaranAnswer('pokok')">
+            <i class="fas fa-atom"></i> 🔵 BESARAN POKOK
+          </button>
+          <button class="fq-btn fq-btn-violet fq-btn-lg" style="padding: 20px; font-size: 1.1rem;" onclick="window.FIVIAQuest.submitBesaranAnswer('turunan')">
+            <i class="fas fa-layer-group"></i> 🟣 BESARAN TURUNAN
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function submitBesaranAnswer(chosenCategory) {
+    const cards = state.besaranHunter.cards;
+    const idx = state.besaranHunter.currentIndex;
+    const card = cards[idx];
+
+    const fb = document.getElementById('fq-bh-feedback');
+    const opts = document.getElementById('fq-bh-options');
+    if (!fb || !opts) return;
+
+    const isCorrect = card.category === chosenCategory;
+    playSound(isCorrect ? 'correct' : 'wrong');
+
+    if (isCorrect) window.FIVIAStudent.addXP(15);
+
+    fb.style.display = 'block';
+    fb.style.background = isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+    fb.style.border = `1.5px solid ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}`;
+    fb.innerHTML = `
+      <div style="font-weight: 800; font-size: 1.1rem; color: ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; margin-bottom: 6px;">
+        ${isCorrect ? '✅ BENAR! (+15 XP)' : '❌ KURANG TEPAT!'}
+      </div>
+      <p style="color: #fff; margin: 0 0 12px 0; font-size: 0.9rem;">${card.explanation}</p>
+      <button class="fq-btn fq-btn-cyan" style="width: 100%;" onclick="window.FIVIAQuest.nextBesaranCard()">
+        LANJUTKAN &rarr;
+      </button>
+    `;
+    opts.style.display = 'none';
+  }
+
+  function nextBesaranCard() {
+    state.besaranHunter.currentIndex++;
+    renderBesaranHunterCard();
+  }
+
+  /**
+   * LEVEL 02: UNIT MASTER GAME BOARD RENDERER
+   */
+  function renderUnitMasterCard() {
+    const container = document.getElementById('fq-unit-board-container');
+    if (!container) return;
+
+    const challenges = state.unitMaster.challenges;
+    const idx = state.unitMaster.currentIndex;
+
+    if (!challenges || challenges.length === 0 || idx >= challenges.length) {
+      window.FIVIAStudent.completeLevel(2);
+      window.FIVIAStudent.awardBadge('🧠 UNIT MASTER');
+
+      container.innerHTML = `
+        <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 36px; text-align: center;">
+          <div style="font-size: 4rem; margin-bottom: 12px;">🏆</div>
+          <span class="fq-badge-pill"><i class="fas fa-trophy"></i> LEVEL 02 COMPLETE</span>
+          <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 8px 0;">UNIT MASTER SELESAI!</h1>
+          <p style="color: var(--fq-text-muted); margin-bottom: 24px;">Luar biasa! Anda telah menguasai konversi dan pencocokan Satuan SI.</p>
+
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.FIVIAQuest.startLevel(2)"><i class="fas fa-redo"></i> MAIN LAGI</button>
+            <button class="fq-btn fq-btn-cyan fq-btn-lg" onclick="window.FIVIAQuest.startLevel(3)"><i class="fas fa-play"></i> LANJUT LEVEL 03 (SI EXPLORER)</button>
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-map-marked-alt"></i> KEMBALI KE MAP</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const c = challenges[idx];
+    container.innerHTML = `
+      <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 28px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 14px; margin-bottom: 20px;">
+          <div>
+            <span class="fq-badge-pill"><i class="fas fa-exchange-alt"></i> LEVEL 02 &bull; TANTANGAN ${idx + 1} / ${challenges.length}</span>
+            <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0 0 0;">UNIT MASTER</h2>
+          </div>
+          <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-times"></i> KELUAR</button>
+        </div>
+
+        <div style="font-size: 1.2rem; color: #fff; font-weight: 700; margin-bottom: 20px;">${c.question}</div>
+        <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 20px; font-size: 1.4rem; font-weight: 900; color: var(--fq-cyan); text-align: center; margin-bottom: 24px;">
+          ${c.quantity || 'Tentukan Satuan SI'}
+        </div>
+
+        <div id="fq-um-feedback" style="display: none; margin-bottom: 20px; padding: 18px; border-radius: 16px;"></div>
+
+        <div id="fq-um-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          ${(c.options || []).map(opt => `
+            <button class="fq-btn fq-btn-outline fq-btn-lg" style="padding: 16px; font-size: 1rem; text-align: left;" onclick="window.FIVIAQuest.submitUnitAnswer('${opt.id}')">
+              ${opt.label || opt.text || opt.id}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function submitUnitAnswer(optId) {
+    const challenges = state.unitMaster.challenges;
+    const idx = state.unitMaster.currentIndex;
+    const c = challenges[idx];
+
+    const fb = document.getElementById('fq-um-feedback');
+    const opts = document.getElementById('fq-um-options');
+    if (!fb || !opts) return;
+
+    const isCorrect = String(optId) === String(c.correctAnswer);
+    playSound(isCorrect ? 'correct' : 'wrong');
+
+    if (isCorrect) window.FIVIAStudent.addXP(20);
+
+    fb.style.display = 'block';
+    fb.style.background = isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+    fb.style.border = `1.5px solid ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}`;
+    fb.innerHTML = `
+      <div style="font-weight: 800; font-size: 1.1rem; color: ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; margin-bottom: 6px;">
+        ${isCorrect ? '✅ BENAR! (+20 XP)' : '❌ KURANG TEPAT!'}
+      </div>
+      <p style="color: #fff; margin: 0 0 12px 0; font-size: 0.9rem;">${c.explanation}</p>
+      <button class="fq-btn fq-btn-cyan" style="width: 100%;" onclick="window.FIVIAQuest.nextUnitCard()">
+        LANJUTKAN &rarr;
+      </button>
+    `;
+    opts.style.display = 'none';
+  }
+
+  function nextUnitCard() {
+    state.unitMaster.currentIndex++;
+    renderUnitMasterCard();
+  }
+
+  /**
+   * LEVEL 03: SI EXPLORER GAME BOARD RENDERER
+   */
+  function renderSIExplorerCard() {
+    const container = document.getElementById('fq-si-board-container');
+    if (!container) return;
+
+    const challenges = state.siExplorer.challenges;
+    const idx = state.siExplorer.currentIndex;
+
+    if (!challenges || challenges.length === 0 || idx >= challenges.length) {
+      window.FIVIAStudent.completeLevel(3);
+      window.FIVIAStudent.awardBadge('🔭 SI EXPLORER');
+
+      container.innerHTML = `
+        <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 36px; text-align: center;">
+          <div style="font-size: 4rem; margin-bottom: 12px;">🔭</div>
+          <span class="fq-badge-pill"><i class="fas fa-trophy"></i> LEVEL 03 COMPLETE</span>
+          <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 8px 0;">SI EXPLORER SELESAI!</h1>
+          <p style="color: var(--fq-text-muted); margin-bottom: 24px;">Hebat! Anda berhasil menyelesaikan simulasi pengukuran instrumen.</p>
+
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.FIVIAQuest.startLevel(3)"><i class="fas fa-redo"></i> MAIN LAGI</button>
+            <button class="fq-btn fq-btn-cyan fq-btn-lg" onclick="window.FIVIAQuest.startLevel(4)"><i class="fas fa-play"></i> LANJUT LEVEL 04 (DIMENSION DETECTIVE)</button>
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-map-marked-alt"></i> KEMBALI KE MAP</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const c = challenges[idx];
+    container.innerHTML = `
+      <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 28px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 14px; margin-bottom: 20px;">
+          <div>
+            <span class="fq-badge-pill"><i class="fas fa-compass"></i> LEVEL 03 &bull; SOAL ${idx + 1} / ${challenges.length}</span>
+            <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0 0 0;">SI EXPLORER</h2>
+          </div>
+          <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-times"></i> KELUAR</button>
+        </div>
+
+        <div style="font-size: 1.2rem; color: #fff; font-weight: 700; margin-bottom: 20px;">${c.question}</div>
+
+        <div id="fq-si-feedback" style="display: none; margin-bottom: 20px; padding: 18px; border-radius: 16px;"></div>
+
+        <div id="fq-si-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          ${(c.options || []).map(opt => `
+            <button class="fq-btn fq-btn-outline fq-btn-lg" style="padding: 16px; font-size: 1rem; text-align: left;" onclick="window.FIVIAQuest.submitSIAnswer('${opt.id}')">
+              <strong>${opt.id}.</strong> ${opt.text || opt.label}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function submitSIAnswer(optId) {
+    const challenges = state.siExplorer.challenges;
+    const idx = state.siExplorer.currentIndex;
+    const c = challenges[idx];
+
+    const fb = document.getElementById('fq-si-feedback');
+    const opts = document.getElementById('fq-si-options');
+    if (!fb || !opts) return;
+
+    const isCorrect = String(optId) === String(c.correctAnswer);
+    playSound(isCorrect ? 'correct' : 'wrong');
+
+    if (isCorrect) window.FIVIAStudent.addXP(25);
+
+    fb.style.display = 'block';
+    fb.style.background = isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+    fb.style.border = `1.5px solid ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}`;
+    fb.innerHTML = `
+      <div style="font-weight: 800; font-size: 1.1rem; color: ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; margin-bottom: 6px;">
+        ${isCorrect ? '✅ BENAR! (+25 XP)' : '❌ KURANG TEPAT!'}
+      </div>
+      <p style="color: #fff; margin: 0 0 12px 0; font-size: 0.9rem;">${c.explanation}</p>
+      <button class="fq-btn fq-btn-cyan" style="width: 100%;" onclick="window.FIVIAQuest.nextSICard()">
+        LANJUTKAN &rarr;
+      </button>
+    `;
+    opts.style.display = 'none';
+  }
+
+  function nextSICard() {
+    state.siExplorer.currentIndex++;
+    renderSIExplorerCard();
+  }
+
+  /**
+   * LEVEL 04: DIMENSION DETECTIVE GAME BOARD RENDERER
+   */
+  function renderDimensionDetectiveCard() {
+    const container = document.getElementById('fq-dd-board-container');
+    if (!container) return;
+
+    const challenges = state.dimensionDetective.challenges;
+    const idx = state.dimensionDetective.currentIndex;
+
+    if (!challenges || challenges.length === 0 || idx >= challenges.length) {
+      window.FIVIAStudent.completeLevel(4);
+      window.FIVIAStudent.awardBadge('🔍 DIMENSION DETECTIVE');
+
+      container.innerHTML = `
+        <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 36px; text-align: center;">
+          <div style="font-size: 4rem; margin-bottom: 12px;">🔍</div>
+          <span class="fq-badge-pill"><i class="fas fa-trophy"></i> LEVEL 04 COMPLETE</span>
+          <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 8px 0;">DIMENSION DETECTIVE SELESAI!</h1>
+          <p style="color: var(--fq-text-muted); margin-bottom: 24px;">Selamat! Anda berhasil memecahkan teka-teki analisis dimensi fisika.</p>
+
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.FIVIAQuest.startLevel(4)"><i class="fas fa-redo"></i> MAIN LAGI</button>
+            <button class="fq-btn fq-btn-cyan fq-btn-lg" onclick="window.FIVIAQuest.startLevel(5)"><i class="fas fa-play"></i> LANJUT LEVEL 05 (DIMENSION BOSS)</button>
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-map-marked-alt"></i> KEMBALI KE MAP</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const c = challenges[idx];
+    container.innerHTML = `
+      <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 28px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 14px; margin-bottom: 20px;">
+          <div>
+            <span class="fq-badge-pill"><i class="fas fa-search"></i> LEVEL 04 &bull; DETEKTIF ${idx + 1} / ${challenges.length}</span>
+            <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0 0 0;">DIMENSION DETECTIVE</h2>
+          </div>
+          <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-times"></i> KELUAR</button>
+        </div>
+
+        <div style="font-size: 1.2rem; color: #fff; font-weight: 700; margin-bottom: 20px;">${c.question}</div>
+
+        <div id="fq-dd-feedback" style="display: none; margin-bottom: 20px; padding: 18px; border-radius: 16px;"></div>
+
+        <div id="fq-dd-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          ${(c.options || []).map(opt => `
+            <button class="fq-btn fq-btn-outline fq-btn-lg" style="padding: 16px; font-size: 1rem; text-align: left;" onclick="window.FIVIAQuest.submitDDAnswer('${opt.id}')">
+              <strong>${opt.id}.</strong> ${opt.text || opt.label}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function submitDDAnswer(optId) {
+    const challenges = state.dimensionDetective.challenges;
+    const idx = state.dimensionDetective.currentIndex;
+    const c = challenges[idx];
+
+    const fb = document.getElementById('fq-dd-feedback');
+    const opts = document.getElementById('fq-dd-options');
+    if (!fb || !opts) return;
+
+    const isCorrect = String(optId) === String(c.correctAnswer);
+    playSound(isCorrect ? 'correct' : 'wrong');
+
+    if (isCorrect) window.FIVIAStudent.addXP(30);
+
+    fb.style.display = 'block';
+    fb.style.background = isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+    fb.style.border = `1.5px solid ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}`;
+    fb.innerHTML = `
+      <div style="font-weight: 800; font-size: 1.1rem; color: ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; margin-bottom: 6px;">
+        ${isCorrect ? '✅ BENAR! (+30 XP)' : '❌ KURANG TEPAT!'}
+      </div>
+      <p style="color: #fff; margin: 0 0 12px 0; font-size: 0.9rem;">${c.explanation}</p>
+      <button class="fq-btn fq-btn-cyan" style="width: 100%;" onclick="window.FIVIAQuest.nextDDCard()">
+        LANJUTKAN &rarr;
+      </button>
+    `;
+    opts.style.display = 'none';
+  }
+
+  function nextDDCard() {
+    state.dimensionDetective.currentIndex++;
+    renderDimensionDetectiveCard();
+  }
+
+  /**
+   * LEVEL 05: DIMENSION BOSS GAME BOARD RENDERER
+   */
+  function renderDimensionBossCard() {
+    const container = document.getElementById('fq-db-board-container');
+    if (!container) return;
+
+    const challenges = state.dimensionBoss.challenges;
+    const idx = state.dimensionBoss.currentIndex;
+    const hp = state.dimensionBoss.bossHp;
+
+    if (!challenges || challenges.length === 0 || idx >= challenges.length || hp <= 0) {
+      window.FIVIAStudent.completeLevel(5);
+      window.FIVIAStudent.awardBadge('👑 DIMENSION MASTER BOSS');
+
+      container.innerHTML = `
+        <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-amber); border-radius: 28px; padding: 36px; text-align: center; box-shadow: 0 0 50px rgba(245,158,11,0.4);">
+          <div style="font-size: 4.5rem; margin-bottom: 12px;">👑</div>
+          <span class="fq-badge-pill" style="border-color: var(--fq-amber); color: var(--fq-amber);"><i class="fas fa-crown"></i> FINAL BOSS DEFEATED</span>
+          <h1 style="font-size: 2.6rem; font-weight: 900; color: #fff; margin: 8px 0;">VICTORY! BOSS DIMENSI KALAH!</h1>
+          <p style="color: var(--fq-text-muted); margin-bottom: 24px;">Selamat! Anda telah menuntaskan seluruh tantangan FIVIA Physics Quest!</p>
+
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.FIVIAQuest.startLevel(5)"><i class="fas fa-redo"></i> MAIN LAGI</button>
+            <button class="fq-btn fq-btn-amber fq-btn-lg" onclick="window.location.hash='#quest/student-dashboard'"><i class="fas fa-user-graduate"></i> DASHBOARD SAYA</button>
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-map-marked-alt"></i> KEMBALI KE MAP</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const c = challenges[idx];
+    container.innerHTML = `
+      <div style="background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-rose); border-radius: 28px; padding: 28px; text-align: left; box-shadow: 0 0 40px rgba(244,63,94,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(244,63,94,0.3); padding-bottom: 14px; margin-bottom: 20px;">
+          <div>
+            <span class="fq-badge-pill" style="border-color: var(--fq-rose); color: var(--fq-rose);"><i class="fas fa-skull"></i> LEVEL 05 &bull; BOSS BATTLE STAGE ${idx + 1}</span>
+            <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0 0 0;">DIMENSION BOSS</h2>
+          </div>
+          <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-times"></i> KELUAR</button>
+        </div>
+
+        <!-- Boss Health Bar -->
+        <div style="background: rgba(30,41,59,0.8); border: 1.5px solid var(--fq-rose); border-radius: 18px; padding: 16px; margin-bottom: 24px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 0.9rem; color: #fff; margin-bottom: 8px;">
+            <span>👾 BOSS DIMENSI (HP)</span>
+            <span style="color: var(--fq-rose);">${hp} / 100 HP</span>
+          </div>
+          <div style="width: 100%; height: 16px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden;">
+            <div style="width: ${hp}%; height: 100%; background: linear-gradient(90deg, #ef4444, #f59e0b); transition: width 0.4s ease;"></div>
+          </div>
+        </div>
+
+        <div style="font-size: 1.2rem; color: #fff; font-weight: 700; margin-bottom: 20px;">${c.question}</div>
+
+        <div id="fq-db-feedback" style="display: none; margin-bottom: 20px; padding: 18px; border-radius: 16px;"></div>
+
+        <div id="fq-db-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          ${(c.options || []).map(opt => `
+            <button class="fq-btn fq-btn-outline fq-btn-lg" style="padding: 16px; font-size: 1rem; text-align: left;" onclick="window.FIVIAQuest.submitDBAnswer('${opt.id}')">
+              <strong>${opt.id}.</strong> ${opt.text || opt.label}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function submitDBAnswer(optId) {
+    const challenges = state.dimensionBoss.challenges;
+    const idx = state.dimensionBoss.currentIndex;
+    const c = challenges[idx];
+
+    const fb = document.getElementById('fq-db-feedback');
+    const opts = document.getElementById('fq-db-options');
+    if (!fb || !opts) return;
+
+    const isCorrect = String(optId) === String(c.correctAnswer);
+    playSound(isCorrect ? 'correct' : 'wrong');
+
+    if (isCorrect) {
+      window.FIVIAStudent.addXP(40);
+      state.dimensionBoss.bossHp = Math.max(0, state.dimensionBoss.bossHp - (c.hpDamage || 10));
+    }
+
+    fb.style.display = 'block';
+    fb.style.background = isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+    fb.style.border = `1.5px solid ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}`;
+    fb.innerHTML = `
+      <div style="font-weight: 800; font-size: 1.1rem; color: ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; margin-bottom: 6px;">
+        ${isCorrect ? `💥 CRITICAL HIT! BOSS SERANGAN BERHASIL! (-${c.hpDamage || 10} HP, +40 XP)` : '❌ BOSS MENANGKIS SERANGAN!'}
+      </div>
+      <p style="color: #fff; margin: 0 0 12px 0; font-size: 0.9rem;">${c.explanation}</p>
+      <button class="fq-btn fq-btn-cyan" style="width: 100%;" onclick="window.FIVIAQuest.nextDBCard()">
+        SERANG LAGI &rarr;
+      </button>
+    `;
+    opts.style.display = 'none';
+  }
+
+  function nextDBCard() {
+    state.dimensionBoss.currentIndex++;
+    renderDimensionBossCard();
+  }
+
+  function startSoloBesaranHunter() {
+    state.besaranHunter.cards = window.FIVIAQuestBesaranHunter.getSessionCards(10);
+    state.besaranHunter.currentIndex = 0;
+    renderView('besaran-hunter');
+  }
+
+  function startSoloUnitMaster() {
+    state.unitMaster.challenges = window.FIVIAQuestUnitMaster.getSoloSessionChallenges(10);
+    state.unitMaster.currentIndex = 0;
+    renderView('unit-master');
+  }
+
+  function startSoloSIExplorer() {
+    state.siExplorer.challenges = window.FIVIAQuestSIExplorer.getSoloSessionChallenges(10);
+    state.siExplorer.currentIndex = 0;
+    renderView('si-explorer');
+  }
+
+  function startSoloDimensionDetective() {
+    state.dimensionDetective.challenges = window.FIVIAQuestDimensionDetective.getSoloSessionChallenges(10);
+    state.dimensionDetective.currentIndex = 0;
+    renderView('dimension-detective');
+  }
+
+  function startSoloDimensionBoss() {
+    state.dimensionBoss.challenges = window.FIVIAQuestDimensionBoss.getSoloSessionChallenges(10);
+    state.dimensionBoss.currentIndex = 0;
+    state.dimensionBoss.bossHp = 100;
+    renderView('dimension-boss');
+  }
+
   function startMasteryAssessment() { renderView('mastery-assessment'); }
 
   function toggleFullscreen() { if (!document.fullscreenElement) { (document.querySelector('.fivia-quest') || document.documentElement).requestFullscreen(); } else { document.exitFullscreen(); } }
@@ -325,6 +948,17 @@ window.FIVIAQuest = (function() {
     init: init,
     handleSubRouting: handleSubRouting,
     renderView: renderView,
+    startLevel: startLevel,
+    submitBesaranAnswer: submitBesaranAnswer,
+    nextBesaranCard: nextBesaranCard,
+    submitUnitAnswer: submitUnitAnswer,
+    nextUnitCard: nextUnitCard,
+    submitSIAnswer: submitSIAnswer,
+    nextSICard: nextSICard,
+    submitDDAnswer: submitDDAnswer,
+    nextDDCard: nextDDCard,
+    submitDBAnswer: submitDBAnswer,
+    nextDBCard: nextDBCard,
     toggleFullscreen: toggleFullscreen,
     toggleSound: toggleSound,
     backToFIVIA: backToFIVIA,

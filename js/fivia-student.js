@@ -120,12 +120,120 @@ window.FIVIAStudent = (function() {
     saveStudentProfile(profile);
   }
 
+  /**
+   * Add XP to current active student profile and update level status
+   */
+  function addXP(amount) {
+    const profile = getStudentProfile();
+    profile.xp = (profile.xp || 0) + amount;
+    profile.totalGameScore = (profile.totalGameScore || 0) + amount;
+    
+    // Recalculate level based on XP
+    if (profile.xp >= 1000) profile.level = 5;
+    else if (profile.xp >= 650) profile.level = 4;
+    else if (profile.xp >= 350) profile.level = 3;
+    else if (profile.xp >= 150) profile.level = 2;
+    else profile.level = 1;
+
+    saveStudentProfile(profile);
+
+    // Also update in roster if present
+    if (window.FIVIAExcelImport) {
+      const roster = window.FIVIAExcelImport.getExistingRoster();
+      const idx = roster.findIndex(s => s.studentId === profile.studentId || s.studentCode === profile.studentCode);
+      if (idx !== -1) {
+        roster[idx] = { ...roster[idx], ...profile };
+        window.FIVIAExcelImport.saveRoster(roster);
+      }
+    }
+    return profile;
+  }
+
+  /**
+   * Award Badge to student profile
+   */
+  function awardBadge(badgeTitle) {
+    const profile = getStudentProfile();
+    if (!Array.isArray(profile.badges)) profile.badges = [];
+    if (!profile.badges.includes(badgeTitle)) {
+      profile.badges.push(badgeTitle);
+      saveStudentProfile(profile);
+    }
+    return profile;
+  }
+
+  /**
+   * Mark level as completed in profile
+   */
+  function completeLevel(levelNum) {
+    const profile = getStudentProfile();
+    if (!profile.levelsCompleted) {
+      profile.levelsCompleted = { level1: false, level2: false, level3: false, level4: false, level5: false };
+    }
+    profile.levelsCompleted[`level${levelNum}`] = true;
+    
+    // Unlock next level if levelNum < 5
+    if (profile.level < levelNum + 1) {
+      profile.level = Math.min(5, levelNum + 1);
+    }
+
+    saveStudentProfile(profile);
+    return profile;
+  }
+
+  /**
+   * Finds student by NIS or Student Code + Class
+   */
+  function loginStudentByNisOrCode(nisOrCode, className) {
+    if (!nisOrCode) return null;
+    const searchKey = String(nisOrCode).trim().toUpperCase();
+    const cleanClass = String(className || '').trim().toUpperCase();
+
+    let roster = [];
+    if (window.FIVIAExcelImport) {
+      roster = window.FIVIAExcelImport.getExistingRoster();
+    } else {
+      try {
+        const raw = localStorage.getItem('fivia_student_roster');
+        if (raw) roster = JSON.parse(raw);
+      } catch (e) {}
+    }
+
+    // Match by studentCode OR NIS
+    const match = roster.find(s => {
+      const sCode = String(s.studentCode || '').toUpperCase();
+      const sNis = String(s.nis || '').toUpperCase();
+      const sClass = String(s.className || s.classId || '').toUpperCase();
+
+      const codeMatches = (sCode === searchKey);
+      const nisMatches = (sNis === searchKey);
+      
+      if (codeMatches) return true;
+      if (nisMatches) {
+        if (!cleanClass) return true;
+        return sClass.includes(cleanClass) || cleanClass.includes(sClass);
+      }
+      return false;
+    });
+
+    if (match) {
+      saveStudentProfile(match);
+      return match;
+    }
+    return null;
+  }
+
   return {
     safeStorageSet: safeStorageSet,
     safeStorageGet: safeStorageGet,
     safeStorageRemove: safeStorageRemove,
     getStudentProfile: getStudentProfile,
     saveStudentProfile: saveStudentProfile,
-    recordAssessmentCompletion: recordAssessmentCompletion
+    recordAssessmentCompletion: recordAssessmentCompletion,
+    addXP: addXP,
+    awardBadge: awardBadge,
+    completeLevel: completeLevel,
+    loginStudentByNisOrCode: loginStudentByNisOrCode
   };
 })();
+

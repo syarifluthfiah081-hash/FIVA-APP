@@ -784,21 +784,36 @@
               <div style="text-align: center; margin-bottom: 24px;">
                 <span class="fq-badge-pill"><i class="fas fa-id-card"></i> IDENTITAS SISWA</span>
                 <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0;">MASUK KELAS SISWA</h2>
-                <p style="color: var(--fq-text-muted); font-size: 0.88rem;">Masukkan kode kelas dan identitas nama Anda untuk memulai.</p>
+                <p style="color: var(--fq-text-muted); font-size: 0.88rem;">Masukkan NIS / Student Code dan Kelas Anda untuk mulai menjelajah.</p>
               </div>
 
-              <form onsubmit="event.preventDefault(); const n = document.getElementById('fq-std-name').value; const c = document.getElementById('fq-std-class').value; const cc = document.getElementById('fq-std-code').value; window.FIVIAStudentSession.startStudentSession(n, c, cc); window.location.hash='#quest/student-dashboard';">
+              <form onsubmit="event.preventDefault(); 
+                const nisOrCode = document.getElementById('fq-std-nis-code').value.trim(); 
+                const className = document.getElementById('fq-std-class').value.trim(); 
+                const nameInput = document.getElementById('fq-std-name').value.trim();
+
+                const matched = window.FIVIAStudent ? window.FIVIAStudent.loginStudentByNisOrCode(nisOrCode, className) : null;
+                if (matched) {
+                  alert('👋 SELAMAT DATANG KEMBALI!\n\nNama: ' + matched.name + '\nNIS: ' + matched.nis + '\nKelas: ' + (matched.className || className) + '\nKode: ' + matched.studentCode);
+                  if (window.FIVIAStudentSession) window.FIVIAStudentSession.startStudentSession(matched.name, matched.className || className, matched.studentCode);
+                } else {
+                  const name = nameInput || ('Siswa (' + (nisOrCode || 'FIVIA') + ')');
+                  const code = window.FIVIAExcelImport ? window.FIVIAExcelImport.generateStudentCode(nisOrCode || '001', className) : ('FIVIA-' + nisOrCode);
+                  if (window.FIVIAStudentSession) window.FIVIAStudentSession.startStudentSession(name, className, code);
+                }
+                window.location.hash='#quest/student-dashboard';">
+                
                 <div class="fq-form-group">
-                  <label class="fq-form-label">Kode Kelas (Diberikan Guru)</label>
-                  <input type="text" id="fq-std-code" class="fq-input" value="FIVIA-XIF-2045" required style="font-weight: bold; color: var(--fq-amber);">
-                </div>
-                <div class="fq-form-group">
-                  <label class="fq-form-label">Nama Lengkap Siswa</label>
-                  <input type="text" id="fq-std-name" class="fq-input" placeholder="Contoh: Syarif Hidayat" required>
+                  <label class="fq-form-label">NIS atau Student Code (Contoh: 001 atau FIVIA-XF1-001)</label>
+                  <input type="text" id="fq-std-nis-code" class="fq-input" placeholder="Masukkan NIS / Student Code..." required style="font-weight: bold; color: var(--fq-amber);">
                 </div>
                 <div class="fq-form-group">
                   <label class="fq-form-label">Kelas</label>
-                  <input type="text" id="fq-std-class" class="fq-input" value="XI Fase F — Fisika" required>
+                  <input type="text" id="fq-std-class" class="fq-input" value="X.F.1" placeholder="Contoh: X.F.1" required>
+                </div>
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Nama Lengkap (Opsional jika NIS sudah diimport)</label>
+                  <input type="text" id="fq-std-name" class="fq-input" placeholder="Masukkan nama (otomatis terisi jika NIS terdaftar)">
                 </div>
 
                 <div style="display: flex; gap: 12px; margin-top: 28px;">
@@ -1935,6 +1950,9 @@
     </div>
   </div>
 
+  <!-- SHEETJS (XLSX) FOR EXCEL IMPORT -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <!-- FIREBASE COMPAT SDK (CDN) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -1997,6 +2015,7 @@
   <script src="js/fivia-sync-status.js"></script>
   <script src="js/fivia-classroom-flow.js"></script>
   <script src="js/fivia-challenges.js"></script>
+  <script src="js/fivia-excel-import.js"></script>
   <script src="js/fivia-besaran-hunter.js"></script>
   <script src="js/fivia-unit-master.js"></script>
   <script src="js/fivia-si-explorer.js"></script>
