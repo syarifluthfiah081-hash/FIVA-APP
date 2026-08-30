@@ -124,13 +124,31 @@ window.FIVIAGroupPlayEngine = (function() {
     `;
   }
 
+  function getGroupPlayQuestions() {
+    if (window.FIVIAGroupLevelQuestions && typeof window.FIVIAGroupLevelQuestions.getQuestionsForLevel === 'function') {
+      return window.FIVIAGroupLevelQuestions.getQuestionsForLevel('LEVEL_01');
+    }
+    return [
+      { id: 'gp_q1', question: 'Manakah yang merupakan besaran pokok SI?', quantity: 'Massa', options: [{ id: 'A', label: 'Kecepatan' }, { id: 'B', label: 'Gaya' }, { id: 'C', label: 'Massa' }, { id: 'D', label: 'Energi' }], correctAnswer: 'C', explanation: 'Massa adalah salah satu dari 7 besaran pokok SI dengan satuan kilogram (kg).' },
+      { id: 'gp_q2', question: 'Satuan Standar Internasional (SI) untuk besaran panjang adalah...', options: [{ id: 'A', label: 'Centimeter' }, { id: 'B', label: 'Meter' }, { id: 'C', label: 'Kilometer' }, { id: 'D', label: 'Millimeter' }], correctAnswer: 'B', explanation: 'Meter (m) adalah satuan pokok SI untuk panjang.' },
+      { id: 'gp_q3', question: 'Dimensi dari besaran kecepatan v = s / t adalah...', options: [{ id: 'A', label: '[L]' }, { id: 'B', label: '[LT⁻¹]' }, { id: 'C', label: '[LT⁻²]' }, { id: 'D', label: '[MLT⁻¹]' }], correctAnswer: 'B', explanation: 'Kecepatan v berdimensi [LT⁻¹].' }
+    ];
+  }
+
   function renderActiveBoardUI(container, state) {
     const activeGroup = state.activeGroup || state.groups[0] || { groupName: 'GROUP NEWTON', score: 0 };
     const activePlayer = state.activePlayer || (activeGroup.members ? activeGroup.members[0] : null) || { studentName: 'Ahmad Fauzan', studentCode: 'STD-001' };
 
-    const challenges = window.FIVIAQuestUnitMaster ? window.FIVIAQuestUnitMaster.getAllChallenges() : [];
+    const challenges = getGroupPlayQuestions();
     const cIdx = state.turnIndex % Math.max(1, challenges.length);
-    const challenge = challenges[cIdx] || { question: 'Manakah yang merupakan besaran pokok SI?', quantity: 'Massa', options: [{ id: 'A', label: 'Kecepatan' }, { id: 'B', label: 'Gaya' }, { id: 'C', label: 'Massa' }, { id: 'D', label: 'Energi' }], correctAnswer: 'C', explanation: 'Massa adalah salah satu dari 7 besaran pokok SI dengan satuan kilogram (kg).' };
+    const challenge = challenges[cIdx] || challenges[0];
+    const qText = challenge.question || challenge.title || 'Manakah yang merupakan besaran pokok SI?';
+    const optsList = challenge.options || [
+      { id: 'A', label: 'Kecepatan' },
+      { id: 'B', label: 'Gaya' },
+      { id: 'C', label: 'Massa' },
+      { id: 'D', label: 'Energi' }
+    ];
 
     container.innerHTML = `
       <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 32px; text-align: left; box-shadow: 0 0 60px var(--fq-cyan-glow);">
@@ -165,7 +183,7 @@ window.FIVIAGroupPlayEngine = (function() {
         <!-- Big HOTS Physics Question Card for Smartboard Display -->
         <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-border-cyan); border-radius: 24px; padding: 28px; margin-bottom: 28px;">
           <div style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.4; margin-bottom: 18px;">
-            ${challenge.question}
+            ${qText}
           </div>
 
           ${challenge.quantity ? `
@@ -178,9 +196,9 @@ window.FIVIAGroupPlayEngine = (function() {
 
           <!-- Touch Target Buttons >= 72px Height -->
           <div id="fq-gp-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            ${(challenge.options || []).map(opt => `
+            ${optsList.map(opt => `
               <button class="fq-btn fq-btn-outline fq-btn-lg" style="min-height: 76px; padding: 20px; font-size: 1.25rem; font-weight: 800; text-align: left; border-width: 2.5px;" onclick="window.FIVIAGroupPlayEngine.submitAnswer('${opt.id}')">
-                <strong style="color: var(--fq-amber); font-size: 1.4rem;">${opt.id}.</strong> ${opt.label || opt.text || opt.id}
+                <strong style="color: var(--fq-amber); font-size: 1.4rem;">${opt.id}.</strong> ${opt.label || opt.text || opt.name || opt.id}
               </button>
             `).join('')}
           </div>
@@ -224,9 +242,9 @@ window.FIVIAGroupPlayEngine = (function() {
     const activeGroup = state.activeGroup || state.groups[0];
     const activePlayer = state.activePlayer;
 
-    const challenges = window.FIVIAQuestUnitMaster ? window.FIVIAQuestUnitMaster.getAllChallenges() : [];
+    const challenges = getGroupPlayQuestions();
     const cIdx = state.turnIndex % Math.max(1, challenges.length);
-    const challenge = challenges[cIdx];
+    const challenge = challenges[cIdx] || challenges[0];
     if (!challenge) return;
 
     const fb = document.getElementById('fq-gp-feedback');
