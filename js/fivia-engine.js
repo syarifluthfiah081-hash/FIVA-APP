@@ -203,6 +203,8 @@ window.FIVIAQuest = (function() {
     if (viewName === 'live-monitor') window.FIVIAClassroomEngine.renderLiveMonitorUI();
     if (viewName === 'intervention') window.FIVIAClassroomEngine.renderInterventionUI();
     if (viewName === 'activity-launcher') window.FIVIAClassroomEngine.renderActivityLauncherUI();
+    if (viewName === 'classroom-setup') renderClassroomSetupUI();
+    if (viewName === 'arena-preview') renderActiveArenaUI();
 
     window.scrollTo(0, 0);
   }
@@ -928,6 +930,345 @@ window.FIVIAQuest = (function() {
   function toggleSound() { state.settings.soundEnabled = !state.settings.soundEnabled; saveStorage(STORAGE_KEYS.SETTINGS, state.settings); playSound('click'); }
   function backToFIVIA() { timer.stop(); window.location.hash = '#quest/access'; }
 
+  /**
+   * CLASSROOM ARENA: SMARTBOARD GROUP GAME MODE
+   */
+  function autoAssignTeamsFromRoster(teamCount) {
+    teamCount = parseInt(teamCount) || 4;
+    let roster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
+    roster = roster.filter(s => s.status !== 'ARCHIVED');
+
+    const defaultTeamNames = ['TEAM NEWTON', 'TEAM EINSTEIN', 'TEAM FARADAY', 'TEAM GALILEO', 'TEAM BOHR', 'TEAM CURIE', 'TEAM TESLA', 'TEAM PLANCK'];
+    const teams = [];
+
+    for (let t = 0; t < teamCount; t++) {
+      teams.push({
+        id: `t_${t + 1}`,
+        name: defaultTeamNames[t] || `TEAM ${t + 1}`,
+        score: 0,
+        players: []
+      });
+    }
+
+    if (roster.length > 0) {
+      roster.forEach((s, idx) => {
+        const teamIdx = idx % teamCount;
+        teams[teamIdx].players.push({
+          id: s.studentId,
+          name: s.name,
+          studentCode: s.studentCode || s.nis,
+          turnsPlayed: 0
+        });
+      });
+    } else {
+      const sampleNames = [
+        ['Ahmad Fauzan', 'Budi Santoso', 'Citra Dewi'],
+        ['Dinda Putri', 'Eko Prasetyo', 'Fajar Ramadhan'],
+        ['Gita Gutawa', 'Hadi Wijaya', 'Indah Permata'],
+        ['Joko Widodo', 'Kiki Amalia', 'Lia Lestari']
+      ];
+      for (let t = 0; t < teamCount; t++) {
+        const names = sampleNames[t % 4];
+        names.forEach(n => {
+          teams[t].players.push({ id: 'p_' + Math.random(), name: n, turnsPlayed: 0 });
+        });
+      }
+    }
+
+    state.teams = teams;
+    saveStorage(STORAGE_KEYS.TEAMS, teams);
+    return teams;
+  }
+
+  function renderClassroomSetupUI() {
+    const container = document.getElementById('fq-team-cards-container');
+    if (!container) return;
+
+    if (!state.teams || state.teams.length === 0) {
+      autoAssignTeamsFromRoster(4);
+    }
+
+    container.innerHTML = state.teams.map((team, idx) => `
+      <div style="background: rgba(30,41,59,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="color: var(--fq-cyan); font-size: 1.2rem; margin: 0; font-weight: 900;">${team.name}</h3>
+          <span class="fq-badge-pill" style="margin: 0; color: var(--fq-amber); border-color: var(--fq-amber);">${team.score} PTS</span>
+        </div>
+        <div style="font-size: 0.82rem; color: var(--fq-text-muted); margin-bottom: 10px;">ANGGOTA TIM (${team.players.length} Siswa):</div>
+        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+          ${team.players.map(p => `
+            <li style="background: rgba(15,23,42,0.6); padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; color: #fff; display: flex; justify-content: space-between;">
+              <span>👨‍🎓 ${p.name}</span>
+              <span style="font-size: 0.75rem; color: var(--fq-cyan);">${p.studentCode || ''}</span>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    `).join('');
+  }
+
+  function renderActiveArenaUI() {
+    const mainBox = document.getElementById('fq-arena-main-box');
+    const lbBox = document.getElementById('fq-leaderboard-list');
+    if (!mainBox) return;
+
+    if (!state.teams || state.teams.length === 0) {
+      autoAssignTeamsFromRoster(4);
+    }
+
+    const currentTeam = state.teams[state.arena.currentTeamIndex || 0] || state.teams[0];
+    const currentPlayer = state.currentPlayer || (currentTeam.players[0] ? currentTeam.players[0].name : 'Belum Dipilih');
+
+    // Update Player Bar
+    const playerEl = document.getElementById('fq-arena-player-name');
+    const teamEl = document.getElementById('fq-arena-player-team');
+    if (playerEl) playerEl.textContent = currentPlayer;
+    if (teamEl) {
+      teamEl.textContent = `🚩 GILIRAN: ${currentTeam.name} (${currentTeam.score} PTS)`;
+      teamEl.className = 'fq-badge-pill';
+    }
+
+    // Get active challenge pool (Unit Master / Besaran Hunter / Dimension challenges)
+    const arenaChallenges = window.FIVIAQuestUnitMaster ? window.FIVIAQuestUnitMaster.getAllChallenges() : [];
+    const cIdx = state.arena.challengeIndex || 0;
+
+    if (cIdx >= arenaChallenges.length) {
+      // Arena Victory Screen
+      const sortedTeams = [...state.teams].sort((a, b) => b.score - a.score);
+      const winner = sortedTeams[0];
+
+      playSound('win');
+      mainBox.innerHTML = `
+        <div style="background: rgba(15,23,42,0.95); border: 3.5px solid var(--fq-amber); border-radius: 28px; padding: 40px; text-align: center; box-shadow: 0 0 60px rgba(245,158,11,0.5);">
+          <div style="font-size: 5rem; margin-bottom: 12px;">🏆</div>
+          <span class="fq-badge-pill" style="border-color: var(--fq-amber); color: var(--fq-amber); font-size: 1rem;"><i class="fas fa-crown"></i> JUARA CLASSROOM ARENA</span>
+          <h1 style="font-size: 3rem; font-weight: 900; color: #fff; margin: 10px 0;">VICTORY! ${winner.name} WIN!</h1>
+          <p style="color: var(--fq-text-muted); font-size: 1.1rem; margin-bottom: 28px;">Selamat kepada ${winner.name} atas perolehan skor tertinggi <strong>${winner.score} PTS</strong>!</p>
+
+          <div style="display: flex; gap: 16px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap;">
+            ${sortedTeams.map((t, rank) => `
+              <div style="background: rgba(30,41,59,0.8); border: 2px solid ${rank === 0 ? 'var(--fq-amber)' : 'var(--fq-border-cyan)'}; padding: 18px 24px; border-radius: 18px; min-width: 160px;">
+                <div style="font-size: 0.8rem; color: var(--fq-text-muted);">PERINGKAT #${rank + 1}</div>
+                <div style="font-size: 1.2rem; font-weight: 900; color: #fff; margin: 4px 0;">${t.name}</div>
+                <div style="font-size: 1.6rem; font-weight: 900; color: var(--fq-cyan);">${t.score} PTS</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="display: flex; gap: 16px; justify-content: center;">
+            <button class="fq-btn fq-btn-cyan fq-btn-lg" onclick="window.FIVIAQuest.resetArena()"><i class="fas fa-redo"></i> MAIN ARENA LAGI</button>
+            <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/classroom-setup'"><i class="fas fa-cog"></i> SETUP TIM</button>
+          </div>
+        </div>
+      `;
+      renderArenaLeaderboard();
+      return;
+    }
+
+    const c = arenaChallenges[cIdx] || { question: 'Pasangkan Besaran dengan Satuan SI yang Tepat', quantity: 'Panjang', options: [{ id: 'm', label: 'meter (m)' }, { id: 'kg', label: 'kilogram (kg)' }], correctAnswer: 'm', explanation: 'Meter adalah satuan SI panjang.' };
+
+    mainBox.innerHTML = `
+      <div style="background: rgba(15, 23, 42, 0.95); border: 3px solid var(--fq-cyan); border-radius: 28px; padding: 32px; text-align: left; box-shadow: 0 0 40px var(--fq-cyan-glow);">
+        <!-- Smartboard Header Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <span class="fq-badge-pill" style="font-size: 0.85rem;"><i class="fas fa-tv"></i> SMARTBOARD ARENA &bull; SOAL ${cIdx + 1} / ${arenaChallenges.length}</span>
+            <h2 style="font-size: 2rem; font-weight: 900; color: #fff; margin: 4px 0 0 0;">GILIRAN: <strong style="color: var(--fq-amber);">${currentTeam.name}</strong></h2>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-cyan" onclick="window.FIVIAQuest.pickRandomPlayer()"><i class="fas fa-crosshairs"></i> 🎯 ROTASI PEMAIN</button>
+            <button class="fq-btn fq-btn-emerald" onclick="window.FIVIAQuest.openBonusScoreModal()"><i class="fas fa-plus-circle"></i> ⭐ BONUS SKOR</button>
+            <button class="fq-btn fq-btn-amber" onclick="window.FIVIAQuest.stealArenaPoints()"><i class="fas fa-skull-crossbones"></i> 🏴‍☠️ REBUT SOAL</button>
+          </div>
+        </div>
+
+        <!-- Smartboard Big HOTS Question Display -->
+        <div style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 20px; line-height: 1.4;">${c.question}</div>
+        
+        ${c.quantity ? `
+          <div style="background: rgba(30,41,59,0.8); border: 1.5px solid var(--fq-border-cyan); border-radius: 20px; padding: 20px; text-align: center; font-size: 1.8rem; font-weight: 900; color: var(--fq-cyan); margin-bottom: 28px;">
+            ${c.quantity}
+          </div>
+        ` : ''}
+
+        <div id="fq-arena-feedback" style="display: none; margin-bottom: 24px; padding: 20px; border-radius: 18px;"></div>
+
+        <!-- Big Touch Option Buttons for Smartboard Interactive Screen -->
+        <div id="fq-arena-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          ${(c.options || []).map(opt => `
+            <button class="fq-btn fq-btn-outline fq-btn-lg" style="padding: 22px; font-size: 1.15rem; min-height: 64px; text-align: left; border-width: 2px;" onclick="window.FIVIAQuest.submitArenaAnswer('${opt.id}')">
+              <strong>${opt.id || opt.label}.</strong> ${opt.label || opt.text || opt.id}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    renderArenaLeaderboard();
+  }
+
+  function submitArenaAnswer(optId) {
+    const arenaChallenges = window.FIVIAQuestUnitMaster ? window.FIVIAQuestUnitMaster.getAllChallenges() : [];
+    const cIdx = state.arena.challengeIndex || 0;
+    const c = arenaChallenges[cIdx];
+    if (!c) return;
+
+    const currentTeam = state.teams[state.arena.currentTeamIndex || 0];
+    const fb = document.getElementById('fq-arena-feedback');
+    const opts = document.getElementById('fq-arena-options');
+    if (!fb || !opts) return;
+
+    const isCorrect = String(optId) === String(c.correctAnswer);
+    playSound(isCorrect ? 'correct' : 'wrong');
+
+    if (isCorrect) {
+      currentTeam.score += 100;
+      saveStorage(STORAGE_KEYS.TEAMS, state.teams);
+    }
+
+    fb.style.display = 'block';
+    fb.style.background = isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+    fb.style.border = `2px solid ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}`;
+    fb.innerHTML = `
+      <div style="font-weight: 900; font-size: 1.3rem; color: ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; margin-bottom: 8px;">
+        ${isCorrect ? `✅ JAWABAN TEPAT! ${currentTeam.name} MENDAPATKAN +100 PTS!` : `❌ JAWABAN SALAH! SOAL BISA DIREBUT TIM LAIN!`}
+      </div>
+      <p style="color: #fff; font-size: 1rem; margin: 0 0 16px 0;">${c.explanation}</p>
+      <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%;" onclick="window.FIVIAQuest.nextArenaChallenge()">
+        SOAL SELANJUTNYA &rarr;
+      </button>
+    `;
+    opts.style.display = 'none';
+  }
+
+  function nextArenaChallenge() {
+    state.arena.challengeIndex = (state.arena.challengeIndex || 0) + 1;
+    // Rotate team turn
+    state.arena.currentTeamIndex = ((state.arena.currentTeamIndex || 0) + 1) % state.teams.length;
+    renderActiveArenaUI();
+  }
+
+  function stealArenaPoints() {
+    const nextTeamIdx = ((state.arena.currentTeamIndex || 0) + 1) % state.teams.length;
+    state.arena.currentTeamIndex = nextTeamIdx;
+    const stolenTeam = state.teams[nextTeamIdx];
+    alert(`🏴‍☠️ SOAL DIREBUT OLEH ${stolenTeam.name}!\n\nGiliran menjawab berpindah ke ${stolenTeam.name}.`);
+    renderActiveArenaUI();
+  }
+
+  function renderArenaLeaderboard() {
+    const lbBox = document.getElementById('fq-leaderboard-list');
+    if (!lbBox) return;
+
+    const sortedTeams = [...state.teams].sort((a, b) => b.score - a.score);
+    lbBox.innerHTML = sortedTeams.map((team, idx) => `
+      <div style="background: rgba(30,41,59,0.7); border: 1.5px solid ${idx === 0 ? 'var(--fq-amber)' : 'var(--fq-border-cyan)'}; border-radius: 16px; padding: 14px 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="font-size: 1.3rem; font-weight: 900; color: ${idx === 0 ? 'var(--fq-amber)' : 'var(--fq-cyan)'};">#${idx + 1}</span>
+          <div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: #fff;">${team.name}</div>
+            <div style="font-size: 0.78rem; color: var(--fq-text-muted);">${team.players.length} Anggota Tim</div>
+          </div>
+        </div>
+        <div style="font-size: 1.5rem; font-weight: 900; color: var(--fq-amber);">${team.score} PTS</div>
+      </div>
+    `).join('');
+  }
+
+  function pickRandomPlayer() {
+    const currentTeam = state.teams[state.arena.currentTeamIndex || 0] || state.teams[0];
+    if (!currentTeam || !currentTeam.players || currentTeam.players.length === 0) {
+      alert('⚠️ Tim tidak memiliki daftar anggota siswa.');
+      return;
+    }
+
+    const modal = document.getElementById('fq-random-player-modal');
+    const nameEl = document.getElementById('fq-shuffle-name');
+    const teamEl = document.getElementById('fq-shuffle-team');
+
+    if (modal) modal.classList.add('active');
+
+    let count = 0;
+    const interval = setInterval(() => {
+      const randomP = currentTeam.players[Math.floor(Math.random() * currentTeam.players.length)];
+      if (nameEl) nameEl.textContent = randomP.name;
+      if (teamEl) teamEl.textContent = currentTeam.name;
+      playSound('click');
+      count++;
+
+      if (count > 15) {
+        clearInterval(interval);
+        const finalP = currentTeam.players[Math.floor(Math.random() * currentTeam.players.length)];
+        if (nameEl) nameEl.textContent = finalP.name;
+        state.currentPlayer = finalP.name;
+        
+        setTimeout(() => {
+          if (modal) modal.classList.remove('active');
+          renderActiveArenaUI();
+        }, 1200);
+      }
+    }, 100);
+  }
+
+  function applyBonusScore() {
+    const currentTeam = state.teams[state.arena.currentTeamIndex || 0];
+    if (currentTeam) {
+      currentTeam.score += 50;
+      saveStorage(STORAGE_KEYS.TEAMS, state.teams);
+      playSound('win');
+      alert(`⭐ BONUS SKOR +50 PTS BERHASIL DITERAPKAN KE ${currentTeam.name}!`);
+      renderActiveArenaUI();
+    }
+  }
+
+  function resetArena() {
+    timer.stop();
+    state.arena.currentRound = 1;
+    state.arena.challengeIndex = 0;
+    state.arena.currentTeamIndex = 0;
+    state.teams.forEach(t => t.score = 0);
+    saveStorage(STORAGE_KEYS.TEAMS, state.teams);
+    alert('↻ Classroom Arena Berhasil Direset. Memulai Sesi Baru.');
+    renderActiveArenaUI();
+  }
+
+  function startSoloBesaranHunter() {
+    state.besaranHunter.cards = window.FIVIAQuestBesaranHunter.getSessionCards(10);
+    state.besaranHunter.currentIndex = 0;
+    renderView('besaran-hunter');
+  }
+
+  function startSoloUnitMaster() {
+    state.unitMaster.challenges = window.FIVIAQuestUnitMaster.getSoloSessionChallenges(10);
+    state.unitMaster.currentIndex = 0;
+    renderView('unit-master');
+  }
+
+  function startSoloSIExplorer() {
+    state.siExplorer.challenges = window.FIVIAQuestSIExplorer.getSoloSessionChallenges(10);
+    state.siExplorer.currentIndex = 0;
+    renderView('si-explorer');
+  }
+
+  function startSoloDimensionDetective() {
+    state.dimensionDetective.challenges = window.FIVIAQuestDimensionDetective.getSoloSessionChallenges(10);
+    state.dimensionDetective.currentIndex = 0;
+    renderView('dimension-detective');
+  }
+
+  function startSoloDimensionBoss() {
+    state.dimensionBoss.challenges = window.FIVIAQuestDimensionBoss.getSoloSessionChallenges(10);
+    state.dimensionBoss.currentIndex = 0;
+    state.dimensionBoss.bossHp = 100;
+    renderView('dimension-boss');
+  }
+
+  function startMasteryAssessment() { renderView('mastery-assessment'); }
+
+  function toggleFullscreen() { if (!document.fullscreenElement) { (document.querySelector('.fivia-quest') || document.documentElement).requestFullscreen(); } else { document.exitFullscreen(); } }
+  function toggleSound() { state.settings.soundEnabled = !state.settings.soundEnabled; saveStorage(STORAGE_KEYS.SETTINGS, state.settings); playSound('click'); }
+  function backToFIVIA() { timer.stop(); window.location.hash = '#quest/access'; }
+
   // Bridge functions for Phase 1-4 inline onclick handlers
   function exportCSV() { if (window.FIVIAReports) window.FIVIAReports.exportClassAnalyticsCSV(); else if (window.FIVIAClassroomReports) window.FIVIAClassroomReports.exportClassroomCSV('cls_2045_x1'); }
   function exportJSON() { if (window.FIVIAReports) window.FIVIAReports.exportClassAnalyticsJSON(); else if (window.FIVIAClassroomReports) window.FIVIAClassroomReports.exportClassroomJSON('cls_2045_x1'); }
@@ -939,9 +1280,7 @@ window.FIVIAQuest = (function() {
   function closeHintModal() { const modal = document.getElementById('fq-hint-modal'); if (modal) modal.classList.remove('active'); }
   function openBonusScoreModal() { const modal = document.getElementById('fq-bonus-modal'); if (modal) modal.classList.add('active'); else alert('⭐ Tambahkan Skor Bonus Tim!'); }
   function closeBonusModal() { const modal = document.getElementById('fq-bonus-modal'); if (modal) modal.classList.remove('active'); }
-  function applyBonusScore() { alert('⭐ Skor Bonus Tim Berhasil Diterapkan!'); closeBonusModal(); }
-  function pickRandomPlayer() { alert('🎯 Pemain Acak Terpilih: Ahmad (Team Newton)'); }
-  function resetArena() { timer.stop(); alert('↻ Classroom Arena Berhasil Direset.'); }
+  function pickRandomPlayer() { pickRandomPlayer(); }
   function resumeGame() { timer.resume(); alert('▶ Permainan Dilanjuutkan.'); }
 
   return {
@@ -959,6 +1298,9 @@ window.FIVIAQuest = (function() {
     nextDDCard: nextDDCard,
     submitDBAnswer: submitDBAnswer,
     nextDBCard: nextDBCard,
+    submitArenaAnswer: submitArenaAnswer,
+    nextArenaChallenge: nextArenaChallenge,
+    stealArenaPoints: stealArenaPoints,
     toggleFullscreen: toggleFullscreen,
     toggleSound: toggleSound,
     backToFIVIA: backToFIVIA,

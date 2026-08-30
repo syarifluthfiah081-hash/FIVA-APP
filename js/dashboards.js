@@ -1486,21 +1486,55 @@ function renderClassManagement() {
   const user = window.auth.getCurrentUser();
   if (!user || user.role !== "guru") return;
   
-  const classes = window.db.getTable("classes").filter(c => c.teacherId === user.id);
-  const classIds = classes.map(c => c.id);
-  
-  let students = window.db.getTable("students").filter(s => classIds.includes(s.classId));
+  // Merge legacy students table with Excel imported roster
+  const excelRoster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
+  const legacyStudents = window.db.getTable("students");
+
+  const studentMap = new Map();
+  excelRoster.forEach(s => {
+    studentMap.set(s.studentId || s.id, {
+      id: s.studentId || s.id,
+      nis: s.nis || '001',
+      studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis||'001')),
+      name: s.name,
+      className: s.className || s.classId || 'Kelas X-1',
+      classId: s.classId || 'cls_x1',
+      xp: s.xp || 0
+    });
+  });
+
+  legacyStudents.forEach(s => {
+    if (!studentMap.has(s.id)) {
+      studentMap.set(s.id, {
+        id: s.id,
+        nis: s.nis || '001',
+        studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis||'001')),
+        name: s.name,
+        className: s.className || s.classId || 'Kelas X-1',
+        classId: s.classId || 'cls_x1',
+        xp: s.xp || 0
+      });
+    }
+  });
+
+  let students = Array.from(studentMap.values());
 
   // Apply search/filters
-  const searchVal = document.getElementById("search-student").value.toLowerCase().trim();
-  const classVal = document.getElementById("filter-class").value;
+  const searchEl = document.getElementById("search-student");
+  const filterEl = document.getElementById("filter-class");
+  const searchVal = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  const classVal = filterEl ? filterEl.value : '';
 
   if (searchVal) {
-    students = students.filter(s => s.name.toLowerCase().includes(searchVal) || s.email.toLowerCase().includes(searchVal));
+    students = students.filter(s => 
+      s.name.toLowerCase().includes(searchVal) || 
+      (s.nis && s.nis.includes(searchVal)) || 
+      (s.studentCode && s.studentCode.toLowerCase().includes(searchVal))
+    );
   }
   
   if (classVal) {
-    students = students.filter(s => s.classId === classVal);
+    students = students.filter(s => s.classId === classVal || s.className.toLowerCase().includes(classVal.toLowerCase()));
   }
 
   const tableBody = document.querySelector("#class-students-table tbody");
@@ -1508,24 +1542,34 @@ function renderClassManagement() {
   tableBody.innerHTML = "";
 
   if (students.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Tidak ada data siswa ditemukan.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 20px;">Tidak ada data siswa ditemukan. Gunakan tombol <strong>📥 Import Excel</strong> atau <strong>➕ Tambah Siswa</strong>.</td></tr>`;
     return;
   }
 
   students.forEach(s => {
-    const classObj = classes.find(c => c.id === s.classId);
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td style="font-family: monospace;">${s.id}</td>
+      <td style="font-family: monospace; font-weight: bold; color: var(--brand-orange);">${s.nis}</td>
+      <td style="font-family: monospace; font-weight: bold; color: var(--brand-blue);">${s.studentCode}</td>
       <td style="font-weight: 600;">${s.name}</td>
-      <td>${s.email}</td>
-      <td><span class="badge badge-blue">${classObj ? classObj.name : "Unassigned"}</span></td>
+      <td><span class="badge badge-blue">${s.className}</span></td>
+      <td><span class="badge badge-success">${s.xp} XP</span></td>
       <td>
+        <button class="btn btn-outline btn-edit-student" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--brand-blue); color: var(--brand-blue); margin-right: 4px;" 
+                data-id="${s.id}"><i class="fas fa-edit"></i> Edit</button>
         <button class="btn btn-outline btn-delete-student" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);" 
                 data-id="${s.id}"><i class="fas fa-trash"></i> Hapus</button>
       </td>
     `;
     tableBody.appendChild(row);
+  });
+
+  // Binds edit buttons
+  tableBody.querySelectorAll(".btn-edit-student").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const stdId = btn.getAttribute("data-id");
+      if (window.FIVIAClassroomEngine) window.FIVIAClassroomEngine.editStudent(stdId);
+    });
   });
 
   // Binds delete buttons

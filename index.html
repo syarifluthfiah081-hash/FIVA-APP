@@ -1215,13 +1215,18 @@
       <!-- 4. GURU CLASS MANAGEMENT SECTION -->
       <section id="class-management-section" class="spa-section dashboard-container hidden-section fade-in-section">
         <div class="glass-panel dashboard-section">
-          <div class="section-header">
-            <h3 class="section-title"><i class="fas fa-users-cog" style="color: var(--brand-blue);"></i> Manajemen Kelas & Siswa</h3>
-            <button class="btn btn-primary" id="btn-add-student"><i class="fas fa-user-plus"></i> Tambah Siswa</button>
+          <div class="section-header" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+            <h3 class="section-title"><i class="fas fa-users-cog" style="color: var(--brand-blue);"></i> Manajemen Kelas &amp; Siswa</h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btn-add-student"><i class="fas fa-user-plus"></i> Tambah Siswa</button>
+              <button class="btn btn-cyan" id="btn-import-excel-sidebar" onclick="window.FIVIAClassroomEngine.triggerExcelImport()" style="background: var(--fq-cyan); color: white; border: none;"><i class="fas fa-file-import"></i> 📥 Import Excel</button>
+              <button class="btn btn-outline" id="btn-download-template-sidebar" onclick="window.FIVIAExcelImport.downloadExcelTemplate()"><i class="fas fa-file-download"></i> 📄 Download Template</button>
+              <button class="btn btn-emerald" id="btn-print-cards-sidebar" onclick="window.FIVIAExcelImport.printStudentCards()" style="background: #10b981; color: white; border: none;"><i class="fas fa-print"></i> 🖨️ Cetak Kartu Siswa</button>
+            </div>
           </div>
           
-          <div class="action-box">
-            <input type="text" class="form-control search-input" id="search-student" placeholder="Cari nama siswa...">
+          <div class="action-box" style="margin-top: 16px;">
+            <input type="text" class="form-control search-input" id="search-student" placeholder="Cari nama, NIS, atau Kode Siswa...">
             <select class="form-control" id="filter-class" style="max-width: 180px;">
               <option value="">Semua Kelas</option>
               <option value="cls_x1">Kelas X-1</option>
@@ -1235,10 +1240,11 @@
             <table class="custom-table" id="class-students-table">
               <thead>
                 <tr>
-                  <th>ID Siswa</th>
+                  <th>NIS</th>
+                  <th>Kode Siswa</th>
                   <th>Nama Lengkap</th>
-                  <th>Email</th>
                   <th>Kelas</th>
+                  <th>Total XP</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
