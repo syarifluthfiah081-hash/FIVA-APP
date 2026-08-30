@@ -453,9 +453,30 @@ window.FIVIAExcelImport = (function() {
   }
 
   /**
-   * Downloads official Excel / CSV template with 3 mandatory columns: NAMA, NIS, KELAS
+   * Downloads official Microsoft Excel (.xlsx) template with mandatory columns: NAMA, NIS, KELAS
    */
   function downloadExcelTemplate() {
+    const templateData = [
+      { NAMA: "Ahmad Fauzan", NIS: "001", KELAS: "X.F.1" },
+      { NAMA: "Siti Rahma", NIS: "002", KELAS: "X.F.1" },
+      { NAMA: "Budi Santoso", NIS: "003", KELAS: "X.F.1" },
+      { NAMA: "Dinda Putri", NIS: "004", KELAS: "X.F.1" },
+      { NAMA: "Eko Prasetyo", NIS: "005", KELAS: "X.F.1" }
+    ];
+
+    if (window.XLSX && window.XLSX.utils && window.XLSX.writeFile) {
+      try {
+        const ws = window.XLSX.utils.json_to_sheet(templateData);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, "Template Siswa");
+        window.XLSX.writeFile(wb, "Template_Import_Siswa_FIVIA.xlsx");
+        return;
+      } catch (err) {
+        console.warn("SheetJS export failed, falling back to blob CSV:", err);
+      }
+    }
+
+    // Fallback if XLSX CDN is unavailable
     const csvContent = "NAMA,NIS,KELAS\nAhmad Fauzan,001,X.F.1\nSiti Rahma,002,X.F.1\nBudi Santoso,003,X.F.1\n";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

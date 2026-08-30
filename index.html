@@ -210,41 +210,33 @@
           <div id="fq-view-landing" class="fq-view">
             <div class="fq-hero">
               <div class="fq-badge-pill">
-                <i class="fas fa-bolt"></i> DUAL MODE LEARNING GAME &bull; SMA KELAS X
+                <i class="fas fa-users-line"></i> INTERACTIVE GROUP GAME MODE &bull; SMA KELAS X
               </div>
-              <h1 class="fq-hero-title">THE MYSTERY OF MEASUREMENT</h1>
+              <h1 class="fq-hero-title">FIVIA PHYSICS GROUP ARENA</h1>
               
               <div class="fq-mission-card">
-                <div class="fq-mission-tag">MISSION 01 &bull; STORYLINE</div>
-                <div class="fq-mission-name">Laboratorium FIVIA 2045</div>
+                <div class="fq-mission-tag">GAME FISIKA BERKELOMPOK &bull; SMARTBOARD &amp; KELAS</div>
+                <div class="fq-mission-name">Kompetisi Kelompok Laboratorium FIVIA 2045</div>
                 <p class="fq-storyline-text">
-                  Tahun 2045. Laboratorium penelitian FIVIA mengalami gangguan besar pada sistem database pengukuran. Besaran menjadi kacau, satuan SI tertukar, dan dimensi Fisika tidak konsisten. Laboratorium membutuhkan seorang <strong>Physics Explorer</strong> untuk memulihkan stabilitas sistem!
+                  Permainan kompetisi Fisika secara <strong>berkelompok dan bergiliran</strong>. Guru meng-import data siswa dari Excel, mengatur nama-nama kelompok dan anggotanya dari database, lalu setiap kelompok secara bergiliran maju menjawab tantangan Fisika di layar interaktif!
                 </p>
               </div>
 
-              <div class="fq-mode-grid">
-                <div class="fq-mode-card" onclick="window.location.hash='#quest/solo-login'">
-                  <div class="fq-mode-icon solo">
-                    <i class="fas fa-user-astronaut"></i>
-                  </div>
-                  <div class="fq-mode-title">SOLO QUEST</div>
-                  <div class="fq-mode-desc">Mode petualangan mandiri. Kumpulkan XP, buka badge, dan selesaikan tantangan level secara individual.</div>
-                  <button class="fq-btn fq-btn-cyan" style="width: 100%;"><i class="fas fa-play"></i> MULAI SOLO QUEST</button>
-                </div>
-
-                <div class="fq-mode-card arena" onclick="window.location.hash='#quest/classroom-setup'">
+              <div class="fq-mode-grid" style="grid-template-columns: 1fr;">
+                <div class="fq-mode-card arena" onclick="window.location.hash='#quest/classroom-setup'" style="border: 3px solid var(--fq-cyan);">
                   <div class="fq-mode-icon arena">
                     <i class="fas fa-users-viewfinder"></i>
                   </div>
-                  <div class="fq-mode-title">CLASSROOM ARENA</div>
-                  <div class="fq-mode-desc">Mode kompetisi kelompok di kelas. Tampilkan pada layar interaktif, bagi tim, putar giliran, dan raih skor tertinggi!</div>
-                  <button class="fq-btn fq-btn-violet" style="width: 100%;"><i class="fas fa-trophy"></i> SETUP ARENA KELAS</button>
+                  <div class="fq-mode-title" style="font-size: 1.8rem;">🚀 MAINKAN GAME KELOMPOK</div>
+                  <div class="fq-mode-desc" style="font-size: 1rem;">Mulai kompetisi kelompok! Anggota tim diambil langsung dari database siswa. Setiap kelompok menjawab tantangan secara bergiliran.</div>
+                  <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; font-size: 1.2rem; min-height: 54px;"><i class="fas fa-play"></i> 🚀 MULAI GAME BERKELOMPOK</button>
                 </div>
               </div>
 
-              <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-                <button class="fq-btn fq-btn-outline" onclick="alert('📘 MATERI RINGKAS:\n\n• Besaran Pokok: Panjang (m), Massa (kg), Waktu (s), Suhu (K), Kuat Arus (A), Jumlah Zat (mol), Intensitas Cahaya (cd).\n• Besaran Turunan: Luas (m²), Kecepatan (m/s), Gaya (N = kg·m/s²), Energi (J = kg·m²/s²).\n• Dimensi: Panjang=[L], Massa=[M], Waktu=[T].')"><i class="fas fa-book"></i> LEARN MATERIAL</button>
-                <button class="fq-btn fq-btn-outline" onclick="alert('ℹ️ ABOUT FIVIA PHYSICS QUEST:\n\nAplikasi gamifikasi Fisika berbasis Kurikulum Merdeka yang menggabungkan storytelling, kompetisi interaktif kelas, serta penguatan pedagogis (THINK -> DISCUSS -> PLAY -> FEEDBACK -> REFLECT).')"><i class="fas fa-info-circle"></i> ABOUT FIVIA</button>
+              <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+                <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/classroom-setup'"><i class="fas fa-users-cog"></i> ATUR KELOMPOK &amp; ANGGOTA</button>
+                <button class="fq-btn fq-btn-outline" onclick="window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT SISWA EXCEL</button>
+                <button class="fq-btn fq-btn-outline" onclick="window.FIVIAExcelImport.downloadExcelTemplate()"><i class="fas fa-file-download"></i> 📄 DOWNLOAD TEMPLATE EXCEL</button>
               </div>
             </div>
           </div>

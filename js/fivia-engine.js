@@ -980,6 +980,55 @@ window.FIVIAQuest = (function() {
     return teams;
   }
 
+  function autoAssignTeamsFromRosterUI() {
+    const select = document.getElementById('fq-select-team-count');
+    const count = select ? select.value : 4;
+    autoAssignTeamsFromRoster(count);
+    renderClassroomSetupUI();
+    alert(`🎉 KELOMPOK BERHASIL DIBAGI OTOMATIS!\n\n${state.teams.length} kelompok telah dibentuk berdasarkan data siswa di database.`);
+  }
+
+  function editTeamName(teamIdx) {
+    if (!state.teams[teamIdx]) return;
+    const oldName = state.teams[teamIdx].name;
+    const newName = prompt('Masukkan Nama Kelompok Baru:', oldName);
+    if (newName && newName.trim()) {
+      state.teams[teamIdx].name = newName.trim();
+      saveStorage(STORAGE_KEYS.TEAMS, state.teams);
+      renderClassroomSetupUI();
+    }
+  }
+
+  function addMemberToTeam(teamIdx) {
+    if (!state.teams[teamIdx]) return;
+    const name = prompt('Masukkan Nama Anggota Siswa Baru untuk ' + state.teams[teamIdx].name + ':');
+    if (name && name.trim()) {
+      state.teams[teamIdx].players.push({
+        id: 'std_' + Date.now().toString(36),
+        name: name.trim(),
+        studentCode: 'STD-' + Math.floor(Math.random() * 900 + 100),
+        turnsPlayed: 0
+      });
+      saveStorage(STORAGE_KEYS.TEAMS, state.teams);
+      renderClassroomSetupUI();
+    }
+  }
+
+  function addNewTeam() {
+    const teamCount = state.teams.length + 1;
+    const newTeamName = prompt('Masukkan Nama Kelompok Baru:', `KELOMPOK ${teamCount}`);
+    if (newTeamName && newTeamName.trim()) {
+      state.teams.push({
+        id: `t_${Date.now().toString(36)}`,
+        name: newTeamName.trim(),
+        score: 0,
+        players: []
+      });
+      saveStorage(STORAGE_KEYS.TEAMS, state.teams);
+      renderClassroomSetupUI();
+    }
+  }
+
   function renderClassroomSetupUI() {
     const container = document.getElementById('fq-team-cards-container');
     if (!container) return;
@@ -988,23 +1037,45 @@ window.FIVIAQuest = (function() {
       autoAssignTeamsFromRoster(4);
     }
 
-    container.innerHTML = state.teams.map((team, idx) => `
-      <div style="background: rgba(30,41,59,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <h3 style="color: var(--fq-cyan); font-size: 1.2rem; margin: 0; font-weight: 900;">${team.name}</h3>
-          <span class="fq-badge-pill" style="margin: 0; color: var(--fq-amber); border-color: var(--fq-amber);">${team.score} PTS</span>
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; background: rgba(15,23,42,0.6); padding: 16px; border-radius: 16px;">
+        <div style="font-weight: 800; color: #fff; font-size: 1rem;">
+          <i class="fas fa-users-cog" style="color: var(--fq-cyan);"></i> MANAJEMEN KELOMPOK SAYA (${state.teams.length} Kelompok Terdaftar)
         </div>
-        <div style="font-size: 0.82rem; color: var(--fq-text-muted); margin-bottom: 10px;">ANGGOTA TIM (${team.players.length} Siswa):</div>
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
-          ${team.players.map(p => `
-            <li style="background: rgba(15,23,42,0.6); padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; color: #fff; display: flex; justify-content: space-between;">
-              <span>👨‍🎓 ${p.name}</span>
-              <span style="font-size: 0.75rem; color: var(--fq-cyan);">${p.studentCode || ''}</span>
-            </li>
-          `).join('')}
-        </ul>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="fq-btn fq-btn-cyan" onclick="window.FIVIAQuest.autoAssignTeamsFromRosterUI()"><i class="fas fa-random"></i> 🔀 BAGI KELOMPOK OTOMATIS DARI DATABASE</button>
+          <button class="fq-btn fq-btn-emerald" onclick="window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT SISWA EXCEL</button>
+          <button class="fq-btn fq-btn-amber" onclick="window.FIVIAQuest.addNewTeam()"><i class="fas fa-plus"></i> ➕ TAMBAH KELOMPOK BARU</button>
+        </div>
       </div>
-    `).join('');
+      ${state.teams.map((team, idx) => `
+        <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-border-cyan); border-radius: 20px; padding: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--fq-border-cyan); padding-bottom: 10px;">
+            <div>
+              <h3 style="color: var(--fq-cyan); font-size: 1.25rem; margin: 0; font-weight: 900;">${team.name}</h3>
+              <div style="font-size: 0.75rem; color: var(--fq-text-muted);">${team.players.length} Anggota Siswa</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="fq-btn fq-btn-outline" style="min-height: 32px; padding: 4px 8px; font-size: 0.75rem;" onclick="window.FIVIAQuest.editTeamName(${idx})" title="Edit Nama Kelompok">✏️ NAMA</button>
+              <button class="fq-btn fq-btn-emerald" style="min-height: 32px; padding: 4px 8px; font-size: 0.75rem;" onclick="window.FIVIAQuest.addMemberToTeam(${idx})" title="Tambah Anggota Siswa">➕ ANGGOTA</button>
+            </div>
+          </div>
+
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+            ${team.players.length === 0 ? `
+              <li style="color: var(--fq-text-muted); font-size: 0.82rem; text-align: center; padding: 12px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px;">
+                Belum ada anggota. Klik <strong>🔀 BAGI KELOMPOK OTOMATIS</strong> atau <strong>➕ ANGGOTA</strong>.
+              </li>
+            ` : team.players.map(p => `
+              <li style="background: rgba(15,23,42,0.7); padding: 8px 12px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                <span>👨‍🎓 ${p.name}</span>
+                <span style="font-size: 0.75rem; color: var(--fq-cyan); font-family: monospace;">${p.studentCode || ''}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `).join('')}
+    `;
   }
 
   function renderActiveArenaUI() {
@@ -1317,7 +1388,11 @@ window.FIVIAQuest = (function() {
     applyBonusScore: applyBonusScore,
     pickRandomPlayer: pickRandomPlayer,
     resetArena: resetArena,
-    resumeGame: resumeGame
+    resumeGame: resumeGame,
+    autoAssignTeamsFromRosterUI: autoAssignTeamsFromRosterUI,
+    editTeamName: editTeamName,
+    addMemberToTeam: addMemberToTeam,
+    addNewTeam: addNewTeam
   };
 
 })();
