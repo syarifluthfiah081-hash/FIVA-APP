@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="css/dashboards.css">
   <link rel="stylesheet" href="css/labs.css">
   <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/fivia-quest.css">
   
   <script>
     // Hide loading screen after full load
@@ -151,9 +152,10 @@
           <p>
             Platform pembelajaran Fisika interaktif yang membawa eksperimen, simulasi, laboratorium virtual, dan teknologi AI ke dalam pengalaman belajar siswa SMA.
           </p>
-          <div class="hero-cta" style="margin-top: 24px;">
+          <div class="hero-cta" style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
             <button class="btn btn-primary btn-open-login" style="padding: 12px 24px;"><i class="fas fa-play"></i> Mulai Belajar</button>
-            <button class="btn btn-outline btn-open-login" style="padding: 12px 24px;"><i class="fas fa-flask"></i> Masuk Laboratorium</button>
+            <a href="#quest" class="btn" style="padding: 12px 24px; background: linear-gradient(135deg, #06b6d4, #8b5cf6); color: #ffffff; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 15px rgba(6,182,212,0.4); text-decoration: none;"><i class="fas fa-gamepad"></i> Physics Quest</a>
+            <button class="btn btn-outline btn-open-login" style="padding: 12px 24px;"><i class="fas fa-flask"></i> Laboratorium</button>
           </div>
         </div>
         <div class="hero-image-container">
@@ -181,6 +183,928 @@
           </div>
         </div>
       </section>
+
+      <!-- FIVIA PHYSICS QUEST MODULE SECTION -->
+      <section id="fivia-quest-section" class="spa-section hidden-section fade-in-section">
+        <div class="fivia-quest">
+          
+          <!-- Outer Physics Quest Header -->
+          <div class="fq-header">
+            <div class="fq-brand">
+              <div class="fq-logo-icon">
+                <i class="fas fa-atom"></i>
+              </div>
+              <div>
+                <h2 class="fq-brand-title">FIVIA PHYSICS QUEST</h2>
+                <p class="fq-brand-sub">The Mystery of Measurement | Besaran, Satuan & Dimensi</p>
+              </div>
+            </div>
+            <div class="fq-header-actions">
+              <button class="fq-btn btn-back-fivia" onclick="window.FIVIAQuest.backToFIVIA()"><i class="fas fa-arrow-left"></i> &larr; Back to FIVIA</button>
+              <button class="fq-btn fq-btn-outline" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAQuest.toggleSound()" title="Toggle Sound"><i class="fas fa-volume-up"></i></button>
+              <button class="fq-btn fq-btn-outline" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAQuest.toggleFullscreen()" title="Toggle Fullscreen"><i class="fas fa-expand"></i></button>
+            </div>
+          </div>
+
+          <!-- 1. LANDING VIEW panel -->
+          <div id="fq-view-landing" class="fq-view">
+            <div class="fq-hero">
+              <div class="fq-badge-pill">
+                <i class="fas fa-bolt"></i> DUAL MODE LEARNING GAME &bull; SMA KELAS X
+              </div>
+              <h1 class="fq-hero-title">THE MYSTERY OF MEASUREMENT</h1>
+              
+              <div class="fq-mission-card">
+                <div class="fq-mission-tag">MISSION 01 &bull; STORYLINE</div>
+                <div class="fq-mission-name">Laboratorium FIVIA 2045</div>
+                <p class="fq-storyline-text">
+                  Tahun 2045. Laboratorium penelitian FIVIA mengalami gangguan besar pada sistem database pengukuran. Besaran menjadi kacau, satuan SI tertukar, dan dimensi Fisika tidak konsisten. Laboratorium membutuhkan seorang <strong>Physics Explorer</strong> untuk memulihkan stabilitas sistem!
+                </p>
+              </div>
+
+              <div class="fq-mode-grid">
+                <div class="fq-mode-card" onclick="window.location.hash='#quest/solo-login'">
+                  <div class="fq-mode-icon solo">
+                    <i class="fas fa-user-astronaut"></i>
+                  </div>
+                  <div class="fq-mode-title">SOLO QUEST</div>
+                  <div class="fq-mode-desc">Mode petualangan mandiri. Kumpulkan XP, buka badge, dan selesaikan tantangan level secara individual.</div>
+                  <button class="fq-btn fq-btn-cyan" style="width: 100%;"><i class="fas fa-play"></i> MULAI SOLO QUEST</button>
+                </div>
+
+                <div class="fq-mode-card arena" onclick="window.location.hash='#quest/classroom-setup'">
+                  <div class="fq-mode-icon arena">
+                    <i class="fas fa-users-viewfinder"></i>
+                  </div>
+                  <div class="fq-mode-title">CLASSROOM ARENA</div>
+                  <div class="fq-mode-desc">Mode kompetisi kelompok di kelas. Tampilkan pada layar interaktif, bagi tim, putar giliran, dan raih skor tertinggi!</div>
+                  <button class="fq-btn fq-btn-violet" style="width: 100%;"><i class="fas fa-trophy"></i> SETUP ARENA KELAS</button>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                <button class="fq-btn fq-btn-outline" onclick="alert('📘 MATERI RINGKAS:\n\n• Besaran Pokok: Panjang (m), Massa (kg), Waktu (s), Suhu (K), Kuat Arus (A), Jumlah Zat (mol), Intensitas Cahaya (cd).\n• Besaran Turunan: Luas (m²), Kecepatan (m/s), Gaya (N = kg·m/s²), Energi (J = kg·m²/s²).\n• Dimensi: Panjang=[L], Massa=[M], Waktu=[T].')"><i class="fas fa-book"></i> LEARN MATERIAL</button>
+                <button class="fq-btn fq-btn-outline" onclick="alert('ℹ️ ABOUT FIVIA PHYSICS QUEST:\n\nAplikasi gamifikasi Fisika berbasis Kurikulum Merdeka yang menggabungkan storytelling, kompetisi interaktif kelas, serta penguatan pedagogis (THINK -> DISCUSS -> PLAY -> FEEDBACK -> REFLECT).')"><i class="fas fa-info-circle"></i> ABOUT FIVIA</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. STUDENT LOGIN VIEW -->
+          <div id="fq-view-solo-login" class="fq-view hidden">
+            <div class="fq-form-container">
+              <h2 style="font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 8px; color: #fff;">STUDENT LOGIN</h2>
+              <p style="text-align: center; color: var(--fq-text-muted); font-size: 0.88rem; margin-bottom: 24px;">Masukkan profil Anda untuk mulai menjelajah Solo Quest</p>
+              
+              <form onsubmit="window.FIVIAQuest.handleStudentLoginSubmit(event)">
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Nama Lengkap <span style="color: var(--fq-rose);">*</span></label>
+                  <input type="text" id="fq-input-name" class="fq-input" placeholder="Contoh: Ahmad Rizky" required>
+                </div>
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Kelas <span style="color: var(--fq-rose);">*</span></label>
+                  <select id="fq-select-class" class="fq-select" required>
+                    <option value="">-- Pilih Kelas --</option>
+                    <option value="X-1">X-1</option>
+                    <option value="X-2">X-2</option>
+                    <option value="X-3">X-3</option>
+                    <option value="X-4">X-4</option>
+                    <option value="X-5">X-5</option>
+                    <option value="X-6">X-6</option>
+                    <option value="X-7">X-7</option>
+                    <option value="X-8">X-8</option>
+                  </select>
+                </div>
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Nomor Absen (Opsional)</label>
+                  <input type="number" id="fq-input-absen" class="fq-input" placeholder="Contoh: 05">
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 28px;">
+                  <button type="button" class="fq-btn fq-btn-outline" style="flex: 1;" onclick="window.location.hash='#quest'">Batal</button>
+                  <button type="submit" class="fq-btn fq-btn-cyan" style="flex: 2;"><i class="fas fa-sign-in-alt"></i> MASUK QUEST</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- 3. STUDENT DASHBOARD VIEW -->
+          <div id="fq-view-student-dashboard" class="fq-view hidden">
+            <div style="max-width: 900px; margin: 0 auto;">
+              <div style="background: var(--fq-bg-card); border: 1px solid var(--fq-border-cyan); border-radius: 20px; padding: 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div>
+                  <h2 id="fq-dash-student-name" style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 0;">Siswa Explorer</h2>
+                  <div id="fq-dash-student-class" style="color: var(--fq-cyan); font-weight: 600; font-size: 0.9rem; margin-top: 4px;">Kelas X-1 | Absen: -</div>
+                </div>
+                <button class="fq-btn fq-btn-cyan" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-map-marked-alt"></i> CONTINUE QUEST</button>
+              </div>
+
+              <div class="fq-stats-grid">
+                <div class="fq-stat-card">
+                  <div class="fq-stat-icon"><i class="fas fa-star"></i></div>
+                  <div>
+                    <div class="fq-stat-val" id="fq-dash-score">0</div>
+                    <div class="fq-stat-lbl">Total Score</div>
+                  </div>
+                </div>
+                <div class="fq-stat-card">
+                  <div class="fq-stat-icon" style="color: var(--fq-violet); background: rgba(139,92,246,0.15);"><i class="fas fa-bolt"></i></div>
+                  <div>
+                    <div class="fq-stat-val" id="fq-dash-xp">0 XP</div>
+                    <div class="fq-stat-lbl">XP Point</div>
+                  </div>
+                </div>
+                <div class="fq-stat-card">
+                  <div class="fq-stat-icon" style="color: var(--fq-emerald); background: rgba(16,185,129,0.15);"><i class="fas fa-shield-alt"></i></div>
+                  <div>
+                    <div class="fq-stat-val" id="fq-dash-level">Lvl 1</div>
+                    <div class="fq-stat-lbl">Level Status</div>
+                  </div>
+                </div>
+                <div class="fq-stat-card">
+                  <div class="fq-stat-icon" style="color: var(--fq-amber); background: rgba(245,158,11,0.15);"><i class="fas fa-medal"></i></div>
+                  <div>
+                    <div class="fq-stat-val" id="fq-dash-badges">0</div>
+                    <div class="fq-stat-lbl">Badges Opened</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/game-map'"><i class="fas fa-compass"></i> GAME MAP</button>
+                <button class="fq-btn fq-btn-outline" onclick="alert('📚 LEARNING MATERIAL:\n\n1. Besaran & Satuan SI\n2. Pengukuran & Alat Ukur\n3. Analisis Dimensi Persamaan')"><i class="fas fa-graduation-cap"></i> LEARN</button>
+                <button class="fq-btn fq-btn-outline" onclick="alert('🏆 BADGES:\n\n• BESARAN HUNTER [LOCKED]\n• UNIT MASTER [LOCKED]\n• SI EXPLORER [LOCKED]\n• DIMENSION DETECTIVE [LOCKED]\n• PHYSICS MASTER [LOCKED]')"><i class="fas fa-award"></i> BADGES</button>
+                <button class="fq-btn fq-btn-outline" onclick="alert('📊 LEADERBOARD:\n\n1. Ahmad Rizky - 1250 PTS\n2. Budi Santoso - 1100 PTS\n3. Citra Dewi - 950 PTS')"><i class="fas fa-list-ol"></i> LEADERBOARD</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. GAME MAP VIEW -->
+          <div id="fq-view-game-map" class="fq-view hidden">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h2 style="font-size: 2rem; font-weight: 900; color: #fff; margin-bottom: 4px;">FIVIA QUEST MAP</h2>
+              <p style="color: var(--fq-text-muted); font-size: 0.9rem;">Selesaikan setiap misi untuk membuka level berikutnya</p>
+            </div>
+
+            <div class="fq-map-container">
+              <!-- COMMAND CENTER -->
+              <div style="background: rgba(139, 92, 246, 0.15); border: 1.5px solid var(--fq-violet); border-radius: 16px; padding: 16px 24px; text-align: center; color: var(--fq-violet); font-weight: 800; font-size: 1.1rem; width: 100%; box-sizing: border-box;">
+                <i class="fas fa-terminal"></i> COMMAND CENTER &bull; LAB 2045
+              </div>
+
+              <div class="fq-map-arrow">&darr;</div>
+
+              <!-- LEVEL 01 -->
+              <div id="fq-map-level-1" class="fq-map-node available">
+                <div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: var(--fq-cyan); letter-spacing: 1px;">LEVEL 01 &bull; AVAILABLE</span>
+                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">BESARAN HUNTER</h3>
+                  <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Drag and Drop: Kelompokkan Besaran Pokok vs Besaran Turunan</p>
+                </div>
+                <button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 8px 16px; font-size: 0.85rem;"><i class="fas fa-play"></i> MAIN</button>
+              </div>
+
+              <div class="fq-map-arrow">&darr;</div>
+
+              <!-- LEVEL 02 -->
+              <div id="fq-map-level-2" class="fq-map-node locked">
+                <div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: var(--fq-rose); letter-spacing: 1px;">LEVEL 02 &bull; LOCKED 🔒</span>
+                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">UNIT MASTER</h3>
+                  <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Touch Matching: Pasangkan Besaran dengan Satuan SI yang tepat</p>
+                </div>
+                <span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>
+              </div>
+
+              <div class="fq-map-arrow">&darr;</div>
+
+              <!-- LEVEL 03 -->
+              <div id="fq-map-level-3" class="fq-map-node locked">
+                <div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: var(--fq-rose); letter-spacing: 1px;">LEVEL 03 &bull; LOCKED 🔒</span>
+                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">SI EXPLORER</h3>
+                  <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Virtual Lab: Gunakan instrumen penggaris, neraca, stopwatch, & termometer</p>
+                </div>
+                <span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>
+              </div>
+
+              <div class="fq-map-arrow">&darr;</div>
+
+              <!-- LEVEL 04 -->
+              <div id="fq-map-level-4" class="fq-map-node locked">
+                <div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: var(--fq-rose); letter-spacing: 1px;">LEVEL 04 &bull; LOCKED 🔒</span>
+                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">DIMENSION DETECTIVE</h3>
+                  <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Dimension Puzzle: Susun simbol dimensi [M], [L], [T] untuk besaran turunan</p>
+                </div>
+                <span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>
+              </div>
+
+              <div class="fq-map-arrow">&darr;</div>
+
+              <!-- LEVEL 05 -->
+              <div id="fq-map-level-5" class="fq-map-node locked">
+                <div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: var(--fq-rose); letter-spacing: 1px;">LEVEL 05 &bull; LOCKED 🔒</span>
+                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 4px 0;">DIMENSION BOSS</h3>
+                  <p style="font-size: 0.82rem; color: var(--fq-text-muted); margin: 0;">Boss Battle: Analisis dimensi persamaan Fisika dan temukan error</p>
+                </div>
+                <span style="color: var(--fq-text-muted); font-size: 0.85rem;"><i class="fas fa-lock"></i> Terkunci</span>
+              </div>
+
+              <div style="margin-top: 16px;">
+                <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/student-dashboard'"><i class="fas fa-arrow-left"></i> KEMBALI KE DASHBOARD</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4B. LEVEL 01 BESARAN HUNTER GAMEPLAY VIEW -->
+          <div id="fq-view-besaran-hunter" class="fq-view hidden">
+            <div id="fq-besaran-board-container" style="max-width: 960px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4C. LEVEL 02 UNIT MASTER GAMEPLAY VIEW -->
+          <div id="fq-view-unit-master" class="fq-view hidden">
+            <div id="fq-unit-board-container" style="max-width: 960px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4D. LEVEL 03 SI EXPLORER GAMEPLAY VIEW -->
+          <div id="fq-view-si-explorer" class="fq-view hidden">
+            <div id="fq-si-board-container" style="max-width: 960px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4E. LEVEL 04 DIMENSION DETECTIVE GAMEPLAY VIEW -->
+          <div id="fq-view-dimension-detective" class="fq-view hidden">
+            <div id="fq-dd-board-container" style="max-width: 960px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4F. LEVEL 05 DIMENSION BOSS GAMEPLAY VIEW -->
+          <div id="fq-view-dimension-boss" class="fq-view hidden">
+            <div id="fq-db-board-container" style="max-width: 960px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4G. PHASE 4: MASTERY ASSESSMENT VIEW -->
+          <div id="fq-view-mastery-assessment" class="fq-view hidden">
+            <div id="fq-ass-board-container" style="max-width: 960px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4H. PHASE 4: TEACHER DASHBOARD VIEW -->
+          <div id="fq-view-teacher-dashboard" class="fq-view hidden">
+            <div style="max-width: 1100px; margin: 0 auto;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                <div>
+                  <span class="fq-badge-pill"><i class="fas fa-chart-line"></i> TEACHER ANALYTICS ENGINE</span>
+                  <h1 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 4px 0;">FIVIA TEACHER ANALYTICS</h1>
+                  <p style="color: var(--fq-text-muted); margin: 0;">Pantau perkembangan belajar siswa, statistik akurasi, dan klasifikasi mastery secara real-time.</p>
+                </div>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                  <button class="fq-btn fq-btn-cyan" onclick="window.FIVIAQuest.exportCSV()"><i class="fas fa-file-csv"></i> EXPORT CSV</button>
+                  <button class="fq-btn fq-btn-violet" onclick="window.FIVIAQuest.exportJSON()"><i class="fas fa-file-code"></i> EXPORT JSON</button>
+                  <button class="fq-btn fq-btn-amber" onclick="window.FIVIAQuest.printReport()"><i class="fas fa-print"></i> CETAK LAPORAN</button>
+                  <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/class-session'"><i class="fas fa-chalkboard-teacher"></i> KELOLA KELAS</button>
+                </div>
+              </div>
+
+              <!-- KPI Summary Cards -->
+              <div class="fq-kpi-grid">
+                <div class="fq-kpi-card">
+                  <div class="fq-kpi-icon"><i class="fas fa-users"></i></div>
+                  <div>
+                    <div class="fq-kpi-val" id="fq-kpi-total-students">0</div>
+                    <div class="fq-kpi-label">TOTAL SISWA</div>
+                  </div>
+                </div>
+                <div class="fq-kpi-card">
+                  <div class="fq-kpi-icon" style="color: var(--fq-violet);"><i class="fas fa-gamepad"></i></div>
+                  <div>
+                    <div class="fq-kpi-val" id="fq-kpi-played-students">0</div>
+                    <div class="fq-kpi-label">SUDAH BERMAIN</div>
+                  </div>
+                </div>
+                <div class="fq-kpi-card">
+                  <div class="fq-kpi-icon" style="color: var(--fq-emerald);"><i class="fas fa-bullseye"></i></div>
+                  <div>
+                    <div class="fq-kpi-val" id="fq-kpi-avg-accuracy">0%</div>
+                    <div class="fq-kpi-label">RATA-RATA AKURASI</div>
+                  </div>
+                </div>
+                <div class="fq-kpi-card">
+                  <div class="fq-kpi-icon" style="color: var(--fq-amber);"><i class="fas fa-crown"></i></div>
+                  <div>
+                    <div class="fq-kpi-val" id="fq-kpi-master-count">0</div>
+                    <div class="fq-kpi-label">SISWA MASTER</div>
+                  </div>
+                </div>
+                <div class="fq-kpi-card">
+                  <div class="fq-kpi-icon" style="color: var(--fq-rose);"><i class="fas fa-exclamation-triangle"></i></div>
+                  <div>
+                    <div class="fq-kpi-val" id="fq-kpi-remediation-count">0</div>
+                    <div class="fq-kpi-label">PERLU REMEDIASI</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Student Table -->
+              <div class="fq-table-container">
+                <table class="fq-student-table">
+                  <thead>
+                    <tr>
+                      <th>NO</th>
+                      <th>NAMA SISWA</th>
+                      <th>KELAS</th>
+                      <th>STATUS MASTERY</th>
+                      <th>AKURASI</th>
+                      <th>SKOR GAME</th>
+                      <th>XP</th>
+                      <th>BADGE</th>
+                      <th>AKSI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fq-teacher-student-table-body">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4I. PHASE 4: CLASSROOM SESSION MANAGER VIEW -->
+          <div id="fq-view-class-session" class="fq-view hidden">
+            <div style="max-width: 850px; margin: 0 auto; text-align: center;">
+              <span class="fq-badge-pill"><i class="fas fa-layer-group"></i> SESSION MANAGER</span>
+              <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 4px 0 16px 0;">MANAJEMEN SESI KELAS</h2>
+              
+              <div style="background: rgba(15, 23, 42, 0.9); border: 2px solid var(--fq-cyan); border-radius: 24px; padding: 32px; margin-bottom: 24px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--fq-cyan); letter-spacing: 2px;">KODE SESI KELAS AKTIF</div>
+                <div style="font-size: 3.5rem; font-weight: 900; color: var(--fq-amber); letter-spacing: 4px; margin: 10px 0;" id="fq-session-code-display">FIVIA-2045</div>
+                <div style="color: #fff; font-size: 1.1rem; font-weight: 700;" id="fq-session-name-display">Sesi Pembelajaran Fisika</div>
+                <div style="color: var(--fq-text-muted); font-size: 0.9rem;" id="fq-session-student-count">0 Siswa Bergabung</div>
+              </div>
+
+              <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--fq-border); border-radius: 20px; padding: 28px; text-align: left;">
+                <h3 style="color: #fff; font-size: 1.2rem; margin: 0 0 16px 0;">Buat Sesi Kelas Baru</h3>
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Nama Sesi</label>
+                  <input type="text" id="fq-input-session-name" class="fq-input" value="Sesi Fisika Kelas X">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="fq-form-group">
+                    <label class="fq-form-label">Kelas</label>
+                    <input type="text" id="fq-input-session-class" class="fq-input" value="X-1">
+                  </div>
+                  <div class="fq-form-group">
+                    <label class="fq-form-label">Nama Guru</label>
+                    <input type="text" id="fq-input-session-teacher" class="fq-input" value="Guru Fisika">
+                  </div>
+                </div>
+                <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; margin-top: 10px;" onclick="window.FIVIAQuest.createNewClassSessionFromUI()"><i class="fas fa-plus-circle"></i> BUAT KODE SESI BARU</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4J. PHASE 4: STUDENT JOIN CLASS VIEW -->
+          <div id="fq-view-join-session" class="fq-view hidden">
+            <div style="max-width: 500px; margin: 0 auto; text-align: center;">
+              <span class="fq-badge-pill"><i class="fas fa-door-open"></i> MASUK KELAS</span>
+              <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 4px 0 20px 0;">GABUNG SESI KELAS</h2>
+
+              <div style="background: rgba(15, 23, 42, 0.95); border: 2px solid var(--fq-cyan); border-radius: 24px; padding: 32px; text-align: left;">
+                <form onsubmit="window.FIVIAQuest.handleJoinSessionSubmit(event)">
+                  <div class="fq-form-group">
+                    <label class="fq-form-label">Kode Sesi Kelas</label>
+                    <input type="text" id="fq-join-input-code" class="fq-input" placeholder="Contoh: FIVIA-2045" style="text-transform: uppercase; font-weight: 800; letter-spacing: 2px;" required>
+                  </div>
+                  <div class="fq-form-group">
+                    <label class="fq-form-label">Nama Lengkap Siswa</label>
+                    <input type="text" id="fq-join-input-name" class="fq-input" placeholder="Masukkan nama..." required>
+                  </div>
+                  <div class="fq-form-group">
+                    <label class="fq-form-label">Kelas</label>
+                    <input type="text" id="fq-join-input-class" class="fq-input" placeholder="Contoh: X-1" required>
+                  </div>
+                  <button type="submit" class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; margin-top: 10px;"><i class="fas fa-sign-in-alt"></i> MASUK KELAS</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4K. PHASE 5: VIRTUAL PHYSICS LAB SELECTION VIEW -->
+          <div id="fq-view-virtual-lab" class="fq-view hidden">
+            <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
+              <span class="fq-badge-pill"><i class="fas fa-flask"></i> LABORATURIUM FISIKA VIRTUAL</span>
+              <h1 style="font-size: 2.5rem; font-weight: 900; color: #fff; margin: 4px 0;">FIVIA VIRTUAL PHYSICS LAB</h1>
+              <p style="color: var(--fq-text-muted); font-size: 1rem; max-width: 700px; margin: 0 auto 24px auto;">
+                Eksperimen interaktif fisika virtual berstandar inkuisisi ilmiah. Amati, prediksikan, dan buktikan teori fisika melalui pengamatan data nyata.
+              </p>
+              <div id="fq-virtual-lab-grid-container" class="fq-lab-grid">
+                <!-- Dynamically rendered via fivia-engine.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 4L. PHASE 5: LAB EXPERIMENT SIMULATION VIEW -->
+          <div id="fq-view-lab-experiment" class="fq-view hidden">
+            <div id="fq-lab-experiment-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-lab-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4M. PHASE 5: DIGITAL LKPD WORKSHEET VIEW -->
+          <div id="fq-view-lab-lkpd" class="fq-view hidden">
+            <div id="fq-lab-lkpd-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-lab-lkpd.js -->
+            </div>
+          </div>
+
+          <!-- 4N. PHASE 6: PROJECT MISSION SELECTION VIEW -->
+          <div id="fq-view-project-mission" class="fq-view hidden">
+            <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
+              <span class="fq-badge-pill"><i class="fas fa-rocket"></i> PROYEK FISIKA REAL-WORLD</span>
+              <h1 style="font-size: 2.5rem; font-weight: 900; color: #fff; margin: 4px 0;">FIVIA PROJECT MISSION</h1>
+              <p style="color: var(--fq-text-muted); font-size: 1rem; max-width: 700px; margin: 0 auto 24px auto;">
+                Dari simulasi ke pemecahan masalah dunia nyata. Aplikasikan hukum fisika untuk merancang investigasi ilmiah nyata.
+              </p>
+              <div id="fq-project-mission-grid-container" class="fq-project-grid">
+                <!-- Dynamically rendered via fivia-engine.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 4O. PHASE 6: PROJECT MISSION WORKFLOW & DETAIL VIEW -->
+          <div id="fq-view-project-detail" class="fq-view hidden">
+            <div id="fq-project-mission-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-project-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4P. PHASE 6: FIVIA AI TUTOR CHAT VIEW -->
+          <div id="fq-view-ai-tutor" class="fq-view hidden">
+            <div style="max-width: 860px; margin: 0 auto; background: rgba(15,23,42,0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 28px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 16px; margin-bottom: 20px;">
+                <div>
+                  <span class="fq-badge-pill"><i class="fas fa-robot"></i> AI LEARNING COMPANION</span>
+                  <h1 style="font-size: 2rem; font-weight: 900; color: #fff; margin: 4px 0;">FIVIA AI TUTOR</h1>
+                  <div style="color: var(--fq-cyan); font-weight: 700;">Pendamping Belajar Sokratik Interaktif Anda</div>
+                </div>
+                <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/student-dashboard'"><i class="fas fa-arrow-left"></i> KEMBALI</button>
+              </div>
+
+              <!-- Quick Prompts Buttons -->
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                <button class="fq-btn fq-btn-outline" style="min-height: 40px; padding: 6px 12px; font-size: 0.8rem;" onclick="window.FIVIAAITutor.sendMessage('Apa konsep pentingnya?')">Apa konsep pentingnya?</button>
+                <button class="fq-btn fq-btn-outline" style="min-height: 40px; padding: 6px 12px; font-size: 0.8rem;" onclick="window.FIVIAAITutor.sendMessage('Beri saya petunjuk.')">Beri saya petunjuk.</button>
+                <button class="fq-btn fq-btn-outline" style="min-height: 40px; padding: 6px 12px; font-size: 0.8rem;" onclick="window.FIVIAAITutor.sendMessage('Jelaskan dengan sederhana.')">Jelaskan dengan sederhana.</button>
+                <button class="fq-btn fq-btn-outline" style="min-height: 40px; padding: 6px 12px; font-size: 0.8rem;" onclick="window.FIVIAAITutor.sendMessage('Tunjukkan contoh.')">Tunjukkan contoh.</button>
+              </div>
+
+              <!-- Messages Container -->
+              <div id="fq-ai-chat-messages" style="height: 380px; overflow-y: auto; background: #030712; border: 1.5px solid var(--fq-border-cyan); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+                <!-- Chat messages rendered via fivia-ai-tutor.js -->
+              </div>
+
+              <!-- Input Form -->
+              <form onsubmit="event.preventDefault(); const inp = document.getElementById('fq-ai-input'); window.FIVIAAITutor.sendMessage(inp.value); inp.value='';">
+                <div style="display: flex; gap: 12px;">
+                  <input type="text" id="fq-ai-input" class="fq-input" placeholder="Ketik pertanyaan fisika Anda di sini..." required style="min-height: 52px;">
+                  <button type="submit" class="fq-btn fq-btn-cyan" style="min-height: 52px; padding: 0 28px;"><i class="fas fa-paper-plane"></i> KIRIM</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- 4Q. PHASE 6: ADAPTIVE PERSONALIZED LEARNING PATH VIEW -->
+          <div id="fq-view-learning-path" class="fq-view hidden">
+            <div id="fq-learning-path-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-adaptive.js -->
+            </div>
+          </div>
+
+          <!-- 4R. PHASE 7: TEACHER CLASSROOM MANAGEMENT VIEW -->
+          <div id="fq-view-classroom" class="fq-view hidden">
+            <div id="fq-classroom-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4S. PHASE 7: STUDENT MY CLASSROOM VIEW -->
+          <div id="fq-view-my-classroom" class="fq-view hidden">
+            <div id="fq-my-classroom-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4T. PHASE 7: ASSIGNMENT MANAGER VIEW -->
+          <div id="fq-view-assignment-manager" class="fq-view hidden">
+            <div id="fq-assignment-manager-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4U. PHASE 7: LIVE CLASSROOM MONITOR VIEW -->
+          <div id="fq-view-live-monitor" class="fq-view hidden">
+            <div id="fq-live-monitor-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4V. PHASE 7: TEACHER INTERVENTION VIEW -->
+          <div id="fq-view-intervention" class="fq-view hidden">
+            <div id="fq-intervention-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4W. PHASE 7: CLASSROOM ACTIVITY LAUNCHER VIEW -->
+          <div id="fq-view-activity-launcher" class="fq-view hidden">
+            <div id="fq-activity-launcher-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4X. PHASE 8: WELCOME ACCESS SCREEN -->
+          <div id="fq-view-access" class="fq-view hidden">
+            <div style="max-width: 900px; margin: 0 auto; text-align: center;">
+              <span class="fq-badge-pill"><i class="fas fa-atom"></i> PLATFORM LEARNING FISIKA INTERAKTIF</span>
+              <h1 style="font-size: 3rem; font-weight: 900; color: #fff; margin: 8px 0 4px 0;">FIVIA PHYSICS QUEST</h1>
+              <div style="font-size: 1.2rem; font-weight: 700; color: var(--fq-cyan); margin-bottom: 12px;">Fisika Virtual Aplikatif &bull; Edisi Kelas Privat</div>
+              <p style="color: var(--fq-text-muted); font-size: 1rem; max-width: 700px; margin: 0 auto 36px auto;">
+                Platform pembelajaran Fisika interaktif untuk belajar melalui permainan, eksperimen, proyek, dan tantangan.
+              </p>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                <div class="fq-access-card" onclick="window.location.hash='#quest/teacher-pin'">
+                  <div style="font-size: 4rem; color: var(--fq-amber); margin-bottom: 14px;"><i class="fas fa-chalkboard-teacher"></i></div>
+                  <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 0 0 8px 0;">👨‍🏫 GURU</h2>
+                  <p style="color: var(--fq-text-muted); font-size: 0.9rem; margin-bottom: 20px;">Akses Teacher Command Center, pemantauan real-time, kelola kelas & penugasan.</p>
+                  <button class="fq-btn fq-btn-amber fq-btn-lg" style="width: 100%;"><i class="fas fa-key"></i> MASUK MODE GURU</button>
+                </div>
+
+                <div class="fq-access-card" onclick="window.location.hash='#quest/student-access'">
+                  <div style="font-size: 4rem; color: var(--fq-cyan); margin-bottom: 14px;"><i class="fas fa-user-graduate"></i></div>
+                  <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 0 0 8px 0;">👨‍🎓 SISWA</h2>
+                  <p style="color: var(--fq-text-muted); font-size: 0.9rem; margin-bottom: 20px;">Akses Quest, Virtual Lab, Proyek, AI Tutor, dan Dashboard Pembelajaran Saya.</p>
+                  <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%;"><i class="fas fa-sign-in-alt"></i> MASUK MODE SISWA</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4Y. PHASE 8: TEACHER PIN VERIFICATION VIEW -->
+          <div id="fq-view-teacher-pin" class="fq-view hidden">
+            <div style="max-width: 500px; margin: 0 auto; background: rgba(15, 23, 42, 0.95); border: 2.5px solid var(--fq-amber); border-radius: 28px; padding: 36px; text-align: center; box-shadow: 0 0 50px rgba(245, 158, 11, 0.3);">
+              <div style="font-size: 3.5rem; color: var(--fq-amber); margin-bottom: 10px;"><i class="fas fa-user-shield"></i></div>
+              <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 0 0 6px 0;">AKSES GURU PRIVAT</h2>
+              <p style="color: var(--fq-text-muted); font-size: 0.9rem; margin-bottom: 24px;">Masukkan PIN Guru untuk mengakses Teacher Command Center (Default: 123456).</p>
+
+              <form onsubmit="event.preventDefault(); const p = document.getElementById('fq-pin-input').value; if(window.FIVIAPrivateAccess.verifyTeacherPin(p)) { window.FIVIAPrivateAccess.setActiveMode('TEACHER'); window.location.hash='#quest/teacher-dashboard'; } else { alert('❌ PIN GURU SALAH!'); }">
+                <div class="fq-form-group">
+                  <input type="password" id="fq-pin-input" class="fq-input" placeholder="Masukkan PIN 6 Angka" required style="text-align: center; font-size: 1.4rem; letter-spacing: 6px;" autofocus>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                  <button type="submit" class="fq-btn fq-btn-amber fq-btn-lg" style="flex: 1;"><i class="fas fa-unlock-alt"></i> VERIFIKASI PIN</button>
+                  <button type="button" class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/access'"><i class="fas fa-arrow-left"></i> KEMBALI</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- 4Z. PHASE 8: STUDENT ACCESS & IDENTITY VIEW -->
+          <div id="fq-view-student-access" class="fq-view hidden">
+            <div style="max-width: 560px; margin: 0 auto; background: rgba(15, 23, 42, 0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <span class="fq-badge-pill"><i class="fas fa-id-card"></i> IDENTITAS SISWA</span>
+                <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0;">MASUK KELAS SISWA</h2>
+                <p style="color: var(--fq-text-muted); font-size: 0.88rem;">Masukkan kode kelas dan identitas nama Anda untuk memulai.</p>
+              </div>
+
+              <form onsubmit="event.preventDefault(); const n = document.getElementById('fq-std-name').value; const c = document.getElementById('fq-std-class').value; const cc = document.getElementById('fq-std-code').value; window.FIVIAStudentSession.startStudentSession(n, c, cc); window.location.hash='#quest/student-dashboard';">
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Kode Kelas (Diberikan Guru)</label>
+                  <input type="text" id="fq-std-code" class="fq-input" value="FIVIA-XIF-2045" required style="font-weight: bold; color: var(--fq-amber);">
+                </div>
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Nama Lengkap Siswa</label>
+                  <input type="text" id="fq-std-name" class="fq-input" placeholder="Contoh: Syarif Hidayat" required>
+                </div>
+                <div class="fq-form-group">
+                  <label class="fq-form-label">Kelas</label>
+                  <input type="text" id="fq-std-class" class="fq-input" value="XI Fase F — Fisika" required>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 28px;">
+                  <button type="submit" class="fq-btn fq-btn-cyan fq-btn-lg" style="flex: 1;"><i class="fas fa-rocket"></i> 🚀 MASUK KE FIVIA</button>
+                  <button type="button" class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/access'"><i class="fas fa-arrow-left"></i> KEMBALI</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- 4ZA. PHASE 8: STUDENT DASHBOARD VIEW -->
+          <div id="fq-view-student-dashboard" class="fq-view hidden">
+            <div id="fq-student-dashboard-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-engine.js -->
+            </div>
+          </div>
+
+          <!-- 4ZB. PHASE 8: BACKUP & RESTORE VIEW -->
+          <div id="fq-view-backup-restore" class="fq-view hidden">
+            <div style="max-width: 800px; margin: 0 auto; background: rgba(15, 23, 42, 0.95); border: 2.5px solid var(--fq-cyan); border-radius: 28px; padding: 36px; text-align: left;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 16px; margin-bottom: 24px;">
+                <div>
+                  <span class="fq-badge-pill"><i class="fas fa-database"></i> DATA MANAGEMENT</span>
+                  <h1 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 4px 0;">BACKUP & RESTORE DATA</h1>
+                </div>
+                <button class="fq-btn fq-btn-outline" onclick="window.location.hash='#quest/teacher-dashboard'"><i class="fas fa-arrow-left"></i> KEMBALI</button>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 20px; padding: 24px;">
+                  <h3 style="color: var(--fq-cyan); margin: 0 0 10px 0;"><i class="fas fa-download"></i> EXPORT BACKUP JSON</h3>
+                  <p style="color: var(--fq-text-muted); font-size: 0.88rem; margin-bottom: 18px;">Unduh seluruh data kelas, profil siswa, penugasan, dan intervensi ke file JSON lokal.</p>
+                  <button class="fq-btn fq-btn-cyan" style="width: 100%;" onclick="window.FIVIAPrivateBackup.exportClassroomBackup()"><i class="fas fa-download"></i> 📥 UNDUH BACKUP JSON</button>
+                </div>
+
+                <div style="background: rgba(30,41,59,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 20px; padding: 24px;">
+                  <h3 style="color: var(--fq-emerald); margin: 0 0 10px 0;"><i class="fas fa-upload"></i> RESTORE BACKUP JSON</h3>
+                  <p style="color: var(--fq-text-muted); font-size: 0.88rem; margin-bottom: 18px;">Pulihkan data kelas dari file JSON backup sebelumnya.</p>
+                  <input type="file" id="fq-restore-file-input" accept=".json" style="display: none;" onchange="const f = this.files[0]; if(f){ const r = new FileReader(); r.onload = function(e){ const res = window.FIVIAPrivateBackup.restoreClassroomBackup(e.target.result); alert(res.message); if(res.success) window.location.reload(); }; r.readAsText(f); }">
+                  <button class="fq-btn fq-btn-emerald" style="width: 100%;" onclick="document.getElementById('fq-restore-file-input').click()"><i class="fas fa-upload"></i> 📤 UNGGAH & RESTORE</button>
+                </div>
+              </div>
+
+              <div style="margin-top: 28px; background: rgba(244,63,94,0.1); border: 1.5px solid var(--fq-rose); border-radius: 20px; padding: 24px;">
+                <h3 style="color: #fda4af; margin: 0 0 8px 0;"><i class="fas fa-exclamation-triangle"></i> RESET DATA DESTRUKTIF (GURU SAJA)</h3>
+                <p style="color: var(--fq-text-muted); font-size: 0.88rem; margin-bottom: 16px;">Hapus seluruh data siswa dan kelas untuk memulai tahun ajaran baru.</p>
+                <button class="fq-btn fq-btn-danger" onclick="window.FIVIAPrivateBackup.resetClassroomData()"><i class="fas fa-trash-alt"></i> 🗑️ RESET ENTIRE CLASSROOM DATA</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4ZC. PHASE 9: TEACHER HOME VIEW -->
+          <div id="fq-view-teacher-home" class="fq-view hidden">
+            <div id="fq-teacher-home-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-teacher-home.js -->
+            </div>
+          </div>
+
+          <!-- 4ZD. PHASE 9: CLASSROOM TODAY VIEW -->
+          <div id="fq-view-classroom-today" class="fq-view hidden">
+            <div id="fq-classroom-today-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-today.js -->
+            </div>
+          </div>
+
+          <!-- 4ZE. PHASE 9: ATTENDANCE VIEW -->
+          <div id="fq-view-attendance" class="fq-view hidden">
+            <div id="fq-attendance-container" style="max-width: 1000px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-attendance.js -->
+            </div>
+          </div>
+
+          <!-- 4ZF. PHASE 9: DAILY SESSION VIEW -->
+          <div id="fq-view-daily-session" class="fq-view hidden">
+            <div id="fq-daily-session-container" style="max-width: 900px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-daily-session.js -->
+            </div>
+          </div>
+
+          <!-- 4ZG. PHASE 9: SESSION SUMMARY VIEW -->
+          <div id="fq-view-session-summary" class="fq-view hidden">
+            <div id="fq-session-summary-container" style="max-width: 900px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-session-summary.js -->
+            </div>
+          </div>
+
+          <!-- 4ZH. PHASE 9: TEACHER NOTES VIEW -->
+          <div id="fq-view-teacher-notes" class="fq-view hidden">
+            <div id="fq-teacher-notes-container" style="max-width: 900px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-teacher-notes.js -->
+            </div>
+          </div>
+
+          <!-- 4ZI. PHASE 9: PROJECTOR VIEW -->
+          <div id="fq-view-projector" class="fq-view hidden">
+            <div id="fq-projector-container" style="max-width: 1100px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-projector.js -->
+            </div>
+          </div>
+
+          <!-- 4ZJ. PHASE 9: DATA HEALTH VIEW -->
+          <div id="fq-view-data-health" class="fq-view hidden">
+            <div id="fq-data-health-container" style="max-width: 900px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-data-health.js -->
+            </div>
+          </div>
+
+          <!-- 4ZK. PHASE 10: QUICK START VIEW -->
+          <div id="fq-view-quick-start" class="fq-view hidden">
+            <div id="fq-quick-start-container" style="max-width: 900px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-quick-start.js -->
+            </div>
+          </div>
+
+          <!-- 4ZL. PHASE 10: ACTIVE SESSION VIEW -->
+          <div id="fq-view-active-session" class="fq-view hidden">
+            <div id="fq-active-session-container" style="max-width: 950px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-active-session.js -->
+            </div>
+          </div>
+
+          <!-- 4ZM. PHASE 10: SYNC STATUS VIEW -->
+          <div id="fq-view-sync-status" class="fq-view hidden">
+            <div id="fq-sync-status-container" style="max-width: 900px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-sync-status.js -->
+            </div>
+          </div>
+
+          <!-- 4ZN. PHASE 10: BACKUP CENTER VIEW -->
+          <div id="fq-view-backup-center" class="fq-view hidden">
+            <div id="fq-backup-center-container" style="max-width: 900px; margin: 0 auto;">
+              <!-- Dynamically rendered via fivia-classroom-flow.js -->
+            </div>
+          </div>
+
+          <!-- 5. CLASSROOM SETUP VIEW -->
+          <div id="fq-view-classroom-setup" class="fq-view hidden">
+            <div style="max-width: 1000px; margin: 0 auto;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 0;">CLASSROOM ARENA SETUP</h2>
+                  <p style="color: var(--fq-text-muted); font-size: 0.88rem; margin-top: 4px;">Konfigurasi tim, daftar siswa, dan timer permainan kelas</p>
+                </div>
+                <button class="fq-btn fq-btn-violet fq-btn-lg" onclick="window.FIVIAQuest.saveSettingsFromUI(); window.location.hash='#quest/arena-preview'"><i class="fas fa-play"></i> BUKA ARENA KELAS</button>
+              </div>
+
+              <!-- Controls Grid -->
+              <div style="background: var(--fq-bg-card); border: 1px solid var(--fq-border); border-radius: 18px; padding: 20px; margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div>
+                  <label class="fq-form-label">Jumlah Tim (2 - 8)</label>
+                  <select id="fq-select-team-count" class="fq-select">
+                    <option value="2">2 Tim</option>
+                    <option value="3">3 Tim</option>
+                    <option value="4" selected>4 Tim (Default)</option>
+                    <option value="5">5 Tim</option>
+                    <option value="6">6 Tim</option>
+                    <option value="7">7 Tim</option>
+                    <option value="8">8 Tim</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="fq-form-label">Think Time (Detik)</label>
+                  <input type="number" id="fq-input-think-time" class="fq-input" value="10" min="5" max="60">
+                </div>
+                <div>
+                  <label class="fq-form-label">Discuss Time (Detik)</label>
+                  <input type="number" id="fq-input-discuss-time" class="fq-input" value="20" min="5" max="120">
+                </div>
+                <div>
+                  <label class="fq-form-label">Play Time (Detik)</label>
+                  <input type="number" id="fq-input-play-time" class="fq-input" value="30" min="10" max="180">
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 24px;">
+                  <input type="checkbox" id="fq-toggle-sound" checked style="width: 20px; height: 20px; cursor: pointer;">
+                  <label for="fq-toggle-sound" style="color: #fff; font-weight: 600; cursor: pointer; font-size: 0.9rem;">Efek Suara ON</label>
+                </div>
+              </div>
+
+              <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--fq-cyan); margin-bottom: 14px;"><i class="fas fa-users"></i> MANAJEMEN TIM & SISWA</h3>
+              <div id="fq-team-cards-container" class="fq-arena-setup-grid">
+                <!-- Dynamically populated via fivia-engine.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. ARENA PREVIEW / ACTIVE ARENA VIEW -->
+          <div id="fq-view-arena-preview" class="fq-view hidden">
+            <!-- Teacher Control Bar -->
+            <div class="fq-teacher-bar">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 0.85rem; font-weight: 800; color: var(--fq-cyan); letter-spacing: 1px;"><i class="fas fa-user-shield"></i> PANEL KONTROL GURU:</span>
+                <button class="fq-btn fq-btn-outline" style="min-height: 38px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAQuest.togglePauseGame()"><i class="fas fa-pause"></i> PAUSE</button>
+                <button class="fq-btn fq-btn-amber" style="min-height: 38px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAQuest.showHintModal()"><i class="fas fa-lightbulb"></i> HINT</button>
+                <button class="fq-btn fq-btn-emerald" style="min-height: 38px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAQuest.openBonusScoreModal()"><i class="fas fa-plus-circle"></i> BONUS SKOR</button>
+                <button class="fq-btn fq-btn-cyan" style="min-height: 38px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAQuest.pickRandomPlayer()"><i class="fas fa-crosshairs"></i> PILIH PEMAIN</button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="fq-btn fq-btn-outline" style="min-height: 38px; padding: 6px 12px; font-size: 0.85rem;" onclick="window.location.hash='#quest/classroom-setup'"><i class="fas fa-cog"></i> SETUP TIM</button>
+                <button class="fq-btn fq-btn-danger" style="min-height: 38px; padding: 6px 12px; font-size: 0.85rem;" onclick="window.FIVIAQuest.resetArena()"><i class="fas fa-redo"></i> RESET ARENA</button>
+              </div>
+            </div>
+
+            <!-- Current Player & Participation Bar -->
+            <div style="background: var(--fq-bg-card); border: 1.5px solid var(--fq-border-cyan); border-radius: 20px; padding: 18px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--fq-cyan); letter-spacing: 1px;">PEMAIN TERPILIH SAAT INI (CURRENT PLAYER):</span>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 2px;">
+                  <span id="fq-arena-player-name" style="font-size: 1.5rem; font-weight: 900; color: #fff;">BELUM DIPILIH</span>
+                  <span id="fq-arena-player-team" class="fq-badge-pill" style="margin-bottom: 0;">Tekan Pilih Pemain untuk Memulai</span>
+                </div>
+              </div>
+              
+              <!-- Player Participation Summary -->
+              <div id="fq-participation-summary" class="fq-participation-box" style="margin-top: 0; min-width: 280px;">
+                <!-- Dynamically populated via fivia-engine.js -->
+              </div>
+            </div>
+
+            <!-- Main Dynamic Arena Game Display -->
+            <div id="fq-arena-main-box" style="margin-bottom: 24px;">
+              <!-- Dynamically populated via fivia-engine.js state machine -->
+            </div>
+
+            <!-- Leaderboard Display -->
+            <div class="fq-leaderboard-card">
+              <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 16px;"><i class="fas fa-trophy" style="color: var(--fq-amber);"></i> SKOR TIM REAL-TIME</h3>
+              <div id="fq-leaderboard-list">
+                <!-- Dynamically populated via fivia-engine.js -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- MODAL 1: RANDOM PLAYER SELECTION ANIMATED OVERLAY -->
+      <div id="fq-random-player-modal" class="fivia-quest-modal-overlay">
+        <div class="fivia-quest-modal-content">
+          <div style="font-size: 1rem; font-weight: 800; color: var(--fq-cyan); letter-spacing: 2px;">🎯 PILIH PEMAIN ROTASI</div>
+          <div id="fq-shuffle-name" class="fq-shuffle-box">MEMILIH...</div>
+          <div id="fq-shuffle-team" style="font-size: 1.2rem; font-weight: 800; color: var(--fq-amber);">MENGACAK PEMAIN...</div>
+        </div>
+      </div>
+
+      <!-- MODAL 2: PAUSE GAME OVERLAY -->
+      <div id="fq-pause-modal" class="fivia-quest-modal-overlay">
+        <div class="fivia-quest-modal-content" style="border-color: var(--fq-amber); box-shadow: 0 0 50px rgba(245,158,11,0.4);">
+          <div style="font-size: 3rem; margin-bottom: 8px;">⏸</div>
+          <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 0;">PERMAINAN DIPAUS (GAME PAUSED)</h2>
+          <p style="color: var(--fq-text-muted); font-size: 0.95rem; margin: 12px 0 24px 0;">Timer dan interaksi dibekukan oleh guru.</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button class="fq-btn fq-btn-cyan fq-btn-lg" onclick="window.FIVIAQuest.resumeGame()"><i class="fas fa-play"></i> RESUME (LANJUTKAN)</button>
+            <button class="fq-btn fq-btn-danger" onclick="window.FIVIAQuest.resetArena()"><i class="fas fa-sign-out-alt"></i> KELUAR RONDE</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL 3: HINT OVERLAY -->
+      <div id="fq-hint-modal" class="fivia-quest-modal-overlay">
+        <div class="fivia-quest-modal-content" style="border-color: var(--fq-amber); box-shadow: 0 0 40px rgba(245,158,11,0.4);">
+          <div style="font-size: 2.5rem; margin-bottom: 8px; color: var(--fq-amber);"><i class="fas fa-lightbulb"></i></div>
+          <h3 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin-bottom: 8px;">PETUNJUK (HINT)</h3>
+          <p id="fq-hint-text" style="color: var(--fq-text-main); font-size: 1.05rem; line-height: 1.5; margin: 16px 0; background: rgba(30,41,59,0.7); padding: 16px; border-radius: 14px;">
+            Perhatikan baik-baik konsep besaran dan satuan SI!
+          </p>
+          <button class="fq-btn fq-btn-outline" onclick="window.FIVIAQuest.closeHintModal()">TUTUP PETUNJUK</button>
+        </div>
+      </div>
+
+      <!-- MODAL 4: BONUS SCORE OVERRIDE -->
+      <div id="fq-bonus-modal" class="fivia-quest-modal-overlay">
+        <div class="fivia-quest-modal-content" style="border-color: var(--fq-emerald); box-shadow: 0 0 40px rgba(16,185,129,0.4);">
+          <div style="font-size: 2.5rem; margin-bottom: 8px; color: var(--fq-emerald);"><i class="fas fa-plus-circle"></i></div>
+          <h3 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin-bottom: 8px;">TAMBAH BONUS SKOR MANUAL</h3>
+          
+          <div class="fq-form-group" style="margin-top: 16px;">
+            <label class="fq-form-label">Pilih Tim Penerima Bonus</label>
+            <select id="fq-bonus-team-select" class="fq-select">
+              <!-- Dynamic -->
+            </select>
+          </div>
+
+          <div class="fq-form-group">
+            <label class="fq-form-label">Jumlah Poin Bonus</label>
+            <select id="fq-bonus-amount-select" class="fq-select">
+              <option value="50">+50 Poin (Speed Bonus)</option>
+              <option value="100" selected>+100 Poin (Jawaban Tepat)</option>
+              <option value="150">+150 Poin (Steal Bonus)</option>
+              <option value="200">+200 Poin (Analisis Dimensi Perfect)</option>
+              <option value="250">+250 Poin (Perfect Round Bonus)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button class="fq-btn fq-btn-outline" style="flex: 1;" onclick="window.FIVIAQuest.closeBonusModal()">BATAL</button>
+            <button class="fq-btn fq-btn-emerald" style="flex: 2;" onclick="window.FIVIAQuest.applyBonusScore()"><i class="fas fa-check"></i> BERIKAN BONUS</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL 5: BESARAN HUNTER CARD FEEDBACK -->
+      <div id="fq-bh-feedback-modal" class="fivia-quest-modal-overlay">
+        <div class="fivia-quest-modal-content" id="fq-bh-feedback-content">
+          <!-- Dynamically populated via fivia-engine.js -->
+        </div>
+      </div>
 
       <!-- 2. STUDENT DASHBOARD SECTION -->
       <section id="student-dashboard-section" class="spa-section dashboard-container hidden-section fade-in-section">
@@ -1030,6 +1954,62 @@
   <script src="js/quiz.js"></script>
   <script src="js/ai-tutor.js"></script>
   <script src="js/detektif.js"></script>
+  <!-- PHASE 4, 5, 6, 7 & 8 SCRIPTS -->
+  <script src="js/fivia-assessment.js"></script>
+  <script src="js/fivia-student.js"></script>
+  <script src="js/fivia-analytics.js"></script>
+  <script src="js/fivia-session.js"></script>
+  <script src="js/fivia-reports.js"></script>
+  <script src="js/fivia-virtual-lab.js"></script>
+  <script src="js/fivia-lab-engine.js"></script>
+  <script src="js/fivia-lab-analytics.js"></script>
+  <script src="js/fivia-lab-lkpd.js"></script>
+  <script src="js/fivia-lab-reports.js"></script>
+  <script src="js/fivia-projects.js"></script>
+  <script src="js/fivia-project-engine.js"></script>
+  <script src="js/fivia-ai-tutor.js"></script>
+  <script src="js/fivia-adaptive.js"></script>
+  <script src="js/fivia-project-reports.js"></script>
+  <script src="js/fivia-classroom.js"></script>
+  <script src="js/fivia-assignment.js"></script>
+  <script src="js/fivia-live-monitor.js"></script>
+  <script src="js/fivia-intervention.js"></script>
+  <script src="js/fivia-classroom-reports.js"></script>
+  <script src="js/fivia-classroom-engine.js"></script>
+  <script src="js/fivia-private-access.js"></script>
+  <script src="js/fivia-student-session.js"></script>
+  <script src="js/fivia-private-classroom.js"></script>
+  <script src="js/fivia-private-backup.js"></script>
+  <script src="js/fivia-teacher-home.js"></script>
+  <script src="js/fivia-classroom-today.js"></script>
+  <script src="js/fivia-attendance.js"></script>
+  <script src="js/fivia-daily-session.js"></script>
+  <script src="js/fivia-session-summary.js"></script>
+  <script src="js/fivia-teacher-notes.js"></script>
+  <script src="js/fivia-projector.js"></script>
+  <script src="js/fivia-data-health.js"></script>
+  <script src="js/fivia-data-validator.js"></script>
+  <script src="js/fivia-presence.js"></script>
+  <script src="js/fivia-firebase-sync-v2.js"></script>
+  <script src="js/fivia-realtime-classroom.js"></script>
+  <script src="js/fivia-quick-start.js"></script>
+  <script src="js/fivia-active-session.js"></script>
+  <script src="js/fivia-sync-status.js"></script>
+  <script src="js/fivia-classroom-flow.js"></script>
+  <script src="js/fivia-challenges.js"></script>
+  <script src="js/fivia-besaran-hunter.js"></script>
+  <script src="js/fivia-unit-master.js"></script>
+  <script src="js/fivia-si-explorer.js"></script>
+  <script src="js/fivia-dimension-detective.js"></script>
+  <script src="js/fivia-dimension-boss.js"></script>
+  <script src="js/fivia-engine.js"></script>
+
+  <!-- PHASE 4: STUDENT DETAIL ANALYTICS MODAL -->
+  <div id="fq-student-detail-modal" class="fivia-quest-modal-overlay">
+    <div class="fivia-quest-modal-content" style="max-width: 650px;" id="fq-student-detail-content">
+      <!-- Dynamically rendered via fivia-engine.js -->
+    </div>
+  </div>
 
   <!-- PWA SERVICE WORKER & UI CONTROLLERS -->
   <script>

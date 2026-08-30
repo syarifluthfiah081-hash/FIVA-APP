@@ -97,26 +97,30 @@ function updateLayoutForUser() {
 }
 
 function getMenuForRole(role) {
+  let menuHtml = '';
   if (role === "siswa") {
-    return `
+    menuHtml = `
       <li class="sidebar-menu-item" id="menu-siswa-dashboard"><a href="#dashboard"><i class="fas fa-home"></i> <span>Beranda</span></a></li>
+      <li class="sidebar-menu-item" id="menu-quest"><a href="#quest"><i class="fas fa-gamepad" style="color: var(--brand-orange);"></i> <span>Physics Quest</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
       <li class="sidebar-menu-item" id="menu-siswa-sertifikat"><a href="#sertifikat"><i class="fas fa-award"></i> <span>Sertifikat</span></a></li>
     `;
   } else if (role === "guru") {
-    return `
+    menuHtml = `
       <li class="sidebar-menu-item" id="menu-guru-dashboard"><a href="#dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard Guru</span></a></li>
+      <li class="sidebar-menu-item" id="menu-quest"><a href="#quest"><i class="fas fa-gamepad" style="color: var(--brand-orange);"></i> <span>Physics Quest</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-kelas"><a href="#kelas"><i class="fas fa-users"></i> <span>Manajemen Kelas</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-laporan"><a href="#laporan"><i class="fas fa-file-pdf"></i> <span>Laporan Nilai</span></a></li>
     `;
   } else if (role === "admin") {
-    return `
+    menuHtml = `
       <li class="sidebar-menu-item" id="menu-admin-dashboard"><a href="#dashboard"><i class="fas fa-user-shield"></i> <span>Admin Control</span></a></li>
+      <li class="sidebar-menu-item" id="menu-quest"><a href="#quest"><i class="fas fa-gamepad" style="color: var(--brand-orange);"></i> <span>Physics Quest</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
     `;
   }
-  return "";
+  return menuHtml;
 }
 
 // UI Interactive Bindings
@@ -200,15 +204,24 @@ function handleRouting() {
     if (el) el.classList.add("active");
   };
 
-  // Auth Guards
-  if (hash !== "#landing" && !user) {
+  // Auth Guards (Allow #quest for both guests & logged in users)
+  if (hash !== "#landing" && !hash.startsWith("#quest") && !user) {
     // Redirect anonymous to landing
     window.location.hash = "#landing";
     return;
   }
 
   // Route Definitions
-  if (hash === "#landing" || hash === "#home") {
+  if (hash.startsWith("#quest")) {
+    highlightSidebar("menu-quest");
+    const questSec = document.getElementById("fivia-quest-section");
+    if (questSec) questSec.classList.remove("hidden-section");
+    if (window.FIVIAQuest && window.FIVIAQuest.handleSubRouting) {
+      window.FIVIAQuest.handleSubRouting(hash);
+    }
+  }
+
+  else if (hash === "#landing" || hash === "#home") {
     if (user) {
       window.location.hash = "#dashboard";
       return;

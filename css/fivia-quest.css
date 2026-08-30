@@ -1,0 +1,115 @@
+/* ==========================================
+   FIVIA PHYSICS QUEST - STYLESHEET (PHASE 1 - PHASE 8 COMPLETE)
+   Scoped strictly under .fivia-quest container
+   Theme: Private Classroom Edition & Futuristic Physics Platform
+   ========================================== */
+
+.fivia-quest {
+  --fq-bg-dark: #030712;
+  --fq-bg-card: rgba(15, 23, 42, 0.75);
+  --fq-bg-card-hover: rgba(30, 41, 59, 0.85);
+  --fq-cyan: #06b6d4;
+  --fq-cyan-glow: rgba(6, 182, 212, 0.4);
+  --fq-violet: #8b5cf6;
+  --fq-violet-glow: rgba(139, 92, 246, 0.4);
+  --fq-emerald: #10b981;
+  --fq-amber: #f59e0b;
+  --fq-rose: #f43f5e;
+  --fq-text-main: #f8fafc;
+  --fq-text-muted: #94a3b8;
+  --fq-border: rgba(255, 255, 255, 0.12);
+  --fq-border-cyan: rgba(6, 182, 212, 0.35);
+
+  font-family: 'Poppins', 'Inter', sans-serif;
+  color: var(--fq-text-main);
+  background: radial-gradient(circle at 50% 0%, #0c1a38 0%, #030712 100%);
+  min-height: calc(100vh - 80px);
+  border-radius: 20px;
+  padding: 24px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.fivia-quest::before {
+  content: '';
+  position: absolute;
+  top: -150px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse at center, rgba(6, 182, 212, 0.15) 0%, rgba(139, 92, 246, 0.08) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header */
+.fivia-quest .fq-header {
+  display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid var(--fq-border-cyan); border-radius: 16px; margin-bottom: 24px; position: relative; z-index: 2; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.fivia-quest .fq-brand { display: flex; align-items: center; gap: 14px; }
+.fivia-quest .fq-logo-icon { width: 44px; height: 44px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1.5px solid var(--fq-cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--fq-cyan); box-shadow: 0 0 15px var(--fq-cyan-glow); }
+.fivia-quest .fq-brand-title { font-size: 1.25rem; font-weight: 800; letter-spacing: 1px; background: linear-gradient(135deg, #ffffff 0%, #38bdf8 50%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+.fivia-quest .fq-brand-sub { font-size: 0.78rem; color: var(--fq-text-muted); margin: 0; font-weight: 500; }
+.fivia-quest .fq-header-actions { display: flex; align-items: center; gap: 12px; }
+
+/* Touch Buttons (Minimum 56px x 56px target) */
+.fivia-quest .fq-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; padding: 14px 28px; border-radius: 16px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border: 1.5px solid transparent; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); user-select: none; -webkit-tap-highlight-color: transparent; text-decoration: none; font-family: inherit;
+}
+.fivia-quest .fq-btn:active { transform: scale(0.97); }
+.fivia-quest .fq-btn-cyan { background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%); color: #030712; box-shadow: 0 4px 20px var(--fq-cyan-glow); }
+.fivia-quest .fq-btn-violet { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: #ffffff; box-shadow: 0 4px 20px var(--fq-violet-glow); }
+.fivia-quest .fq-btn-emerald { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+.fivia-quest .fq-btn-amber { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #030712; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); }
+.fivia-quest .fq-btn-outline { background: rgba(15, 23, 42, 0.6); border-color: var(--fq-border-cyan); color: var(--fq-text-main); backdrop-filter: blur(8px); }
+.fivia-quest .fq-btn-danger { background: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.4); color: #fda4af; }
+.fivia-quest .fq-btn-lg { min-height: 64px; padding: 18px 36px; font-size: 1.2rem; border-radius: 18px; }
+
+/* Views & Animations */
+.fivia-quest .fq-view { position: relative; z-index: 1; animation: fqFadeIn 0.35s ease forwards; }
+.fivia-quest .fq-view.hidden { display: none !important; }
+@keyframes fqFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Form inputs & cards */
+.fivia-quest .fq-form-group { margin-bottom: 22px; }
+.fivia-quest .fq-form-label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--fq-text-main); margin-bottom: 8px; }
+.fivia-quest .fq-input, .fivia-quest .fq-select {
+  width: 100%; min-height: 52px; padding: 14px 18px; background: rgba(30, 41, 59, 0.7); border: 1.5px solid var(--fq-border); border-radius: 14px; color: #ffffff; font-size: 1rem; box-sizing: border-box;
+}
+
+/* Modals */
+.fivia-quest-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(3, 7, 18, 0.88); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.fivia-quest-modal-overlay.active { opacity: 1; pointer-events: auto; }
+.fivia-quest-modal-content { background: #0f172a; border: 2px solid var(--fq-cyan); box-shadow: 0 0 50px var(--fq-cyan-glow); border-radius: 28px; padding: 36px; text-align: center; max-width: 500px; width: 90%; color: #fff; }
+.fivia-quest .fq-badge-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 18px; background: rgba(6, 182, 212, 0.12); border: 1px solid var(--fq-border-cyan); border-radius: 30px; color: var(--fq-cyan); font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; }
+
+/* Table & KPI */
+.fivia-quest .fq-student-table { width: 100%; border-collapse: collapse; text-align: left; }
+.fivia-quest .fq-student-table th { background: rgba(30, 41, 59, 0.9); color: var(--fq-cyan); font-size: 0.85rem; font-weight: 800; padding: 16px 20px; border-bottom: 1.5px solid var(--fq-border-cyan); }
+.fivia-quest .fq-student-table td { padding: 14px 20px; border-bottom: 1px solid var(--fq-border); font-size: 0.9rem; color: var(--fq-text-main); }
+
+/* =========================================================
+   PHASE 8: PRIVATE ACCESS & IDENTITY STYLES
+   ========================================================= */
+
+.fivia-quest .fq-access-card {
+  background: var(--fq-bg-card);
+  border: 2px solid var(--fq-border-cyan);
+  border-radius: 28px;
+  padding: 36px 28px;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.fivia-quest .fq-access-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--fq-cyan);
+  box-shadow: 0 12px 40px var(--fq-cyan-glow);
+}
