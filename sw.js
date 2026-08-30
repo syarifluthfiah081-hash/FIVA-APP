@@ -31,7 +31,11 @@ const CORE_ASSETS = [
   "./js/fivia-group-play-engine.js",
   "./js/fivia-group-play-session.js",
   "./js/fivia-group-play-sync.js",
-  "./js/fivia-group-play-analytics.js"
+  "./js/fivia-group-play-analytics.js",
+  "./js/fivia-group-levels.js",
+  "./js/fivia-group-level-questions.js",
+  "./js/fivia-group-level-engine.js",
+  "./js/fivia-group-level-analytics.js"
 ];
 
 // 1. Install event: Cache all essential application files
