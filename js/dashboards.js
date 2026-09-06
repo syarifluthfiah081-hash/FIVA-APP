@@ -1542,6 +1542,8 @@ function renderClassManagement() {
   const excelRoster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
   const legacyStudents = window.db.getTable("students");
 
+  const hasCustomRoster = Array.isArray(excelRoster) && excelRoster.length > 0;
+
   const studentMap = new Map();
   excelRoster.forEach(s => {
     const sId = s.studentId || s.id;
@@ -1564,26 +1566,30 @@ function renderClassManagement() {
     }
   });
 
-  legacyStudents.forEach(s => {
-    const sId = s.id || s.studentId;
-    const sName = s.name || s.studentName || s.displayName || 'Siswa';
-    const sNis = s.nis || s.studentCode || '001';
-    const sCode = s.studentCode || ('FIVIA-X1-' + sNis);
-    const sClassName = s.className || s.classId || 'Kelas X-1';
-    const sClassId = s.classId || 'cls_x1';
+  if (!hasCustomRoster) {
+    legacyStudents.forEach(s => {
+      const sId = s.id || s.studentId;
+      if (sId && ['std_2', 'std_3', 'std_4', 'std_5'].includes(sId)) return;
 
-    if (sId && !studentMap.has(sId)) {
-      studentMap.set(sId, {
-        id: sId,
-        nis: sNis,
-        studentCode: sCode,
-        name: sName,
-        className: sClassName,
-        classId: sClassId,
-        xp: s.xp || 0
-      });
-    }
-  });
+      const sName = s.name || s.studentName || s.displayName || 'Siswa';
+      const sNis = s.nis || s.studentCode || '001';
+      const sCode = s.studentCode || ('FIVIA-X1-' + sNis);
+      const sClassName = s.className || s.classId || 'Kelas X-1';
+      const sClassId = s.classId || 'cls_x1';
+
+      if (sId && !studentMap.has(sId)) {
+        studentMap.set(sId, {
+          id: sId,
+          nis: sNis,
+          studentCode: sCode,
+          name: sName,
+          className: sClassName,
+          classId: sClassId,
+          xp: s.xp || 0
+        });
+      }
+    });
+  }
 
   let students = Array.from(studentMap.values());
 
@@ -1707,6 +1713,8 @@ function renderTeacherReports() {
     return (cleanId.includes(cleanVal) || cleanName.includes(cleanVal) || cleanVal.includes(cleanId) || cleanVal.includes(cleanName));
   }
 
+  const hasCustomRoster = Array.isArray(excelRoster) && excelRoster.length > 0;
+
   excelRoster.forEach(s => {
     if (isMatchClass(s.classId, s.className)) {
       studentMap.set(s.studentId || s.id, {
@@ -1722,23 +1730,26 @@ function renderTeacherReports() {
     }
   });
 
-  dbStudents.forEach(s => {
-    if (isMatchClass(s.classId, s.className)) {
+  if (!hasCustomRoster) {
+    dbStudents.forEach(s => {
       const key = s.id || s.studentId;
-      if (!studentMap.has(key)) {
-        studentMap.set(key, {
-          id: key,
-          nis: s.nis || '001',
-          studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis || '001')),
-          name: s.name || s.studentName,
-          className: s.className || (classObj ? classObj.name : 'Kelas X-1'),
-          classId: s.classId || classVal,
-          xp: s.xp || 0,
-          groupPlayScore: s.groupPlayScore || 0
-        });
+      if (key && ['std_2', 'std_3', 'std_4', 'std_5'].includes(key)) return;
+      if (isMatchClass(s.classId, s.className)) {
+        if (!studentMap.has(key)) {
+          studentMap.set(key, {
+            id: key,
+            nis: s.nis || '001',
+            studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis || '001')),
+            name: s.name || s.studentName,
+            className: s.className || (classObj ? classObj.name : 'Kelas X-1'),
+            classId: s.classId || classVal,
+            xp: s.xp || 0,
+            groupPlayScore: s.groupPlayScore || 0
+          });
+        }
       }
-    }
-  });
+    });
+  }
 
   const students = Array.from(studentMap.values());
   const submissions = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("submissions") || [] : [];

@@ -255,7 +255,9 @@ window.FIVIAGroupPlayEngine = (function() {
     const opts = document.getElementById('fq-gp-options');
     if (!fb || !opts) return;
 
-    const isCorrect = String(optId) === String(challenge.correctAnswer);
+    const isCorrect = (window.evaluateQuestionAnswer && typeof window.evaluateQuestionAnswer === 'function')
+      ? window.evaluateQuestionAnswer(challenge, optId)
+      : String(optId) === String(challenge.correctAnswer);
 
     if (isCorrect) {
       if (activeGroup) activeGroup.score = (activeGroup.score || 0) + 100;

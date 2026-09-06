@@ -248,6 +248,47 @@ function nextQuestion() {
   }
 }
 
+function extractPairsFromQuestion(q) {
+  if (!q) return [];
+  if (Array.isArray(q.pairs) && q.pairs.length > 0) return q.pairs;
+
+  const sources = [
+    q.correctAnswer,
+    Array.isArray(q.correctAnswers) ? q.correctAnswers.join('; ') : '',
+    Array.isArray(q.options) ? q.options.map(o => (typeof o === 'object' ? (o.label || o.text || o.id) : o)).join('; ') : '',
+    q.explanation
+  ];
+
+  for (let src of sources) {
+    if (!src || typeof src !== 'string') continue;
+    const text = src.replace(/<br\s*\/?>/gi, '\n').replace(/&rarr;/g, '->');
+    const lines = text.split(/[\n;]+/).map(s => s.trim()).filter(Boolean);
+    const pairs = [];
+    lines.forEach(line => {
+      let parts = [];
+      let sep = '';
+      if (line.includes('=')) { parts = line.split('='); sep = '='; }
+      else if (line.includes('->')) { parts = line.split('->'); sep = '->'; }
+      else if (line.includes('=>')) { parts = line.split('=>'); sep = '=>'; }
+      else if (line.includes('–')) { parts = line.split('–'); sep = '–'; }
+      else if (line.includes(':')) { parts = line.split(':'); sep = ':'; }
+      else if (line.includes('-')) { parts = line.split('-'); sep = '-'; }
+
+      if (parts.length >= 2) {
+        const left = parts[0].trim();
+        const right = parts.slice(1).join(sep).trim();
+        if (left && right && left.length < 60 && right.length < 60) {
+          pairs.push({ left, right });
+        }
+      }
+    });
+    if (pairs.length >= 2) return pairs;
+  }
+
+  return [];
+}
+window.extractPairsFromQuestion = extractPairsFromQuestion;
+
 function evaluateQuestionAnswer(q, studentAns) {
   if (studentAns === null || studentAns === undefined) return false;
   const type = q.type || (q.pairs ? "matching" : q.correctAnswers ? (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number' ? "multiple_select" : "short_answer") : "multiple_choice");
@@ -255,12 +296,22 @@ function evaluateQuestionAnswer(q, studentAns) {
   if (type === "multiple_choice" || type === "true_false") {
     const sStr = String(studentAns).trim().toUpperCase();
     const rawTarget = String(q.correctAnswer || q.correct || '').trim().toUpperCase();
+    if (!sStr || !rawTarget) return false;
     
     // Extract letter A-D from target if present (e.g. "B. PANJANG", "OPTION B", "KUNCI: B" -> "B")
     const letterMatch = rawTarget.match(/(?:KUNCI|OPSI|OPTION|JAWABAN)?\s*[\:\.\-\(]*\s*([A-D])(?:\b|[\)\.\:\-]|$)/i);
-    const targetLetter = letterMatch ? letterMatch[1].toUpperCase() : rawTarget;
+    const targetLetter = letterMatch ? letterMatch[1].toUpperCase() : (rawTarget.length === 1 && rawTarget >= 'A' && rawTarget <= 'Z' ? rawTarget : '');
 
-    // Direct letter or exact string comparison
+    // Extract letter A-D from studentAns if present
+    const sLetterMatch = sStr.match(/(?:OPSI|OPTION|JAWABAN)?\s*[\:\.\-\(]*\s*([A-D])(?:\b|[\)\.\:\-]|$)/i);
+    const studentLetter = sLetterMatch ? sLetterMatch[1].toUpperCase() : (sStr.length === 1 && sStr >= 'A' && sStr <= 'Z' ? sStr : '');
+
+    // Direct letter comparison if both student answer and target have single-letter representations (e.g. studentAns='A'/'B', target='B')
+    if (studentLetter && targetLetter) {
+      return studentLetter === targetLetter;
+    }
+
+    // Direct exact string comparison
     if (sStr === targetLetter && sStr !== '') return true;
     if (sStr === rawTarget && sStr !== '') return true;
 
@@ -278,10 +329,14 @@ function evaluateQuestionAnswer(q, studentAns) {
 
     // Option label matching
     if (q.options && Array.isArray(q.options)) {
-      const selectedOpt = q.options.find((o, i) => (o.id || String.fromCharCode(65 + i)).toUpperCase() === sStr);
+      const selectedOpt = q.options.find((o, i) => (o.id || String.fromCharCode(65 + i)).toUpperCase() === sStr || (o.id || String.fromCharCode(65 + i)).toUpperCase() === studentLetter);
       if (selectedOpt) {
         const labelUpper = (selectedOpt.label || selectedOpt.text || '').trim().toUpperCase();
-        if (labelUpper && (rawTarget === labelUpper || rawTarget.includes(labelUpper) || labelUpper.includes(rawTarget))) return true;
+        if (labelUpper && rawTarget) {
+          if (labelUpper === rawTarget) return true;
+          // Avoid matching single letter targets ('A', 'B') against labels via substring inclusion ('BENAR' contains 'B', 'SALAH' contains 'A')
+          if (rawTarget.length > 2 && (rawTarget.includes(labelUpper) || labelUpper.includes(rawTarget))) return true;
+        }
       }
     }
 
@@ -289,35 +344,64 @@ function evaluateQuestionAnswer(q, studentAns) {
   }
 
   if (type === "short_answer") {
-    if (typeof studentAns !== 'string') return false;
-    const cleanStd = studentAns.trim().toLowerCase();
-    const correctAnswers = q.correctAnswers || (q.correctAnswer ? [q.correctAnswer] : []);
+    if (studentAns === null || studentAns === undefined) return false;
+    const cleanStd = String(studentAns).replace(',', '.').trim().toLowerCase();
+    let correctAnswers = q.correctAnswers;
+    if (!correctAnswers || !Array.isArray(correctAnswers) || correctAnswers.length === 0) {
+      if (q.correctAnswer) {
+        correctAnswers = String(q.correctAnswer).split(/[\,\;\|\/]+/).map(s => s.trim()).filter(Boolean);
+      } else if (q.correct !== undefined) {
+        correctAnswers = [String(q.correct)];
+      } else {
+        correctAnswers = [];
+      }
+    }
     return correctAnswers.some(c => {
-      const cleanC = String(c).replace(/^(KUNCI|JAWABAN|KEY|KUNCI JAWABAN)\s*[\:\=]?\s*/i, '').trim().toLowerCase();
+      const cleanC = String(c).replace(/^(KUNCI|JAWABAN|KEY|KUNCI JAWABAN)\s*[\:\=]?\s*/i, '').replace(',', '.').trim().toLowerCase();
       if (!cleanC) return false;
       return cleanC === cleanStd || (cleanStd.length >= 3 && cleanC.length >= 3 && (cleanStd.includes(cleanC) || cleanC.includes(cleanStd)));
     });
   }
 
   if (type === "multiple_select") {
-    if (!Array.isArray(studentAns)) return false;
-    const targetCorrect = q.correctAnswers || (q.correct !== undefined ? [q.correct] : []);
-    if (studentAns.length !== targetCorrect.length) return false;
+    let studentArray = studentAns;
+    if (!Array.isArray(studentArray)) {
+      if (typeof studentAns === 'string') {
+        studentArray = studentAns.split(/[\,\;\|\/\s&]+/).map(s => s.trim()).filter(Boolean);
+      } else if (studentAns !== null && studentAns !== undefined) {
+        studentArray = [studentAns];
+      } else {
+        return false;
+      }
+    }
 
-    // Normalize student selections and target values to indices (0, 1, 2, 3)
-    const stdSet = new Set(studentAns.map(x => {
+    let rawTargets = q.correctAnswers;
+    if (!rawTargets || !Array.isArray(rawTargets) || rawTargets.length === 0) {
+      if (q.correct !== undefined) {
+        rawTargets = Array.isArray(q.correct) ? q.correct : [q.correct];
+      } else if (q.correctAnswer) {
+        if (Array.isArray(q.correctAnswer)) {
+          rawTargets = q.correctAnswer;
+        } else {
+          rawTargets = String(q.correctAnswer).split(/[\,\;\|\/\s&]+/).map(s => s.trim()).filter(Boolean);
+        }
+      } else {
+        rawTargets = [];
+      }
+    }
+
+    if (studentArray.length !== rawTargets.length || rawTargets.length === 0) return false;
+
+    const normalizeItem = (x) => {
       if (typeof x === 'number') return x;
       const str = String(x).trim().toUpperCase();
-      if (/^[A-D]$/.test(str)) return str.charCodeAt(0) - 65;
+      const mLetter = str.match(/^[A-D]$/i);
+      if (mLetter) return mLetter[0].charCodeAt(0) - 65;
       return isNaN(str) ? str : Number(str);
-    }));
+    };
 
-    const targetSet = new Set(targetCorrect.map(x => {
-      if (typeof x === 'number') return x;
-      const str = String(x).trim().toUpperCase();
-      if (/^[A-D]$/.test(str)) return str.charCodeAt(0) - 65;
-      return isNaN(str) ? str : Number(str);
-    }));
+    const stdSet = new Set(studentArray.map(normalizeItem));
+    const targetSet = new Set(rawTargets.map(normalizeItem));
 
     if (stdSet.size !== targetSet.size) return false;
     for (let val of stdSet) {
@@ -327,12 +411,84 @@ function evaluateQuestionAnswer(q, studentAns) {
   }
 
   if (type === "matching") {
-    if (!studentAns || typeof studentAns !== 'object') return false;
-    const pairs = q.pairs || [];
-    if (pairs.length === 0) return false;
+    let pairs = q.pairs;
+    if (!pairs || !Array.isArray(pairs) || pairs.length === 0) {
+      pairs = extractPairsFromQuestion(q);
+    }
+    if (!pairs || pairs.length === 0) return false;
+
+    let ansObj = studentAns;
+    if (typeof ansObj === 'string') {
+      try {
+        ansObj = JSON.parse(ansObj);
+      } catch (e) {
+        ansObj = {};
+        const parts = studentAns.split(/[\n;]+/);
+        parts.forEach((pt, i) => {
+          const pairParts = pt.split(/->|=>|=|-|:/);
+          if (pairParts.length >= 2) {
+            ansObj[i] = pairParts[1].trim();
+            ansObj[pairParts[0].trim()] = pairParts[1].trim();
+          }
+        });
+      }
+    }
+
+    if (!ansObj || typeof ansObj !== 'object') return false;
+
+    const normalizeStr = (str) => {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    };
+
+    const rightOptions = pairs.map(p => p.right);
+
     return pairs.every((p, pIdx) => {
-      const userVal = studentAns[pIdx] !== undefined ? studentAns[pIdx] : studentAns[p.left];
-      return userVal && String(userVal).trim().toLowerCase() === String(p.right).trim().toLowerCase();
+      let rawUserVal = ansObj[pIdx];
+      if (rawUserVal === undefined) rawUserVal = ansObj[String(pIdx)];
+      if (rawUserVal === undefined && p.left) rawUserVal = ansObj[p.left];
+      if (rawUserVal === undefined && p.left) rawUserVal = ansObj[p.left.trim()];
+      
+      if (rawUserVal === undefined || rawUserVal === null || rawUserVal === '') return false;
+
+      const userStr = String(rawUserVal).trim();
+      const targetStr = String(p.right).trim();
+
+      const userNorm = normalizeStr(userStr);
+      const targetNorm = normalizeStr(targetStr);
+
+      // Direct normalized text match
+      if (userNorm === targetNorm && userNorm !== '') return true;
+
+      // Index match (if studentAns passed 0, 1, 2 or "0", "1", "2")
+      if (!isNaN(userStr) && userStr !== '') {
+        const optIdx = Number(userStr);
+        if (optIdx >= 0 && optIdx < rightOptions.length) {
+          if (normalizeStr(rightOptions[optIdx]) === targetNorm) return true;
+        }
+      }
+
+      // Letter match ('A' -> 0, 'B' -> 1)
+      if (/^[A-Z]$/i.test(userStr)) {
+        const optIdx = userStr.toUpperCase().charCodeAt(0) - 65;
+        if (optIdx >= 0 && optIdx < rightOptions.length) {
+          if (normalizeStr(rightOptions[optIdx]) === targetNorm) return true;
+        }
+      }
+
+      // Substring match for long texts
+      if (userNorm.length > 3 && targetNorm.length > 3) {
+        if (userNorm.includes(targetNorm) || targetNorm.includes(userNorm)) return true;
+      }
+
+      return false;
     });
   }
 

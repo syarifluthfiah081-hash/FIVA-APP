@@ -23,11 +23,7 @@ const SEED_DATA = {
     { id: "cls_xi2", name: "Kelas XI IPA-2", teacherId: "usr_guru" }
   ],
   students: [
-    { id: "usr_siswa", name: "Pasya Ramadhan", classId: "cls_x1", email: "siswa@hidayahstore.edu" },
-    { id: "std_2", name: "Budi Santoso", classId: "cls_x1", email: "budi@hidayahstore.edu" },
-    { id: "std_3", name: "Siti Aminah", classId: "cls_x1", email: "siti@hidayahstore.edu" },
-    { id: "std_4", name: "Rian Wijaya", classId: "cls_x2", email: "rian@hidayahstore.edu" },
-    { id: "std_5", name: "Dewi Lestari", classId: "cls_xi1", email: "dewi@hidayahstore.edu" }
+    { id: "usr_siswa", name: "Pasya Ramadhan", classId: "cls_x1", email: "siswa@hidayahstore.edu" }
   ],
   materials: [
     { id: 1, name: "Hakikat Fisika dan Metode Ilmiah", fase: "E", topic: "Definisi fisika, keselamatan kerja laboratorium, metode ilmiah.", equation: "\\text{Metode Ilmiah: Observasi} \\rightarrow \\text{Hipotesis} \\rightarrow \\text{Eksperimen} \\rightarrow \\text{Analisis} \\rightarrow \\text{Kesimpulan}", videoUrl: "https://www.youtube.com/embed/3U_yD1u7W-w", desc: "Materi ini membahas definisi fisika sebagai bagian sains, langkah-langkah penelitian ilmiah secara sistematis, serta aturan keselamatan kerja saat beraktivitas di laboratorium fisika." },
@@ -488,7 +484,7 @@ class LocalDatabase {
 
   init() {
     // Force re-seeding if code has changed
-    const SEED_VERSION = "6.0";
+    const SEED_VERSION = "7.0";
     if (localStorage.getItem(DB_PREFIX + "seed_version") !== SEED_VERSION) {
       localStorage.removeItem(DB_PREFIX + "initialized");
       localStorage.setItem(DB_PREFIX + "seed_version", SEED_VERSION);

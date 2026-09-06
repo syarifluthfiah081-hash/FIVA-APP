@@ -137,7 +137,7 @@ window.FIVIAGroupPlay = (function() {
 
     // 2. Try window.db.getTable('students')
     if (window.db && typeof window.db.getTable === 'function') {
-      const dbStudents = window.db.getTable('students') || [];
+      const dbStudents = (window.db.getTable('students') || []).filter(s => !['std_2', 'std_3', 'std_4', 'std_5'].includes(s.id || s.studentId));
       dbStudents.forEach(addStudent);
     }
 

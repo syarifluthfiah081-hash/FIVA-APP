@@ -267,6 +267,7 @@ aside.sidebar {
   font-weight: 700;
   background: linear-gradient(135deg, #ffffff 0%, var(--brand-orange) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
 }
@@ -479,6 +480,7 @@ header.app-header {
   margin-bottom: 24px;
   background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-orange) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

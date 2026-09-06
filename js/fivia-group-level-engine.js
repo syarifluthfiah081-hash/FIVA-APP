@@ -560,7 +560,7 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
         `;
       } else if (qType === "matching") {
-        const pairs = q.pairs || [];
+        const pairs = (q.pairs && q.pairs.length > 0) ? q.pairs : (window.extractPairsFromQuestion ? window.extractPairsFromQuestion(q) : extractPairsFromText(q.correctAnswer || q.explanation || ''));
         const rightOptions = pairs.map(p => p.right);
         optionsUI = `
           <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 10px;">
@@ -1412,7 +1412,7 @@ window.FIVIAGroupLevelEngine = (function() {
           });
           formattedKey = labels.join(' + ');
         } else if (qType === 'matching') {
-          const pairs = q.pairs || [];
+          const pairs = (q.pairs && q.pairs.length > 0) ? q.pairs : (window.extractPairsFromQuestion ? window.extractPairsFromQuestion(q) : extractPairsFromText(q.correctAnswer || q.explanation || ''));
           formattedKey = pairs.map(p => `<strong>${p.left}</strong> &rarr; <span style="color:#10b981;">${p.right}</span>`).join('<br/>');
         } else if (qType === 'short_answer') {
           formattedKey = (q.correctAnswers || [q.correctAnswer]).join(' ATAU ');
