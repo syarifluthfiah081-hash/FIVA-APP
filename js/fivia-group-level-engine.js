@@ -943,6 +943,68 @@ window.FIVIAGroupLevelEngine = (function() {
     }
   }
 
+  function extractOptionsFromText(optionsStr) {
+    if (!optionsStr) return [];
+
+    const cleanedText = optionsStr
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .trim();
+
+    const options = [];
+
+    // Match 'A.' or 'A)' or 'A:' up to the next 'B.', 'B)', 'B:' or end of string
+    const regex = /([A-D])[\.\:\)]\s*([\s\S]*?)(?=(?:[A-D][\.\:\)]\s*)|$)/gi;
+    let match;
+    while ((match = regex.exec(cleanedText)) !== null) {
+      const letter = match[1].toUpperCase();
+      const optText = match[2].trim().replace(/[\r\n]+/g, ' ');
+      if (optText.length > 0 && !options.some(o => o.id === letter)) {
+        options.push({ id: letter, label: optText });
+      }
+    }
+
+    // Fallback: If no A/B/C/D markers, split by newline if lines exist
+    if (options.length === 0 && cleanedText.length > 0) {
+      const rawLines = cleanedText.split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
+      if (rawLines.length >= 2) {
+        rawLines.slice(0, 4).forEach((lineText, i) => {
+          const letter = String.fromCharCode(65 + i);
+          const cleaned = lineText.replace(/^([A-D][\.\:\)]\s*)?/i, '').trim();
+          if (cleaned.length > 0) {
+            options.push({ id: letter, label: cleaned });
+          }
+        });
+      }
+    }
+
+    return options;
+  }
+
+  function extractPairsFromText(pairsStr) {
+    if (!pairsStr) return [];
+    const text = pairsStr
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .trim();
+
+    const pairs = [];
+    const lines = text.split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
+    lines.forEach(line => {
+      if (line.includes('=')) {
+        const parts = line.split('=');
+        if (parts.length >= 2) {
+          pairs.push({ left: parts[0].trim(), right: parts.slice(1).join('=').trim() });
+        }
+      }
+    });
+    return pairs;
+  }
+
   function parseWordHtmlTable(htmlText) {
     if (!htmlText || !htmlText.includes('<tr')) return [];
     try {
@@ -955,6 +1017,7 @@ window.FIVIAGroupLevelEngine = (function() {
         const cells = row.querySelectorAll('th, td');
         if (cells.length < 3) return;
 
+        const cellHtmls = Array.from(cells).map(c => (c.innerHTML || c.textContent || '').trim());
         const cellTexts = Array.from(cells).map(c => (c.innerText || c.textContent || '').trim());
         const fullRowText = cellTexts.join(' ').toUpperCase();
 
@@ -974,26 +1037,26 @@ window.FIVIAGroupLevelEngine = (function() {
 
         let jenisText = '';
         let questionText = '';
-        let optionsText = '';
+        let optionsRaw = '';
         let keyText = '';
         let explanationText = '';
 
         if (cellTexts.length >= 6) {
           jenisText = cellTexts[1];
           questionText = cellTexts[2];
-          optionsText = cellTexts[3];
+          optionsRaw = cellHtmls[3] || cellTexts[3];
           keyText = cellTexts[4];
           explanationText = cellTexts[5];
         } else if (cellTexts.length >= 5) {
           jenisText = cellTexts[0];
           questionText = cellTexts[1];
-          optionsText = cellTexts[2];
+          optionsRaw = cellHtmls[2] || cellTexts[2];
           keyText = cellTexts[3];
           explanationText = cellTexts[4];
         } else if (cellTexts.length >= 4) {
           jenisText = cellTexts[0];
           questionText = cellTexts[1];
-          optionsText = cellTexts[2];
+          optionsRaw = cellHtmls[2] || cellTexts[2];
           keyText = cellTexts[3];
         }
 
@@ -1023,41 +1086,12 @@ window.FIVIAGroupLevelEngine = (function() {
           type = 'multiple_choice';
         }
 
-        const options = [];
-        if (type === 'multiple_choice' || type === 'true_false' || type === 'multiple_select') {
-          const lines = optionsText.split(/\n|<br\s*\/?>/i);
-          lines.forEach(line => {
-            const m = line.trim().match(/^([A-D])[\.\:\)]\s*(.*)/i);
-            if (m) {
-              options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
-            }
-          });
-          if (options.length === 0 && optionsText.length > 0) {
-            const optMatches = optionsText.matchAll(/([A-D])[\.\:\)]\s*([^A-D\.\:\)]+)/gi);
-            for (const om of optMatches) {
-              options.push({ id: om[1].toUpperCase(), label: om[2].trim() });
-            }
-          }
-          if (type === 'true_false' && options.length === 0) {
-            options.push({ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' });
-          }
+        const options = extractOptionsFromText(optionsRaw);
+        if (type === 'true_false' && options.length === 0) {
+          options.push({ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' });
         }
 
-        const pairs = [];
-        if (type === 'matching') {
-          const lines = optionsText.split(/\n|<br\s*\/?>/i);
-          lines.forEach(line => {
-            if (line.includes('=')) {
-              const parts = line.split('=');
-              if (parts.length >= 2) {
-                pairs.push({ left: parts[0].trim(), right: parts.slice(1).join('=').trim() });
-              }
-            }
-          });
-          if (pairs.length === 0) {
-            pairs.push({ left: 'Besaran A', right: 'Satuan A' });
-          }
-        }
+        const pairs = extractPairsFromText(optionsRaw);
 
         let keyVal = keyText.trim();
         let keyArr = [keyVal];
