@@ -304,27 +304,27 @@ window.FIVIAGroupLevelQuestions = (function() {
       const modIdStr = String(selectedModuleId);
       const modIdNum = parseInt(selectedModuleId);
 
-      // 1. Check built-in MODULE_QUESTION_BANKS for Modul 1, 2, 3, 4, 5
-      if (MODULE_QUESTION_BANKS[modIdStr] && MODULE_QUESTION_BANKS[modIdStr][lvlKey] && MODULE_QUESTION_BANKS[modIdStr][lvlKey].length > 0) {
+      // 1. Check if teacher uploaded custom questions for this module (in customQuizzes or db)
+      let customQuiz = null;
+      try {
+        const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
+        customQuiz = customQuizzes.find(q => q.materialId === modIdNum || q.id === `quiz_${modIdNum}` || String(q.materialId) === modIdStr || String(q.id) === modIdStr);
+      } catch(e) {}
+
+      if (!customQuiz && window.db && typeof window.db.getTable === 'function') {
+        try {
+          const dbQuizzes = window.db.getTable("quizzes") || [];
+          customQuiz = dbQuizzes.find(q => parseInt(q.materialId) === modIdNum && q.questions && q.questions.length > 0);
+        } catch(e) {}
+      }
+
+      if (customQuiz && customQuiz.questions && customQuiz.questions.length > 0) {
+        pool = customQuiz.questions.map(q => formatQuestionForGroupPlay(q, lvlKey));
+      } else if (MODULE_QUESTION_BANKS[modIdStr] && MODULE_QUESTION_BANKS[modIdStr][lvlKey] && MODULE_QUESTION_BANKS[modIdStr][lvlKey].length > 0) {
+        // 2. Built-in MODULE_QUESTION_BANKS for Modul 1, 2, 3, 4, 5
         pool = MODULE_QUESTION_BANKS[modIdStr][lvlKey].map(q => formatQuestionForGroupPlay(q, lvlKey));
       } else if (MODULE_QUESTION_BANKS[modIdNum] && MODULE_QUESTION_BANKS[modIdNum][lvlKey] && MODULE_QUESTION_BANKS[modIdNum][lvlKey].length > 0) {
         pool = MODULE_QUESTION_BANKS[modIdNum][lvlKey].map(q => formatQuestionForGroupPlay(q, lvlKey));
-      } else {
-        // 2. Fetch from DB or Custom Quizzes (e.g. Word Upload or Teacher AI Generator)
-        let targetQuiz = null;
-        if (window.db && typeof window.db.getQuizForMaterial === 'function') {
-          targetQuiz = window.db.getQuizForMaterial(modIdNum);
-        }
-        if (!targetQuiz) {
-          try {
-            const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
-            targetQuiz = customQuizzes.find(q => q.materialId === modIdNum || q.id === `quiz_${modIdNum}` || String(q.materialId) === modIdStr || String(q.id) === modIdStr);
-          } catch(e) {}
-        }
-
-        if (targetQuiz && targetQuiz.questions && targetQuiz.questions.length > 0) {
-          pool = targetQuiz.questions.map(q => formatQuestionForGroupPlay(q, lvlKey));
-        }
       }
     }
 

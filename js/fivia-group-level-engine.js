@@ -831,12 +831,25 @@ KUNCI: Kelvin
 PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
         </div>
 
-        <!-- Target Module Input -->
+        <!-- Target Module Dropdown Selector -->
         <div style="margin-bottom: 20px;">
           <label style="display: block; color: #fff; font-weight: 800; font-size: 1rem; margin-bottom: 8px;">
-            📚 NAMA MODUL FISIKA / TOPIK SOAL GURU:
+            📚 PILIH TARGET MODUL FISIKA UNTUK BANK SOAL WORD:
           </label>
-          <input type="text" id="fq-word-module-name" class="fq-select" style="width: 100%; min-height: 52px; font-size: 1.05rem; padding: 0 16px; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 12px;" placeholder="Contoh: Modul 1 - Kalor & Suhu Bebas Miskonsepsi" value="Modul Buatan Guru (Word)" />
+          <select id="fq-word-target-module-select" class="fq-select" style="width: 100%; min-height: 52px; font-weight: 800; font-size: 1.05rem; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 0 16px; margin-bottom: 12px;" onchange="
+            const customDiv = document.getElementById('fq-word-custom-title-wrapper');
+            if (customDiv) customDiv.style.display = this.value === 'CUSTOM' ? 'block' : 'none';
+          ">
+            <option value="1">Modul 1: Hakikat Fisika dan Metode Ilmiah</option>
+            <option value="2">Modul 2: Pengukuran Dasar Fisika</option>
+            <option value="3">Modul 3: Usaha dan Energi</option>
+            <option value="4">Modul 4: Lingkungan dan Energi Terbarukan</option>
+            <option value="5">Modul 5: Pemanasan Global</option>
+            <option value="CUSTOM">➕ Buat Modul Tambahan / Topik Custom Guru</option>
+          </select>
+          <div id="fq-word-custom-title-wrapper" style="display: none;">
+            <input type="text" id="fq-word-module-name" class="fq-select" style="width: 100%; min-height: 52px; font-size: 1.05rem; padding: 0 16px; background: #0f172a; color: #fff; border: 2px solid var(--fq-amber); border-radius: 12px;" placeholder="Tuliskan nama modul baru..." value="Modul Buatan Guru (Word)" />
+          </div>
         </div>
 
         <!-- File Select Input -->
@@ -864,14 +877,24 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
 
   function processWordImportFile() {
     const fileInput = document.getElementById('fq-word-file-input');
+    const targetModSelect = document.getElementById('fq-word-target-module-select');
     const moduleNameInput = document.getElementById('fq-word-module-name');
+
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
       alert('⚠️ Silakan pilih file Word (.docx) atau Text (.txt) terlebih dahulu!');
       return;
     }
 
     const file = fileInput.files[0];
-    const moduleTitle = (moduleNameInput && moduleNameInput.value.trim()) ? moduleNameInput.value.trim() : "Modul Word Guru";
+    const selectedModId = targetModSelect ? targetModSelect.value : '1';
+    let moduleTitle = '';
+
+    if (selectedModId === 'CUSTOM') {
+      moduleTitle = (moduleNameInput && moduleNameInput.value.trim()) ? moduleNameInput.value.trim() : "Modul Word Guru";
+    } else {
+      const selectedOpt = targetModSelect ? targetModSelect.options[targetModSelect.selectedIndex] : null;
+      moduleTitle = selectedOpt ? selectedOpt.text : `Modul ${selectedModId}`;
+    }
 
     if (file.name.endsWith('.docx')) {
       if (typeof window.mammoth === 'undefined') {
@@ -884,7 +907,7 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
         window.mammoth.extractRawText({ arrayBuffer: arrayBuffer })
           .then(function(result) {
             const rawText = result.value;
-            parseAndSaveWordQuestions(rawText, moduleTitle);
+            parseAndSaveWordQuestions(rawText, selectedModId, moduleTitle);
           })
           .catch(function(err) {
             console.error('Error extracting Word text:', err);
@@ -896,13 +919,13 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
       const reader = new FileReader();
       reader.onload = function(e) {
         const rawText = e.target.result;
-        parseAndSaveWordQuestions(rawText, moduleTitle);
+        parseAndSaveWordQuestions(rawText, selectedModId, moduleTitle);
       };
       reader.readAsText(file);
     }
   }
 
-  function parseAndSaveWordQuestions(text, moduleTitle) {
+  function parseAndSaveWordQuestions(text, selectedModId, moduleTitle) {
     if (!text || text.trim().length === 0) {
       alert('⚠️ Dokumen Word kosong atau tidak berisi teks!');
       return;
@@ -1016,39 +1039,61 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
       return;
     }
 
-    // Save to custom materials & custom quizzes in localStorage
-    const newModId = Date.now();
-    const newMaterial = {
-      id: newModId,
-      name: moduleTitle,
-      topic: 'Fisika Word Importer',
-      description: `Modul buatan Guru di-import dari Word (.docx) berisi ${parsedQuestions.length} soal.`,
-      content: `Daftar soal fisika interaktif yang dibuat langsung oleh guru via Microsoft Word.`
-    };
+    let targetModId = selectedModId;
+    if (targetModId === 'CUSTOM') {
+      targetModId = String(Date.now());
+      const newMaterial = {
+        id: parseInt(targetModId),
+        name: moduleTitle,
+        topic: 'Fisika Word Importer',
+        description: `Modul buatan Guru di-import dari Word (.docx) berisi ${parsedQuestions.length} soal.`,
+        content: `Daftar soal fisika interaktif yang dibuat langsung oleh guru via Microsoft Word.`
+      };
+      let customMats = [];
+      try { customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]"); } catch(e){}
+      customMats.unshift(newMaterial);
+      localStorage.setItem("fivia_custom_materials", JSON.stringify(customMats));
+    }
 
+    const matIdNum = parseInt(targetModId);
+
+    // Save/Overwrite quiz for target module
     const newQuiz = {
-      id: `quiz_${newModId}`,
-      materialId: newModId,
-      questions: parsedQuestions
+      id: `quiz_${targetModId}`,
+      materialId: isNaN(matIdNum) ? targetModId : matIdNum,
+      questions: parsedQuestions,
+      isTeacherUploaded: true
     };
-
-    let customMats = [];
-    try { customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]"); } catch(e){}
-    customMats.unshift(newMaterial);
-    localStorage.setItem("fivia_custom_materials", JSON.stringify(customMats));
 
     let customQuizzes = [];
     try { customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]"); } catch(e){}
-    customQuizzes.unshift(newQuiz);
+    
+    const existingIdx = customQuizzes.findIndex(q => String(q.materialId) === String(targetModId) || String(q.id) === `quiz_${targetModId}`);
+    if (existingIdx !== -1) {
+      customQuizzes[existingIdx] = newQuiz;
+    } else {
+      customQuizzes.unshift(newQuiz);
+    }
     localStorage.setItem("fivia_custom_quizzes", JSON.stringify(customQuizzes));
+
+    if (window.db && typeof window.db.getTable === 'function') {
+      try {
+        const baseQuizzes = window.db.getTable("quizzes");
+        const bIdx = baseQuizzes.findIndex(q => parseInt(q.materialId) === matIdNum);
+        if (bIdx !== -1) {
+          baseQuizzes[bIdx] = newQuiz;
+          window.db.saveTable("quizzes", baseQuizzes);
+        }
+      } catch(e) {}
+    }
 
     if (window.FIVIAGroupLevelQuestions && typeof window.FIVIAGroupLevelQuestions.resetQuestionCache === 'function') {
       window.FIVIAGroupLevelQuestions.resetQuestionCache();
     }
 
-    setSelectedModule(String(newModId));
+    setSelectedModule(String(targetModId));
     closeWordImportModal();
-    alert(`🎉 BERHASIL MENG-IMPORT ${parsedQuestions.length} SOAL DARI WORD DOKUMEN!\n\nModul "${moduleTitle}" telah dibuat dan otomatis dipilih.`);
+    alert(`🎉 BERHASIL MENG-IMPORT ${parsedQuestions.length} SOAL DARI WORD DOKUMEN!\n\nBank soal untuk "${moduleTitle}" telah berhasil disimpan dan otomatis terpilih untuk permainan.`);
     renderLevelMapUI();
   }
 
