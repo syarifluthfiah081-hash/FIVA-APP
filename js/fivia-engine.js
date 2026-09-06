@@ -70,6 +70,10 @@ window.FIVIAQuest = (function() {
 
   function playSound(type) {
     if (!state.settings.soundEnabled) return;
+    if (typeof window.playEnergeticSound === 'function') {
+      window.playEnergeticSound(type);
+      return;
+    }
     try {
       if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (state.audioCtx.state === 'suspended') state.audioCtx.resume();

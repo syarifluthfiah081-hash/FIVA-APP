@@ -760,6 +760,7 @@ window.FIVIAGroupLevelEngine = (function() {
       fb.style.display = 'block';
 
       if (isCorrect) {
+        playEnergeticSound('correct');
         currentGrp.score = (currentGrp.score || 0) + 50;
         currentGrp.totalXP = (currentGrp.totalXP || 0) + 50;
         localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
@@ -780,6 +781,7 @@ window.FIVIAGroupLevelEngine = (function() {
           </button>
         `;
       } else {
+        playEnergeticSound('wrong');
         // -10 Point Penalty for wrong rebound answer
         currentGrp.score = (currentGrp.score || 0) - 10;
         localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
@@ -809,6 +811,7 @@ window.FIVIAGroupLevelEngine = (function() {
     const result = window.FIVIAGroupLevels.registerAnswerResult(isCorrect);
 
     if (isCorrect) {
+      playEnergeticSound('correct');
       currentGrp.score = (currentGrp.score || 0) + 100;
       currentGrp.totalXP = (currentGrp.totalXP || 0) + 100;
       localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
@@ -832,6 +835,7 @@ window.FIVIAGroupLevelEngine = (function() {
       `;
       opts.style.display = 'none';
     } else {
+      playEnergeticSound('wrong');
       showReboundSelectionUI("JAWABAN KELOMPOK BELUM TEPAT!");
     }
   }
@@ -839,18 +843,41 @@ window.FIVIAGroupLevelEngine = (function() {
   function renderLevelCompletionUI() {
     if (turnTimerInterval) clearInterval(turnTimerInterval);
 
-    const state = window.FIVIAGroupLevels.getLevelState();
+    const state = window.FIVIAGroupLevels ? window.FIVIAGroupLevels.getLevelState() : { activeLevelId: 'LEVEL_01' };
     const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
       ? window.FIVIAGroupPlay.getSessionState()
       : {};
     const groups = sessionState.groups || [];
     const sortedGroups = [...groups].sort((a, b) => (b.score || 0) - (a.score || 0));
 
+    // Determine next level
+    const levelOrder = ['LEVEL_01', 'LEVEL_02', 'LEVEL_03', 'LEVEL_04', 'LEVEL_05'];
+    const currentIdx = levelOrder.indexOf(state.activeLevelId);
+    const nextLevelId = (currentIdx >= 0 && currentIdx < levelOrder.length - 1) ? levelOrder[currentIdx + 1] : null;
+
+    const activeMeta = (window.FIVIAGroupLevels && typeof window.FIVIAGroupLevels.getLevelMetadata === 'function')
+      ? window.FIVIAGroupLevels.getLevelMetadata(state.activeLevelId)
+      : { code: state.activeLevelId || 'LEVEL 01', title: 'LEVEL', focus: '' };
+
+    const nextMeta = (nextLevelId && window.FIVIAGroupLevels && typeof window.FIVIAGroupLevels.getLevelMetadata === 'function')
+      ? window.FIVIAGroupLevels.getLevelMetadata(nextLevelId)
+      : null;
+
     const html = `
-      <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: center; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
+      <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: center; box-shadow: 0 0 60px rgba(6,182,212,0.3); position: relative; overflow: hidden;">
         <div style="font-size: 3rem; margin-bottom: 8px;">🏆</div>
-        <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 0 0 10px 0;">BABAK LEVEL SELESAI!</h1>
-        <p style="font-size: 1.1rem; color: var(--fq-cyan); font-weight: 800; margin-bottom: 28px;">
+        <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 0 0 8px 0;">BABAK ${activeMeta.code || 'LEVEL'} SELESAI!</h1>
+        
+        <!-- KETERANGAN LEVEL -->
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(6,182,212,0.15); border: 1.5px solid var(--fq-cyan); border-radius: 99px; padding: 6px 20px; color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem; margin-bottom: 12px;">
+          <span>${activeMeta.badge || '🟢'}</span>
+          <span>${activeMeta.title || ''}</span>
+        </div>
+        <p style="font-size: 0.95rem; color: #cbd5e1; max-width: 650px; margin: 0 auto 20px auto; line-height: 1.5; background: rgba(30,41,59,0.6); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--fq-border-cyan);">
+          📌 <strong>Keterangan Level:</strong> ${activeMeta.focus || 'Penguasaan materi fisika interaktif kelompok.'}
+        </p>
+
+        <p style="font-size: 1.1rem; color: var(--fq-cyan); font-weight: 800; margin-bottom: 24px;">
           Setiap kelompok telah menyelesaikan 1 soal pada level ini! Berikut hasil skor klasemen akhir:
         </p>
 
@@ -877,13 +904,387 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
         </div>
 
-        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 56px; padding: 0 32px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.startLevel('${state.activeLevelId}')">
+        <!-- ACTION BUTTONS -->
+        <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+          ${nextLevelId ? `
+            <button class="fq-btn fq-btn-emerald fq-btn-lg" style="min-height: 56px; padding: 0 28px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 2px solid #34d399; box-shadow: 0 0 25px rgba(16,185,129,0.4);" onclick="window.FIVIAGroupLevelEngine.startLevel('${nextLevelId}')">
+              ▶ LANJUT KE LEVEL SELANJUTNYA ${nextMeta ? `(${nextMeta.code})` : ''} &rarr;
+            </button>
+          ` : ''}
+
+          <button class="fq-btn fq-btn-amber fq-btn-lg" style="min-height: 56px; padding: 0 28px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: 2px solid #fbbf24; box-shadow: 0 0 25px rgba(245,158,11,0.5);" onclick="window.FIVIAGroupLevelEngine.renderGrandWinnerUI()">
+            👑 UMUMKAN PEMENANG PERMAINAN 🏆
+          </button>
+
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 56px; padding: 0 24px; font-size: 1.1rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.startLevel('${state.activeLevelId}')">
             🔄 MAINKAN ULANG LEVEL INI
           </button>
-          <button class="fq-btn fq-btn-emerald fq-btn-lg" style="min-height: 56px; padding: 0 32px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()">
+
+          <button class="fq-btn fq-btn-outline fq-btn-lg" style="min-height: 56px; padding: 0 24px; font-size: 1.1rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()">
             🗺️ KEMBALI KE PETA LEVEL
           </button>
+        </div>
+      </div>
+    `;
+
+    renderToContainers(html);
+  }
+
+  // ENERGETIC AUDIO & BGM SYNTHESIZER
+  let bgmIntervalId = null;
+
+  function getAudioCtx() {
+    if (!window.fiviaAudioCtx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) window.fiviaAudioCtx = new AudioCtx();
+    }
+    if (window.fiviaAudioCtx && window.fiviaAudioCtx.state === 'suspended') {
+      window.fiviaAudioCtx.resume();
+    }
+    return window.fiviaAudioCtx;
+  }
+
+  function playEnergeticSound(type) {
+    try {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      if (type === 'correct') {
+        // Bright, energetic 5-note ascending arpeggio (C5 -> E5 -> G5 -> C6 -> E6)
+        const freqs = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        freqs.forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + idx * 0.06);
+          gain.gain.setValueAtTime(0.24, now + idx * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.06);
+          osc.stop(now + idx * 0.06 + 0.22);
+        });
+      } else if (type === 'wrong') {
+        // Dramatic low buzz tone dropping rapidly (320Hz -> 110Hz)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.35);
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (type === 'win' || type === 'fanfare') {
+        playFestiveFanfare();
+      } else if (type === 'click') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.06);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      }
+    } catch(e) {
+      console.warn("Audio playback error:", e);
+    }
+  }
+
+  function startBGM() {
+    if (bgmIntervalId) return;
+    if (localStorage.getItem('fivia_bgm_muted') === 'true') return;
+
+    let step = 0;
+    const bgmNotes = [
+      [261.63, 329.63, 392.00], // C major
+      [293.66, 369.99, 440.00], // G major
+      [220.00, 261.63, 329.63], // A minor
+      [174.61, 220.00, 261.63]  // F major
+    ];
+
+    bgmIntervalId = setInterval(() => {
+      if (localStorage.getItem('fivia_bgm_muted') === 'true') {
+        stopBGM();
+        return;
+      }
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const chord = bgmNotes[step % bgmNotes.length];
+
+        chord.forEach(freq => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.03, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        });
+
+        // Upbeat rhythm bass pulse
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bassOsc.type = 'triangle';
+        bassOsc.frequency.setValueAtTime(chord[0] / 2, now);
+        bassGain.gain.setValueAtTime(0.05, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        bassOsc.connect(bassGain);
+        bassGain.connect(ctx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.3);
+
+        step++;
+      } catch(e) {}
+    }, 700);
+  }
+
+  function stopBGM() {
+    if (bgmIntervalId) {
+      clearInterval(bgmIntervalId);
+      bgmIntervalId = null;
+    }
+  }
+
+  function toggleBGM() {
+    const isMuted = localStorage.getItem('fivia_bgm_muted') === 'true';
+    if (isMuted) {
+      localStorage.setItem('fivia_bgm_muted', 'false');
+      startBGM();
+      playEnergeticSound('click');
+    } else {
+      localStorage.setItem('fivia_bgm_muted', 'true');
+      stopBGM();
+    }
+    updateBgmToggleButtons();
+  }
+
+  function updateBgmToggleButtons() {
+    const isMuted = localStorage.getItem('fivia_bgm_muted') === 'true';
+    const btns = document.querySelectorAll('.fq-bgm-toggle-btn');
+    btns.forEach(btn => {
+      btn.innerHTML = isMuted ? '🔇 BGM: OFF' : '🎵 BGM: ON';
+      btn.style.background = isMuted ? 'rgba(244,63,94,0.2)' : 'rgba(16,185,129,0.2)';
+      btn.style.borderColor = isMuted ? 'var(--fq-rose)' : 'var(--fq-emerald)';
+      btn.style.color = isMuted ? '#fda4af' : '#6ee7b7';
+    });
+  }
+
+  window.playEnergeticSound = playEnergeticSound;
+  window.toggleBGM = toggleBGM;
+  window.startBGM = startBGM;
+  window.stopBGM = stopBGM;
+
+  function playFestiveFanfare() {
+    try {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const notes = [
+        { f: 523.25, t: 0, d: 0.15 },   // C5
+        { f: 659.25, t: 0.15, d: 0.15 }, // E5
+        { f: 783.99, t: 0.3, d: 0.15 },  // G5
+        { f: 1046.50, t: 0.45, d: 0.55 } // C6
+      ];
+      notes.forEach(n => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = n.f;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + n.t);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.t + n.d);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + n.t);
+        osc.stop(ctx.currentTime + n.t + n.d);
+      });
+    } catch(e) {
+      console.warn("Audio Context sound failed:", e);
+    }
+  }
+
+  function launchFestiveConfetti() {
+    const canvas = document.getElementById('fq-festive-confetti-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.parentElement ? canvas.parentElement.offsetWidth : window.innerWidth;
+    canvas.height = canvas.parentElement ? canvas.parentElement.offsetHeight : 600;
+
+    const colors = ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6', '#fef08a'];
+    const particles = [];
+
+    for (let i = 0; i < 90; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 3,
+        vy: Math.random() * 3 + 2,
+        rot: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 10
+      });
+    }
+
+    let animationId;
+    let frames = 0;
+
+    function animate() {
+      if (frames > 400 || !document.getElementById('fq-festive-confetti-canvas')) {
+        if (animationId) cancelAnimationFrame(animationId);
+        return;
+      }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.rotSpeed;
+
+        if (p.y > canvas.height) {
+          p.y = -20;
+          p.x = Math.random() * canvas.width;
+        }
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        ctx.restore();
+      });
+
+      frames++;
+      animationId = requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  function renderGrandWinnerUI() {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+
+    const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
+      ? window.FIVIAGroupPlay.getSessionState()
+      : {};
+    const groups = sessionState.groups || [];
+    const sortedGroups = [...groups].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    const champ = sortedGroups[0] || { groupName: 'Belum Ada Kelompok', score: 0, members: [] };
+    const second = sortedGroups[1] || null;
+    const third = sortedGroups[2] || null;
+    const restGroups = sortedGroups.slice(3);
+
+    playFestiveFanfare();
+    setTimeout(() => { launchFestiveConfetti(); }, 100);
+
+    const html = `
+      <style>
+        @keyframes fqWinnerPulse {
+          0% { box-shadow: 0 0 30px rgba(245,158,11,0.5); transform: scale(1); }
+          50% { box-shadow: 0 0 60px rgba(245,158,11,0.9); transform: scale(1.02); }
+          100% { box-shadow: 0 0 30px rgba(245,158,11,0.5); transform: scale(1); }
+        }
+        @keyframes fqBouncer {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-10px); }
+        }
+      </style>
+      <div style="background: radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.25), rgba(15, 23, 42, 0.98) 75%); border: 4px solid var(--fq-amber); border-radius: 36px; padding: 40px 28px; text-align: center; box-shadow: 0 0 80px rgba(245,158,11,0.5); position: relative; overflow: hidden;">
+        
+        <!-- CANVAS FOR CONFETTI IN CONTAINER -->
+        <canvas id="fq-festive-confetti-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
+
+        <!-- CELEBRATION HEADER -->
+        <div style="position: relative; z-index: 20;">
+          <div style="font-size: 4rem; animation: fqBouncer 1s infinite alternate ease-in-out; margin-bottom: 4px;">👑 🏆 👑</div>
+          <h1 style="font-size: 2.8rem; font-weight: 900; background: linear-gradient(135deg, #fbbf24, #f59e0b, #fef08a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 1px;">
+            PENGUMUMAN PEMENANG UTAMA!
+          </h1>
+          <p style="font-size: 1.2rem; color: var(--fq-cyan); font-weight: 800; margin-bottom: 36px;">
+            🎉 Selamat kepada para Juara FIVIA Group Play Physics Championship! 🎉
+          </p>
+
+          <!-- 3D PODIUM STAGE (JUARA 1, 2, 3) -->
+          <div style="display: flex; justify-content: center; align-items: flex-end; gap: 16px; margin-bottom: 36px; flex-wrap: wrap;">
+            
+            <!-- JUARA 2 (LEFT PODIUM) -->
+            ${second ? `
+              <div style="flex: 1; min-width: 220px; max-width: 260px; background: linear-gradient(180deg, rgba(51,65,85,0.9), rgba(15,23,42,0.95)); border: 2.5px solid #cbd5e1; border-radius: 24px; padding: 20px 16px; box-shadow: 0 0 30px rgba(203,213,225,0.3); transform: translateY(12px);">
+                <div style="font-size: 2.5rem; margin-bottom: 4px;">🥈</div>
+                <span style="background: #cbd5e1; color: #0f172a; font-weight: 900; font-size: 0.85rem; padding: 4px 14px; border-radius: 99px; display: inline-block; margin-bottom: 8px;">JUARA 2</span>
+                <h3 style="color: #fff; font-size: 1.3rem; font-weight: 900; margin: 4px 0;">${second.groupName}</h3>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #cbd5e1; margin-bottom: 10px;">${second.score || 0} POIN</div>
+                <div style="font-size: 0.82rem; color: #94a3b8; text-align: left; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 12px; max-height: 90px; overflow-y: auto;">
+                  ${(second.members || []).map((m, i) => `<div>${i+1}. ${m.studentName || m}</div>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- JUARA 1 (CENTER PODIUM - HIGHEST & GLOWING) -->
+            <div style="flex: 1; min-width: 250px; max-width: 300px; background: linear-gradient(180deg, rgba(245,158,11,0.25), rgba(15,23,42,0.98)); border: 3.5px solid #fbbf24; border-radius: 28px; padding: 28px 20px; animation: fqWinnerPulse 3s infinite ease-in-out; position: relative; z-index: 5;">
+              <div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-weight: 900; font-size: 0.85rem; padding: 6px 20px; border-radius: 99px; box-shadow: 0 0 20px rgba(245,158,11,0.8); border: 2px solid #fef08a; white-space: nowrap;">
+                🏆 SANG JUARA UTAMA
+              </div>
+              <div style="font-size: 3.8rem; margin: 10px 0 4px 0; filter: drop-shadow(0 0 15px rgba(245,158,11,0.8));">🥇</div>
+              <h2 style="color: #fef08a; font-size: 1.7rem; font-weight: 900; margin: 4px 0; text-shadow: 0 0 10px rgba(245,158,11,0.5);">${champ.groupName}</h2>
+              <div style="font-size: 2.2rem; font-weight: 900; color: #fbbf24; margin-bottom: 12px; text-shadow: 0 0 12px rgba(251,191,36,0.6);">${champ.score || 0} POIN</div>
+              <div style="font-size: 0.9rem; color: #fef08a; text-align: left; background: rgba(0,0,0,0.4); padding: 10px 14px; border-radius: 14px; border: 1px solid rgba(251,191,36,0.3); max-height: 110px; overflow-y: auto;">
+                <strong style="color: #fbbf24; display: block; margin-bottom: 4px;">⭐ Anggota Kelompok Juara:</strong>
+                ${(champ.members || []).map((m, i) => `<div style="display: flex; justify-content: space-between; padding: 2px 0;"><span>${i+1}. ${m.studentName || m}</span> <span>⭐</span></div>`).join('')}
+              </div>
+            </div>
+
+            <!-- JUARA 3 (RIGHT PODIUM) -->
+            ${third ? `
+              <div style="flex: 1; min-width: 220px; max-width: 260px; background: linear-gradient(180deg, rgba(180,83,9,0.25), rgba(15,23,42,0.95)); border: 2.5px solid #cd7f32; border-radius: 24px; padding: 20px 16px; box-shadow: 0 0 30px rgba(205,127,50,0.3); transform: translateY(18px);">
+                <div style="font-size: 2.5rem; margin-bottom: 4px;">🥉</div>
+                <span style="background: #cd7f32; color: #fff; font-weight: 900; font-size: 0.85rem; padding: 4px 14px; border-radius: 99px; display: inline-block; margin-bottom: 8px;">JUARA 3</span>
+                <h3 style="color: #fff; font-size: 1.3rem; font-weight: 900; margin: 4px 0;">${third.groupName}</h3>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #cd7f32; margin-bottom: 10px;">${third.score || 0} POIN</div>
+                <div style="font-size: 0.82rem; color: #cbd5e1; text-align: left; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 12px; max-height: 90px; overflow-y: auto;">
+                  ${(third.members || []).map((m, i) => `<div>${i+1}. ${m.studentName || m}</div>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+          </div>
+
+          <!-- REST OF GROUPS (POSISI SELANJUTNYA) -->
+          ${restGroups.length > 0 ? `
+            <div style="background: rgba(30,41,59,0.85); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 18px 24px; margin-bottom: 32px; text-align: left;">
+              <h4 style="color: var(--fq-cyan); font-weight: 900; font-size: 1.1rem; margin: 0 0 12px 0;">🎗️ KLASEMEN PERINGKAT SELANJUTNYA:</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;">
+                ${restGroups.map((grp, idx) => `
+                  <div style="background: rgba(15,23,42,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 12px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: 900; color: #fff;">
+                      <span style="color: #94a3b8; margin-right: 8px;">#${idx + 4}</span> ${grp.groupName}
+                    </div>
+                    <div style="font-weight: 900; color: var(--fq-cyan);">${grp.score || 0} POIN</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- ACTION BUTTONS -->
+          <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 56px; padding: 0 32px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.startLevel('LEVEL_01')">
+              🔄 MAINKAN LAGI DARI LEVEL 1
+            </button>
+            <button class="fq-btn fq-btn-emerald fq-btn-lg" style="min-height: 56px; padding: 0 32px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()">
+              🗺️ KEMBALI KE PETA LEVEL
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -1733,7 +2134,9 @@ window.FIVIAGroupLevelEngine = (function() {
     processWordImportFile: processWordImportFile,
     appointReboundGroup: appointReboundGroup,
     showReboundSelectionUI: showReboundSelectionUI,
-    startTurnTimer: startTurnTimer
+    startTurnTimer: startTurnTimer,
+    renderLevelCompletionUI: renderLevelCompletionUI,
+    renderGrandWinnerUI: renderGrandWinnerUI
   };
 })();
 
