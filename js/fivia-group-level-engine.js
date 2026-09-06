@@ -92,33 +92,33 @@ window.FIVIAGroupLevelEngine = (function() {
       }
 
       const html = `
-        <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
+        <div style="background: rgba(15, 23, 42, 0.98); border: 2.5px solid var(--fq-cyan); border-radius: 24px; padding: 20px 24px; text-align: left; box-shadow: 0 0 35px var(--fq-cyan-glow);">
           <!-- Top Title Header -->
-          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2.5px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 28px; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
             <div>
-              <span class="fq-badge-pill" style="font-size: 0.9rem; padding: 6px 16px;"><i class="fas fa-users-cog"></i> FIVIA GROUP PLAY &bull; PETA PERMAINAN KELOMPOK</span>
-              <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 6px 0 2px 0;">🎮 PETA LEVEL PERMAINAN KELOMPOK</h1>
-              <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem;">Atur kelompok, pilih modul materi, dan mainkan tantangan fisika interaktif secara bergiliran!</div>
+              <span class="fq-badge-pill" style="font-size: 0.8rem; padding: 4px 12px; margin-bottom: 4px;"><i class="fas fa-users-cog"></i> FIVIA GROUP PLAY &bull; PETA PERMAINAN KELOMPOK</span>
+              <h1 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0 2px 0;">🎮 PETA LEVEL PERMAINAN KELOMPOK</h1>
+              <div style="color: var(--fq-cyan); font-weight: 800; font-size: 0.9rem;">Atur kelompok, pilih modul materi, dan mainkan tantangan fisika interaktif secara bergiliran!</div>
             </div>
 
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <button class="fq-btn fq-btn-cyan" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.openWordImportModal()"><i class="fas fa-file-word"></i> 📝 UPLOAD SOAL WORD (.docx)</button>
-              <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
-              <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="if(window.FIVIAClassroomEngine) window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
-              <button class="fq-btn fq-btn-amber" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.autoGroup()"><i class="fas fa-random"></i> 🔀 BAGI KELOMPOK</button>
-              <button class="fq-btn fq-btn-cyan" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.startLevel('LEVEL_01')"><i class="fas fa-play"></i> ▶ MULAI LEVEL 01</button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.openWordImportModal()"><i class="fas fa-file-word"></i> 📝 UPLOAD WORD (.docx)</button>
+              <button class="fq-btn fq-btn-emerald" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
+              <button class="fq-btn fq-btn-emerald" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="if(window.FIVIAClassroomEngine) window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
+              <button class="fq-btn fq-btn-amber" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.autoGroup()"><i class="fas fa-random"></i> 🔀 BAGI KELOMPOK</button>
+              <button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.startLevel('LEVEL_01')"><i class="fas fa-play"></i> ▶ MULAI LEVEL 01</button>
             </div>
           </div>
 
           <!-- MODULE SELECTOR BAR (GIM BERDASARKAN MODUL MATERI) -->
-          <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-cyan); border-radius: 24px; padding: 22px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 0 25px rgba(6,182,212,0.2);">
+          <div style="background: rgba(30,41,59,0.85); border: 2px solid var(--fq-cyan); border-radius: 16px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 0 20px rgba(6,182,212,0.15);">
             <div>
-              <span class="fq-badge-pill" style="border-color: var(--fq-amber); color: var(--fq-amber); font-weight: 900;"><i class="fas fa-book-open"></i> PILIH MODUL PERMAINAN</span>
-              <h3 style="color: #fff; font-size: 1.3rem; font-weight: 900; margin: 6px 0 2px 0;">📚 MATERI &amp; BANK SOAL MODUL GIM:</h3>
-              <div style="color: var(--fq-cyan); font-size: 0.88rem; font-weight: 700;">Gim akan memainkan tantangan fisika yang dibuat secara khusus berdasarkan modul berikut.</div>
+              <span class="fq-badge-pill" style="border-color: var(--fq-amber); color: var(--fq-amber); font-weight: 900; font-size: 0.78rem; margin-bottom: 2px;"><i class="fas fa-book-open"></i> PILIH MODUL PERMAINAN</span>
+              <h3 style="color: #fff; font-size: 1.1rem; font-weight: 900; margin: 2px 0 1px 0;">📚 MATERI &amp; BANK SOAL MODUL GIM:</h3>
+              <div style="color: var(--fq-cyan); font-size: 0.82rem; font-weight: 700;">Gim akan memainkan tantangan fisika berdasarkan modul terpilih.</div>
             </div>
             <div>
-              <select class="fq-select" style="min-width: 340px; min-height: 52px; font-weight: 800; font-size: 1.05rem; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 0 16px;" onchange="window.FIVIAGroupLevelEngine.setSelectedModule(this.value)">
+              <select class="fq-select" style="min-width: 300px; min-height: 42px; font-weight: 800; font-size: 0.95rem; background: #0f172a; color: #fff; border: 1.5px solid var(--fq-cyan); border-radius: 10px; padding: 0 12px;" onchange="window.FIVIAGroupLevelEngine.setSelectedModule(this.value)">
                 <option value="ALL" ${selectedModuleId === 'ALL' ? 'selected' : ''}>🌟 SEMUA MODUL MATERI (ACAK GABUNGAN)</option>
                 <optgroup label="📖 Modul Kurikulum Utama (Materi &amp; Lab)">
                   ${baseMats.map(m => `<option value="${m.id}" ${String(selectedModuleId) === String(m.id) ? 'selected' : ''}>Modul ${m.id}: ${m.name}</option>`).join('')}
@@ -128,12 +128,12 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
 
           <!-- 1. PENGATURAN KELOMPOK & DATABASE SISWA -->
-          <div style="background: rgba(30,41,59,0.85); border: 2px solid var(--fq-border-cyan); border-radius: 24px; padding: 24px; margin-bottom: 32px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-              <h3 style="color: var(--fq-cyan); font-size: 1.2rem; font-weight: 900; margin: 0;"><i class="fas fa-chalkboard"></i> PENGATURAN KELAS &amp; KELOMPOK (${groups.length} Kelompok Terdaftar):</h3>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div style="background: rgba(30,41,59,0.85); border: 1.5px solid var(--fq-border-cyan); border-radius: 16px; padding: 14px 18px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+              <h3 style="color: var(--fq-cyan); font-size: 1rem; font-weight: 900; margin: 0;"><i class="fas fa-chalkboard"></i> KELAS &amp; KELOMPOK (${groups.length} Kelompok):</h3>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 ${classes.map(cls => `
-                  <button class="fq-btn ${cls.id === activeCls.id ? 'fq-btn-cyan' : 'fq-btn-outline'}" style="padding: 6px 16px; font-weight: 800; font-size: 0.9rem;" onclick="window.FIVIAGroupLevelEngine.selectClass('${cls.id}')">
+                  <button class="fq-btn ${cls.id === activeCls.id ? 'fq-btn-cyan' : 'fq-btn-outline'}" style="padding: 4px 12px; font-weight: 800; font-size: 0.82rem; min-height: 32px;" onclick="window.FIVIAGroupLevelEngine.selectClass('${cls.id}')">
                     📘 ${cls.name}
                   </button>
                 `).join('')}
@@ -141,16 +141,16 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
 
             <!-- Group Member Cards Preview -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
               ${groups.map((grp, gIdx) => `
-                <div style="background: rgba(15,23,42,0.7); border: 1.5px solid var(--fq-border-cyan); border-radius: 16px; padding: 14px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fq-border-cyan); padding-bottom: 8px; margin-bottom: 10px;">
-                    <strong style="color: var(--fq-amber); font-size: 1.05rem;">👥 ${grp.groupName}</strong>
-                    <span class="fq-badge-pill" style="margin: 0; font-size: 0.75rem;">${(grp.members || []).length} Siswa</span>
+                <div style="background: rgba(15,23,42,0.7); border: 1px solid var(--fq-border-cyan); border-radius: 12px; padding: 10px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fq-border-cyan); padding-bottom: 4px; margin-bottom: 6px;">
+                    <strong style="color: var(--fq-amber); font-size: 0.95rem;">👥 ${grp.groupName}</strong>
+                    <span class="fq-badge-pill" style="margin: 0; font-size: 0.7rem; padding: 2px 8px;">${(grp.members || []).length} Siswa</span>
                   </div>
-                  <div style="font-size: 0.85rem; color: #fff; display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto;">
+                  <div style="font-size: 0.8rem; color: #fff; display: flex; flex-direction: column; gap: 2px; max-height: 80px; overflow-y: auto;">
                     ${(grp.members || []).map((m, mIdx) => `
-                      <div style="display: flex; align-items: center; gap: 6px;">
+                      <div style="display: flex; align-items: center; gap: 4px;">
                         <span style="color: var(--fq-cyan); font-weight: 800;">${mIdx + 1}.</span> ${m.studentName || m}
                       </div>
                     `).join('')}
@@ -161,53 +161,49 @@ window.FIVIAGroupLevelEngine = (function() {
           </div>
 
           <!-- 2. VISUAL GAME MAP PATH (CONNECTED NODES) -->
-          <div style="background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9)); border: 2.5px solid var(--fq-border-cyan); border-radius: 28px; padding: 28px; margin-bottom: 32px; text-align: center; position: relative;">
-            <h3 style="color: var(--fq-cyan); font-size: 1.3rem; font-weight: 900; margin: 0 0 20px 0;"><i class="fas fa-route"></i> PETA JALUR PERMAINAN KELOMPOK (KLIK UNTUK MAINKAN):</h3>
+          <div style="background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9)); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 16px 20px; margin-bottom: 16px; text-align: center; position: relative;">
+            <h3 style="color: var(--fq-cyan); font-size: 1.05rem; font-weight: 900; margin: 0 0 12px 0;"><i class="fas fa-route"></i> PETA JALUR PERMAINAN KELOMPOK (KLIK UNTUK MAINKAN):</h3>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; overflow-x: auto; padding: 10px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; overflow-x: auto; padding: 4px 0;">
               ${Object.keys(allLevels).map((key, idx) => {
                 const lvl = allLevels[key];
 
                 return `
-                  <div style="flex: 1; min-width: 150px; background: rgba(15,23,42,0.9); border: 3px solid ${lvl.color || '#06b6d4'}; border-radius: 22px; padding: 20px 14px; position: relative; box-shadow: 0 0 20px ${lvl.color || '#06b6d4'}; cursor: pointer; transition: transform 0.2s ease;" onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <div style="font-size: 2.5rem; margin-bottom: 6px;">${lvl.badge || '🟢'}</div>
-                    <div style="font-size: 0.85rem; font-weight: 900; color: ${lvl.color || '#06b6d4'};">${lvl.code}</div>
-                    <div style="font-size: 1.05rem; font-weight: 900; color: #fff; margin: 4px 0;">${lvl.title}</div>
-                    <div style="font-size: 0.78rem; font-weight: 800; color: var(--fq-emerald); margin-top: 8px;">
-                      🟢 TERBUKA (MAINKAN)
+                  <div style="flex: 1; min-width: 130px; background: rgba(15,23,42,0.9); border: 2px solid ${lvl.color || '#06b6d4'}; border-radius: 16px; padding: 12px 10px; position: relative; box-shadow: 0 0 15px ${lvl.color || '#06b6d4'}; cursor: pointer; transition: transform 0.2s ease;" onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size: 1.8rem; margin-bottom: 4px;">${lvl.badge || '🟢'}</div>
+                    <div style="font-size: 0.78rem; font-weight: 900; color: ${lvl.color || '#06b6d4'};">${lvl.code}</div>
+                    <div style="font-size: 0.9rem; font-weight: 900; color: #fff; margin: 2px 0;">${lvl.title}</div>
+                    <div style="font-size: 0.72rem; font-weight: 800; color: var(--fq-emerald); margin-top: 4px;">
+                      🟢 TERBUKA
                     </div>
                   </div>
-                  ${idx < 4 ? '<div style="font-size: 1.8rem; color: var(--fq-cyan); font-weight: 900;">&rarr;</div>' : ''}
+                  ${idx < 4 ? '<div style="font-size: 1.4rem; color: var(--fq-cyan); font-weight: 900;">&rarr;</div>' : ''}
                 `;
               }).join('')}
             </div>
           </div>
 
           <!-- 3. LEVEL CARDS GRID (MINIGAME MODES) -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
             ${Object.keys(allLevels).map(key => {
               const lvl = allLevels[key];
 
               return `
-                <div style="background: rgba(30,41,59,0.85); border: 3px solid ${lvl.color || '#06b6d4'}; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 0 25px rgba(0,0,0,0.3);">
+                <div style="background: rgba(30,41,59,0.85); border: 2px solid ${lvl.color || '#06b6d4'}; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 0 15px rgba(0,0,0,0.2);">
                   <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                      <span class="fq-badge-pill" style="border-color: ${lvl.color || '#06b6d4'}; color: ${lvl.color || '#06b6d4'}; font-weight: 900;">${lvl.badge || '🟢'} ${lvl.code}</span>
-                      <span class="fq-badge-pill" style="margin: 0; color: var(--fq-emerald); border-color: var(--fq-emerald); font-weight: 900;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                      <span class="fq-badge-pill" style="border-color: ${lvl.color || '#06b6d4'}; color: ${lvl.color || '#06b6d4'}; font-weight: 900; font-size: 0.78rem; padding: 2px 10px;">${lvl.badge || '🟢'} ${lvl.code}</span>
+                      <span class="fq-badge-pill" style="margin: 0; color: var(--fq-emerald); border-color: var(--fq-emerald); font-weight: 900; font-size: 0.75rem; padding: 2px 8px;">
                         ✅ TERBUKA
                       </span>
                     </div>
 
-                    <h3 style="font-size: 1.6rem; font-weight: 900; color: #fff; margin: 4px 0 8px 0;">${lvl.title}</h3>
-                    <p style="font-size: 0.9rem; color: var(--fq-text-muted); line-height: 1.4; margin-bottom: 16px;">${lvl.focus}</p>
+                    <h3 style="font-size: 1.2rem; font-weight: 900; color: #fff; margin: 2px 0 4px 0;">${lvl.title}</h3>
+                    <p style="font-size: 0.8rem; color: var(--fq-text-muted); line-height: 1.3; margin-bottom: 10px;">${lvl.focus}</p>
                   </div>
 
                   <div>
-                    <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--fq-emerald); border-radius: 12px; padding: 10px; font-size: 0.82rem; color: var(--fq-emerald); font-weight: 700; margin-bottom: 14px;">
-                      🎮 Status: Siap Dimainkan Berkelompok (Round-Robin)
-                    </div>
-
-                    <button class="fq-btn fq-btn-cyan" style="width: 100%; min-height: 56px; font-size: 1.15rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')">
+                    <button class="fq-btn fq-btn-cyan" style="width: 100%; min-height: 42px; font-size: 0.95rem; font-weight: 900; padding: 8px 14px;" onclick="window.FIVIAGroupLevelEngine.startLevel('${lvl.id}')">
                       🚀 MAINKAN ${lvl.code}
                     </button>
                   </div>
@@ -500,35 +496,35 @@ window.FIVIAGroupLevelEngine = (function() {
           ];
         }
         optionsUI = `
-          <div id="fq-gl-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div id="fq-gl-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             ${optsList.map((opt, i) => `
-              <button class="fq-btn fq-btn-outline fq-btn-lg" style="min-height: 76px; padding: 20px; font-size: 1.25rem; font-weight: 800; text-align: left; border-width: 2.5px;" onclick="window.FIVIAGroupLevelEngine.submitAnswer('${opt.id || String.fromCharCode(65 + i)}')">
-                <strong style="color: var(--fq-amber); font-size: 1.4rem;">${opt.id || String.fromCharCode(65 + i)}.</strong> ${opt.label || opt.text || opt}
+              <button class="fq-btn fq-btn-outline fq-btn-lg" style="min-height: 52px; padding: 10px 16px; font-size: 1.1rem; font-weight: 800; text-align: left; border-width: 2px;" onclick="window.FIVIAGroupLevelEngine.submitAnswer('${opt.id || String.fromCharCode(65 + i)}')">
+                <strong style="color: var(--fq-amber); font-size: 1.2rem;">${opt.id || String.fromCharCode(65 + i)}.</strong> ${opt.label || opt.text || opt}
               </button>
             `).join('')}
           </div>
         `;
       } else if (qType === "multiple_select") {
         optionsUI = `
-          <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 14px;">
-            <div style="color: var(--fq-amber); font-weight: 800; font-size: 1.05rem;"><i class="fas fa-check-square"></i> Pilih SEMUA opsi jawaban yang BENAR (Lebih dari 1):</div>
+          <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="color: var(--fq-amber); font-weight: 800; font-size: 0.95rem;"><i class="fas fa-check-square"></i> Pilih SEMUA opsi jawaban yang BENAR:</div>
             ${(q.options || []).map((opt, i) => `
-              <label style="background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 16px; padding: 18px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; font-size: 1.15rem; color: #fff; font-weight: 700;">
-                <input type="checkbox" class="fq-ms-check" value="${i}" style="width: 24px; height: 24px; accent-color: var(--fq-cyan);" />
+              <label style="background: rgba(15,23,42,0.8); border: 1.5px solid var(--fq-border-cyan); border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1.05rem; color: #fff; font-weight: 700;">
+                <input type="checkbox" class="fq-ms-check" value="${i}" style="width: 20px; height: 20px; accent-color: var(--fq-cyan);" />
                 <span><strong style="color: var(--fq-amber);">${opt.id || String.fromCharCode(65 + i)}.</strong> ${opt.label || opt.text || opt}</span>
               </label>
             `).join('')}
-            <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 64px; font-size: 1.2rem; font-weight: 900; margin-top: 10px;" onclick="window.FIVIAGroupLevelEngine.submitMultipleSelect()">
+            <button class="fq-btn fq-btn-cyan" style="min-height: 48px; font-size: 1.1rem; font-weight: 900; margin-top: 6px;" onclick="window.FIVIAGroupLevelEngine.submitMultipleSelect()">
               🚀 KIRIM JAWABAN KOMPLEKS
             </button>
           </div>
         `;
       } else if (qType === "short_answer") {
         optionsUI = `
-          <div id="fq-gl-options" style="background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 24px;">
-            <label style="display: block; color: var(--fq-cyan); font-weight: 900; font-size: 1.1rem; margin-bottom: 12px;"><i class="fas fa-keyboard"></i> KETIKKAN JAWABAN ISIAN SINGKAT:</label>
-            <input type="text" id="fq-short-input" class="fq-select" style="width: 100%; min-height: 60px; font-size: 1.2rem; padding: 0 20px; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; margin-bottom: 18px;" placeholder="Ketikkan teks, simbol, atau angka jawaban..." />
-            <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 64px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.submitShortAnswer()">
+          <div id="fq-gl-options" style="background: rgba(15,23,42,0.8); border: 1.5px solid var(--fq-border-cyan); border-radius: 16px; padding: 16px;">
+            <label style="display: block; color: var(--fq-cyan); font-weight: 900; font-size: 1rem; margin-bottom: 8px;"><i class="fas fa-keyboard"></i> KETIKKAN JAWABAN ISIAN SINGKAT:</label>
+            <input type="text" id="fq-short-input" class="fq-select" style="width: 100%; min-height: 46px; font-size: 1.1rem; padding: 0 16px; background: #0f172a; color: #fff; border: 1.5px solid var(--fq-cyan); border-radius: 10px; margin-bottom: 12px;" placeholder="Ketikkan teks, simbol, atau angka jawaban..." />
+            <button class="fq-btn fq-btn-cyan" style="width: 100%; min-height: 48px; font-size: 1.1rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.submitShortAnswer()">
               🚀 KIRIM JAWABAN ISIAN
             </button>
           </div>
@@ -537,20 +533,20 @@ window.FIVIAGroupLevelEngine = (function() {
         const pairs = q.pairs || [];
         const rightOptions = pairs.map(p => p.right);
         optionsUI = `
-          <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="color: var(--fq-amber); font-weight: 800; font-size: 1.05rem;"><i class="fas fa-project-diagram"></i> Pasangkan elemen di sebelah kiri dengan jawaban di sebelah kanan:</div>
+          <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="color: var(--fq-amber); font-weight: 800; font-size: 0.95rem;"><i class="fas fa-project-diagram"></i> Pasangkan elemen di sebelah kiri dengan jawaban di sebelah kanan:</div>
             ${pairs.map((p, i) => `
-              <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; align-items: center; background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 16px; padding: 18px;">
-                <div style="font-weight: 800; color: #fff; font-size: 1.05rem;">${i + 1}. ${p.left}</div>
+              <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; align-items: center; background: rgba(15,23,42,0.8); border: 1.5px solid var(--fq-border-cyan); border-radius: 12px; padding: 10px 14px;">
+                <div style="font-weight: 800; color: #fff; font-size: 0.95rem;">${i + 1}. ${p.left}</div>
                 <div>
-                  <select class="fq-matching-select fq-select" data-pair-idx="${i}" style="width: 100%; min-height: 48px; font-size: 1rem; background: #0f172a; color: #fff; border: 1.5px solid var(--fq-cyan); border-radius: 10px; padding: 0 12px; font-weight: 700;">
+                  <select class="fq-matching-select fq-select" data-pair-idx="${i}" style="width: 100%; min-height: 40px; font-size: 0.95rem; background: #0f172a; color: #fff; border: 1.5px solid var(--fq-cyan); border-radius: 8px; padding: 0 10px; font-weight: 700;">
                     <option value="">-- Pilih Pasangan --</option>
                     ${rightOptions.map(rOpt => `<option value="${rOpt.replace(/"/g, '&quot;')}">${rOpt}</option>`).join('')}
                   </select>
                 </div>
               </div>
             `).join('')}
-            <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 64px; font-size: 1.2rem; font-weight: 900; margin-top: 10px;" onclick="window.FIVIAGroupLevelEngine.submitMatching()">
+            <button class="fq-btn fq-btn-cyan" style="min-height: 48px; font-size: 1.1rem; font-weight: 900; margin-top: 6px;" onclick="window.FIVIAGroupLevelEngine.submitMatching()">
               🚀 KIRIM JAWABAN PENCOCOKAN
             </button>
           </div>
@@ -560,45 +556,45 @@ window.FIVIAGroupLevelEngine = (function() {
       const groups = sessionState.groups || [];
 
       const html = `
-        <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid ${meta.color || '#06b6d4'}; border-radius: 32px; padding: 32px; text-align: left; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
+        <div style="background: rgba(15, 23, 42, 0.98); border: 2.5px solid ${meta.color || '#06b6d4'}; border-radius: 24px; padding: 16px 22px; text-align: left; box-shadow: 0 0 40px rgba(6,182,212,0.25);">
           <!-- Smartboard Level Top Header Bar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fq-border-cyan); padding-bottom: 10px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
             <div>
-              <span class="fq-badge-pill" style="border-color: ${meta.color || '#06b6d4'}; color: ${meta.color || '#06b6d4'}; font-size: 1rem; padding: 6px 18px;">
+              <span class="fq-badge-pill" style="border-color: ${meta.color || '#06b6d4'}; color: ${meta.color || '#06b6d4'}; font-size: 0.82rem; padding: 4px 12px; margin-bottom: 4px;">
                 ${meta.badge || '🟢'} ${meta.code} &bull; ${meta.title}
               </span>
-              <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 6px 0 0 0;">👥 GILIRAN: <strong style="color: var(--fq-amber);">${displayGroup.groupName || 'KELOMPOK 1'}</strong></h2>
+              <h2 style="font-size: 1.5rem; font-weight: 900; color: #fff; margin: 4px 0 0 0;">👥 GILIRAN: <strong style="color: var(--fq-amber);">${displayGroup.groupName || 'KELOMPOK 1'}</strong></h2>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <!-- 2-MINUTE COUNTDOWN TIMER BADGE -->
-              <div style="background: rgba(15,23,42,0.9); border: 2.5px solid var(--fq-cyan); border-radius: 20px; padding: 8px 22px; text-align: center; box-shadow: 0 0 20px rgba(6,182,212,0.3);">
-                <div style="font-size: 0.72rem; color: var(--fq-cyan); font-weight: 800; letter-spacing: 1px;">⏱️ SISA WAKTU (2 MENIT)</div>
-                <div id="fq-timer-clock" style="font-size: 1.7rem; font-weight: 900; color: var(--fq-cyan); font-family: monospace; line-height: 1.1;">02:00</div>
+              <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 4px 16px; text-align: center; box-shadow: 0 0 15px rgba(6,182,212,0.25);">
+                <div style="font-size: 0.65rem; color: var(--fq-cyan); font-weight: 800; letter-spacing: 1px;">⏱️ SISA WAKTU</div>
+                <div id="fq-timer-clock" style="font-size: 1.4rem; font-weight: 900; color: var(--fq-cyan); font-family: monospace; line-height: 1.1;">02:00</div>
               </div>
 
-              <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-rose); border-radius: 20px; padding: 10px 20px; text-align: center;">
-                <div style="font-size: 0.75rem; color: var(--fq-text-muted); font-weight: 800;">TEAM LIVES</div>
-                <div style="font-size: 1.5rem;">${livesHtml}</div>
+              <div style="background: rgba(30,41,59,0.9); border: 1.5px solid var(--fq-rose); border-radius: 14px; padding: 6px 14px; text-align: center;">
+                <div style="font-size: 0.68rem; color: var(--fq-text-muted); font-weight: 800;">TEAM LIVES</div>
+                <div style="font-size: 1.2rem;">${livesHtml}</div>
               </div>
 
               ${(state.comboStreak || 0) > 1 ? `
-                <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-amber); border-radius: 20px; padding: 10px 20px; text-align: center;">
-                  <div style="font-size: 0.75rem; color: var(--fq-amber); font-weight: 800;">COMBO STREAK</div>
-                  <div style="font-size: 1.4rem; font-weight: 900; color: var(--fq-amber);">🔥 COMBO x${state.comboStreak}</div>
+                <div style="background: rgba(30,41,59,0.9); border: 1.5px solid var(--fq-amber); border-radius: 14px; padding: 6px 14px; text-align: center;">
+                  <div style="font-size: 0.68rem; color: var(--fq-amber); font-weight: 800;">STREAK</div>
+                  <div style="font-size: 1.1rem; font-weight: 900; color: var(--fq-amber);">🔥 x${state.comboStreak}</div>
                 </div>
               ` : ''}
 
-              <button class="fq-btn fq-btn-outline" style="min-height: 56px; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-map"></i> PETA KELOMPOK</button>
+              <button class="fq-btn fq-btn-outline" style="min-height: 38px; padding: 6px 14px; font-size: 0.85rem; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-map"></i> PETA KELOMPOK</button>
             </div>
           </div>
 
           <!-- GROUP SCORES REAL-TIME LEADERBOARD BAR -->
-          <div style="background: rgba(30,41,59,0.85); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div style="font-weight: 900; color: var(--fq-amber); font-size: 0.95rem;"><i class="fas fa-trophy"></i> POIN KELOMPOK:</div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div style="background: rgba(30,41,59,0.85); border: 1.5px solid var(--fq-border-cyan); border-radius: 14px; padding: 6px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="font-weight: 900; color: var(--fq-amber); font-size: 0.85rem;"><i class="fas fa-trophy"></i> POIN KELOMPOK:</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               ${groups.map(g => `
-                <div style="background: ${displayGroup.groupName === g.groupName ? 'rgba(6,182,212,0.3)' : 'rgba(15,23,42,0.7)'}; border: 1.5px solid ${displayGroup.groupName === g.groupName ? 'var(--fq-cyan)' : 'var(--fq-border-cyan)'}; border-radius: 12px; padding: 6px 14px; font-size: 0.9rem; font-weight: 800; color: #fff;">
+                <div style="background: ${displayGroup.groupName === g.groupName ? 'rgba(6,182,212,0.3)' : 'rgba(15,23,42,0.7)'}; border: 1px solid ${displayGroup.groupName === g.groupName ? 'var(--fq-cyan)' : 'var(--fq-border-cyan)'}; border-radius: 10px; padding: 4px 10px; font-size: 0.82rem; font-weight: 800; color: #fff;">
                   ${g.groupName}: <span style="color: ${(g.score || 0) < 0 ? 'var(--fq-rose)' : 'var(--fq-amber)'};">${g.score || 0} pts</span>
                 </div>
               `).join('')}
@@ -607,11 +603,11 @@ window.FIVIAGroupLevelEngine = (function() {
 
           <!-- REBOUND TURN WARNING BANNER -->
           ${activeReboundGroup ? `
-            <div style="background: rgba(245,158,11,0.2); border: 2.5px solid var(--fq-amber); border-radius: 20px; padding: 16px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 30px rgba(245,158,11,0.3);">
-              <div style="font-size: 1.3rem; font-weight: 900; color: var(--fq-amber); margin-bottom: 4px;">
+            <div style="background: rgba(245,158,11,0.2); border: 2px solid var(--fq-amber); border-radius: 14px; padding: 10px; text-align: center; margin-bottom: 10px; box-shadow: 0 0 20px rgba(245,158,11,0.25);">
+              <div style="font-size: 1.1rem; font-weight: 900; color: var(--fq-amber); margin-bottom: 2px;">
                 👉 DITUNJUK UNTUK MENJAWAB REBOUND: <span style="color: #fff;">${activeReboundGroup.groupName}</span>
               </div>
-              <div style="font-size: 0.95rem; color: #e2e8f0; font-weight: 700;">
+              <div style="font-size: 0.85rem; color: #e2e8f0; font-weight: 700;">
                 ⚠️ Perhatian: Jika jawaban kelompokmu SALAH, Poin Kelompok berkurang 10 Poin (-10 POIN).
               </div>
             </div>
@@ -619,52 +615,52 @@ window.FIVIAGroupLevelEngine = (function() {
 
           <!-- LEVEL 05 PHYSICS BOSS HP BAR OVERLAY -->
           ${state.activeLevelId === 'LEVEL_05' ? `
-            <div style="background: rgba(225,29,72,0.2); border: 2.5px solid var(--fq-rose); border-radius: 20px; padding: 18px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 30px rgba(225,29,72,0.4);">
-              <div style="display: flex; justify-content: space-between; font-weight: 900; color: var(--fq-rose); font-size: 1.1rem; margin-bottom: 6px;">
+            <div style="background: rgba(225,29,72,0.2); border: 2px solid var(--fq-rose); border-radius: 14px; padding: 10px; text-align: center; margin-bottom: 10px;">
+              <div style="display: flex; justify-content: space-between; font-weight: 900; color: var(--fq-rose); font-size: 0.95rem; margin-bottom: 4px;">
                 <span>👾 MECHA PHYSICS BOSS</span>
                 <span>${bossHP} / 100 HP</span>
               </div>
-              <div style="width: 100%; background: rgba(15,23,42,0.8); height: 20px; border-radius: 10px; overflow: hidden; border: 1px solid var(--fq-rose);">
+              <div style="width: 100%; background: rgba(15,23,42,0.8); height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid var(--fq-rose);">
                 <div style="width: ${bossHP}%; background: linear-gradient(90deg, #f43f5e, #fb7185); height: 100%; transition: width 0.5s ease;"></div>
               </div>
             </div>
           ` : ''}
 
           <!-- PLAYER TURN BANNER -->
-          <div style="background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25)); border: 3px solid var(--fq-cyan); border-radius: 24px; padding: 22px; text-align: center; margin-bottom: 28px;">
-            <div style="font-size: 1.1rem; font-weight: 900; color: var(--fq-amber); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">
+          <div style="background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25)); border: 2px solid var(--fq-cyan); border-radius: 16px; padding: 8px 16px; text-align: center; margin-bottom: 10px;">
+            <div style="font-size: 0.8rem; font-weight: 900; color: var(--fq-amber); letter-spacing: 1.5px; text-transform: uppercase;">
               🎯 ${activeReboundGroup ? 'REBOUND TURN! MENJAWAB SOAL' : 'GILIRANMU! MAJU KE PAPAN INTERAKTIF'}
             </div>
-            <h1 style="font-size: 3rem; font-weight: 900; color: #fff; margin: 2px 0;">
+            <h1 style="font-size: 1.6rem; font-weight: 900; color: #fff; margin: 1px 0;">
               👨‍🎓 ${activePlayer.studentName || 'Siswa'}
             </h1>
-            <div style="font-size: 1rem; color: var(--fq-cyan); font-weight: 800;">
-              👥 ${displayGroup.groupName || 'Kelompok 1'} &bull; TANTANGAN SOAL &bull; TYPE: <span style="color:var(--fq-amber);">${typeBadgeLabel}</span>
+            <div style="font-size: 0.85rem; color: var(--fq-cyan); font-weight: 800;">
+              👥 ${displayGroup.groupName || 'Kelompok 1'} &bull; TYPE: <span style="color:var(--fq-amber);">${typeBadgeLabel}</span>
             </div>
           </div>
 
           <!-- Minigame Interactive Challenge Card Display -->
-          <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-border-cyan); border-radius: 24px; padding: 28px; margin-bottom: 28px;">
-            <div style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.4; margin-bottom: 20px; whitespace: pre-line;">
+          <div style="background: rgba(30,41,59,0.85); border: 2px solid var(--fq-border-cyan); border-radius: 16px; padding: 14px 18px; margin-bottom: 10px;">
+            <div style="font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.35; margin-bottom: 12px; whitespace: pre-line;">
               ${q.question}
             </div>
 
-            <div id="fq-gl-feedback" style="display: none; margin-bottom: 24px; padding: 22px; border-radius: 20px; font-size: 1.1rem;"></div>
+            <div id="fq-gl-feedback" style="display: none; margin-bottom: 12px; padding: 14px; border-radius: 14px; font-size: 1rem;"></div>
 
             ${optionsUI}
           </div>
 
           <!-- Teacher Controller Floating Overlay Bar -->
-          <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div style="font-weight: 800; color: #fff; font-size: 1rem;">
+          <div style="background: rgba(15,23,42,0.9); border: 1.5px solid var(--fq-border-cyan); border-radius: 14px; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="font-weight: 800; color: #fff; font-size: 0.88rem;">
               🎮 CONTROLLER GURU: <span style="color: var(--fq-cyan);">${activePlayer.studentName || 'Siswa'} (${displayGroup.groupName || 'Kelompok 1'})</span>
             </div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <button class="fq-btn fq-btn-emerald" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
-              <button class="fq-btn fq-btn-emerald" style="min-height: 48px;" onclick="if(window.FIVIAGroupLevels) window.FIVIAGroupLevels.addTeamLife(); window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI();"><i class="fas fa-heart"></i> ❤️ +1 LIFE</button>
-              <button class="fq-btn fq-btn-amber" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.skipTurn()"><i class="fas fa-step-forward"></i> ⏭ LEWATI GILIRAN</button>
-              <button class="fq-btn fq-btn-outline" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI()"><i class="fas fa-redo"></i> 🔄 ULANGI GILIRAN</button>
-              <button class="fq-btn fq-btn-danger" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-stop-circle"></i> 🏁 KELUAR LEVEL</button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="fq-btn fq-btn-emerald" style="min-height: 38px; padding: 4px 10px; font-size: 0.82rem;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN</button>
+              <button class="fq-btn fq-btn-emerald" style="min-height: 38px; padding: 4px 10px; font-size: 0.82rem;" onclick="if(window.FIVIAGroupLevels) window.FIVIAGroupLevels.addTeamLife(); window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI();"><i class="fas fa-heart"></i> ❤️ +1 LIFE</button>
+              <button class="fq-btn fq-btn-amber" style="min-height: 38px; padding: 4px 10px; font-size: 0.82rem;" onclick="window.FIVIAGroupLevelEngine.skipTurn()"><i class="fas fa-step-forward"></i> ⏭ LEWATI</button>
+              <button class="fq-btn fq-btn-outline" style="min-height: 38px; padding: 4px 10px; font-size: 0.82rem;" onclick="window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI()"><i class="fas fa-redo"></i> 🔄 ULANGI</button>
+              <button class="fq-btn fq-btn-danger" style="min-height: 38px; padding: 4px 10px; font-size: 0.82rem;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-stop-circle"></i> 🏁 KELUAR</button>
             </div>
           </div>
         </div>
