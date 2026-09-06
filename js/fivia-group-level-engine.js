@@ -67,7 +67,6 @@ window.FIVIAGroupLevelEngine = (function() {
             { groupName: 'Kelompok 4 (Tesla)', members: [{ studentName: 'Indah Permata' }, { studentName: 'Joko' }] }
           ];
 
-      // Collect base & custom materials for module selector
       let allMats = [];
       if (window.db) {
         if (typeof window.db.getMaterials === 'function') {
@@ -76,14 +75,21 @@ window.FIVIAGroupLevelEngine = (function() {
           allMats = window.db.getTable("materials") || [];
         }
       }
-      let extraCustomMats = [];
-      try {
-        const storedCustom = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
-        extraCustomMats = storedCustom.filter(cm => !allMats.some(m => String(m.id) === String(cm.id)));
-      } catch(e) {}
 
-      const baseMats = allMats.filter(m => parseInt(m.id) <= 5 && !m.isTeacherCreated);
-      const customMats = [...allMats.filter(m => parseInt(m.id) > 5 || m.isTeacherCreated), ...extraCustomMats];
+      // Ensure all 5 core modules (Modul 1 to 5) are always present
+      const fallbackMats = [
+        { id: 1, name: "Hakikat Fisika dan Metode Ilmiah" },
+        { id: 2, name: "Pengukuran Dasar Fisika" },
+        { id: 3, name: "Usaha dan Energi" },
+        { id: 4, name: "Lingkungan dan Energi Terbarukan" },
+        { id: 5, name: "Pemanasan Global" }
+      ];
+
+      const baseMats = [];
+      for (let i = 1; i <= 5; i++) {
+        const found = allMats.find(m => parseInt(m.id) === i) || fallbackMats.find(m => m.id === i);
+        if (found) baseMats.push(found);
+      }
 
       const html = `
         <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
