@@ -19,16 +19,63 @@ window.FIVIAClassroom = (function() {
   ];
 
   function getClassrooms() {
+    const classMap = new Map();
+
+    // 1. Gather classrooms directly from uploaded student roster in Manajemen Kelas
+    let roster = [];
+    if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === 'function') {
+      roster = window.FIVIAExcelImport.getExistingRoster() || [];
+    }
+    if (!roster || roster.length === 0) {
+      try {
+        const saved = localStorage.getItem('fivia_student_roster');
+        if (saved) roster = JSON.parse(saved);
+      } catch (e) {}
+    }
+
+    if (Array.isArray(roster) && roster.length > 0) {
+      roster.forEach(s => {
+        const cName = (s.className || s.classId || s.kelas || '').trim();
+        if (cName) {
+          const cId = s.classId || ('cls_' + cName.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          if (!classMap.has(cId) && !Array.from(classMap.values()).some(c => c.name === cName)) {
+            classMap.set(cId, {
+              id: cId,
+              name: cName,
+              school: "SMA Negeri FIVIA",
+              subject: "Fisika SMA",
+              grade: cName.toUpperCase().includes('XI') ? 'XI' : 'X',
+              code: 'FIVIA-' + cName.replace(/[^A-Z0-9]/g, '').toUpperCase()
+            });
+          }
+        }
+      });
+    }
+
+    // 2. Gather from stored classrooms
     let classes = window.FIVIAStudent ? window.FIVIAStudent.safeStorageGet(STORAGE_KEYS.CLASSROOMS, []) : [];
     if (!classes || classes.length === 0) {
       if (window.db && typeof window.db.getTable === 'function') {
         classes = window.db.getTable("classes") || [];
       }
     }
-    if (!classes || classes.length === 0) {
-      classes = DEFAULT_CLASSROOMS;
+
+    if (Array.isArray(classes)) {
+      classes.forEach(c => {
+        if (c && c.name) {
+          const cId = c.id || ('cls_' + c.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          if (!classMap.has(cId) && !Array.from(classMap.values()).some(x => x.name === c.name)) {
+            classMap.set(cId, c);
+          }
+        }
+      });
     }
-    return classes;
+
+    let finalClasses = Array.from(classMap.values());
+    if (!finalClasses || finalClasses.length === 0) {
+      finalClasses = DEFAULT_CLASSROOMS;
+    }
+    return finalClasses;
   }
 
   function saveClassrooms(classes) {

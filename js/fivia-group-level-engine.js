@@ -56,16 +56,17 @@ window.FIVIAGroupLevelEngine = (function() {
       const classes = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getClassrooms === 'function')
         ? window.FIVIAGroupPlay.getClassrooms() || []
         : [];
-      
-      const activeCls = classes.find(c => c && c.id === sessionState.classroomId) || classes[0] || { id: 'cls_xf1', name: 'XI FASE F' };
-      const groups = (sessionState.groups && Array.isArray(sessionState.groups) && sessionState.groups.length > 0)
+
+      let activeCls = classes.find(c => c && (c.id === sessionState.classroomId || c.name === sessionState.className)) || classes[0] || { id: 'cls_x1', name: 'Kelas X-1' };
+
+      // Dynamically auto-group students for active class if groups are empty or classroom changed
+      let groups = (sessionState.groups && Array.isArray(sessionState.groups) && sessionState.groups.length > 0)
         ? sessionState.groups
-        : [
-            { groupName: 'Kelompok 1 (Newton)', members: [{ studentName: 'Ahmad Fauzan' }, { studentName: 'Budi Santoso' }] },
-            { groupName: 'Kelompok 2 (Einstein)', members: [{ studentName: 'Dian Pratama' }, { studentName: 'Eka Putri' }] },
-            { groupName: 'Kelompok 3 (Galileo)', members: [{ studentName: 'Gita Savitri' }, { studentName: 'Hendra Setiawan' }] },
-            { groupName: 'Kelompok 4 (Tesla)', members: [{ studentName: 'Indah Permata' }, { studentName: 'Joko' }] }
-          ];
+        : [];
+
+      if ((!groups || groups.length === 0 || sessionState.classroomId !== activeCls.id) && window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.autoGroupStudents === 'function') {
+        groups = window.FIVIAGroupPlay.autoGroupStudents(activeCls.id, currentGroupCount || 4);
+      }
 
       let allMats = [];
       if (window.db) {

@@ -140,8 +140,8 @@ window.FIVIAGroupPlayEngine = (function() {
   }
 
   function renderActiveBoardUI(container, state) {
-    const activeGroup = state.activeGroup || state.groups[0] || { groupName: 'GROUP NEWTON', score: 0 };
-    const activePlayer = state.activePlayer || (activeGroup.members ? activeGroup.members[0] : null) || { studentName: 'Ahmad Fauzan', studentCode: 'STD-001' };
+    const activeGroup = state.activeGroup || state.groups[0] || { groupName: 'Kelompok 1', score: 0 };
+    const activePlayer = state.activePlayer || (activeGroup.members ? activeGroup.members[0] : null) || { studentName: 'Anggota Kelompok', studentCode: '-' };
 
     const challenges = getGroupPlayQuestions();
     const cIdx = state.turnIndex % Math.max(1, challenges.length);

@@ -55,26 +55,46 @@ window.FIVIAGroupPlay = (function() {
   }
 
   function getClassrooms() {
-    let classes = [];
+    const classMap = new Map();
 
-    // 1. Try window.db.getTable('classes')
-    if (window.db && typeof window.db.getTable === 'function') {
-      classes = window.db.getTable('classes') || [];
+    // 1. Extract classrooms directly from uploaded student roster
+    let roster = [];
+    if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === 'function') {
+      roster = window.FIVIAExcelImport.getExistingRoster() || [];
     }
-
-    // 2. Try FIVIAClassroom
-    if ((!classes || classes.length === 0) && window.FIVIAClassroom && typeof window.FIVIAClassroom.getClassrooms === 'function') {
-      classes = window.FIVIAClassroom.getClassrooms();
-    }
-
-    // 3. Try localStorage
-    if (!classes || classes.length === 0) {
+    if (!roster || roster.length === 0) {
       try {
-        const saved = localStorage.getItem('vlab_fisika_classes') || localStorage.getItem('fivia_classrooms');
-        if (saved) classes = JSON.parse(saved);
+        const saved = localStorage.getItem('fivia_student_roster');
+        if (saved) roster = JSON.parse(saved);
       } catch (e) {}
     }
 
+    if (Array.isArray(roster) && roster.length > 0) {
+      roster.forEach(s => {
+        const cName = (s.className || s.classId || s.kelas || '').trim();
+        if (cName) {
+          const cId = s.classId || ('cls_' + cName.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          if (!classMap.has(cId) && !Array.from(classMap.values()).some(c => c.name === cName)) {
+            classMap.set(cId, { id: cId, name: cName });
+          }
+        }
+      });
+    }
+
+    // 2. Also check FIVIAClassroom & window.db & localStorage
+    if (window.FIVIAClassroom && typeof window.FIVIAClassroom.getClassrooms === 'function') {
+      const fcClasses = window.FIVIAClassroom.getClassrooms() || [];
+      fcClasses.forEach(c => {
+        if (c && c.name) {
+          const cId = c.id || ('cls_' + c.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          if (!classMap.has(cId) && !Array.from(classMap.values()).some(x => x.name === c.name)) {
+            classMap.set(cId, { id: cId, name: c.name });
+          }
+        }
+      });
+    }
+
+    let classes = Array.from(classMap.values());
     if (!classes || classes.length === 0) {
       classes = [
         { id: "cls_x1", name: "Kelas X-1" },
@@ -96,12 +116,14 @@ window.FIVIAGroupPlay = (function() {
 
       const key = (s.studentId || s.id || s.studentCode || s.nis || name).toString().trim().toLowerCase();
       if (!studentMap.has(key)) {
+        const cName = s.className || s.kelas || 'Kelas X-1';
+        const cId = s.classId || s.kelasId || ('cls_' + cName.toLowerCase().replace(/[^a-z0-9]/g, ''));
         studentMap.set(key, {
           studentId: s.studentId || s.id || ('std_' + Math.random().toString(36).substr(2, 9)),
           name: name,
           studentName: name,
-          classId: s.classId || s.kelasId || 'cls_x1',
-          className: s.className || s.kelas || 'Kelas X-1',
+          classId: cId,
+          className: cName,
           studentCode: s.studentCode || s.nis || ('STD-' + (s.id || Math.floor(Math.random() * 1000)))
         });
       }
@@ -154,24 +176,30 @@ window.FIVIAGroupPlay = (function() {
 
     let roster = Array.from(studentMap.values());
 
-    // Filter by class ONLY if matching records exist
+    // Filter by class ONLY
     if (classId && classId !== 'ALL') {
-      const filtered = roster.filter(s =>
-        s.classId === classId ||
-        s.className === classId ||
-        (s.classId || '').toLowerCase().includes((classId || '').toLowerCase()) ||
-        (s.className || '').toLowerCase().includes((classId || '').toLowerCase())
-      );
-      if (filtered.length > 0) {
-        return filtered;
-      }
+      const targetClean = (classId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const filtered = roster.filter(s => {
+        const sClassId = (s.classId || '').toLowerCase();
+        const sClassName = (s.className || '').toLowerCase();
+        const sClassClean = sClassName.replace(/[^a-z0-9]/g, '');
+        const sIdClean = sClassId.replace(/[^a-z0-9]/g, '');
+
+        return s.classId === classId ||
+               s.className === classId ||
+               sClassId === (classId || '').toLowerCase() ||
+               sClassName === (classId || '').toLowerCase() ||
+               (targetClean && (sClassClean === targetClean || sIdClean === targetClean || sClassClean.includes(targetClean) || targetClean.includes(sClassClean)));
+      });
+      return filtered;
     }
 
     return roster;
   }
 
   function autoGroupStudents(classId, numGroups) {
-    const targetClassId = classId || 'cls_x1';
+    const classes = getClassrooms();
+    const targetClassId = classId || (classes[0] ? classes[0].id : 'cls_x1');
     const roster = getRosterForClass(targetClassId);
     numGroups = parseInt(numGroups) || 4;
 
@@ -191,24 +219,25 @@ window.FIVIAGroupPlay = (function() {
     if (roster.length > 0) {
       roster.forEach((student, idx) => {
         const groupIdx = idx % numGroups;
-        const studentName = student.name || student.studentName || 'Siswa ' + (idx + 1);
-        groups[groupIdx].members.push({
-          studentId: student.studentId || student.id || ('std_' + (idx + 1)),
-          studentName: studentName,
-          studentCode: student.studentCode || student.nis || ('FIVIA-X1-' + (idx + 1)),
-          turnsPlayed: 0,
-          xpContributed: 0,
-          status: 'READY'
-        });
+        const studentName = student.name || student.studentName;
+        if (studentName) {
+          groups[groupIdx].members.push({
+            studentId: student.studentId || student.id || ('std_' + (idx + 1)),
+            studentName: studentName,
+            studentCode: student.studentCode || student.nis || ('STD-' + (idx + 1)),
+            turnsPlayed: 0,
+            xpContributed: 0,
+            status: 'READY'
+          });
+        }
       });
     }
 
-    const classes = getClassrooms();
-    const clsObj = classes.find(c => c.id === targetClassId || c.name === targetClassId) || classes[0] || { id: 'cls_x1', name: 'Kelas X-1' };
+    const clsObj = classes.find(c => c.id === targetClassId || c.name === targetClassId) || classes[0] || { id: targetClassId, name: targetClassId };
 
     sessionState.groups = groups;
     sessionState.classroomId = clsObj.id || targetClassId;
-    sessionState.className = clsObj.name || 'Kelas X-1';
+    sessionState.className = clsObj.name || targetClassId;
     saveSession();
     return groups;
   }
