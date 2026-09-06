@@ -261,7 +261,7 @@ window.FIVIAContentGenerator = (function() {
    * Main Generator Function
    * Decides whether to use Gemini API or Built-in Intelligent Parser
    */
-  async function generateContent({ sourceText, topicTitle, classLevel, misconceptionFocus, apiKey }) {
+  async function generateContent({ sourceText, topicTitle, classLevel, misconceptionFocus, apiKey, targetModuleId = "NEW" }) {
     const cleanText = (sourceText || "").trim();
     if (!cleanText || cleanText.length < 30) {
       throw new Error("Sumber materi terlalu singkat! Masukkan minimal 30 karakter teks dokumen atau isi artikel web.");
@@ -272,7 +272,7 @@ window.FIVIAContentGenerator = (function() {
     if (savedApiKey) {
       try {
         console.log("Generasi menggunakan Google Gemini API...");
-        return await generateWithGeminiAPI(cleanText, topicTitle, classLevel, misconceptionFocus, savedApiKey);
+        return await generateWithGeminiAPI(cleanText, topicTitle, classLevel, misconceptionFocus, savedApiKey, targetModuleId);
       } catch (err) {
         console.warn("Gemini API Error, falling back to Intelligent Built-in Parser:", err);
       }
@@ -280,22 +280,32 @@ window.FIVIAContentGenerator = (function() {
 
     // Default: Built-in Heuristic & NLP Generator Engine
     console.log("Generasi menggunakan Built-in Heuristic NLP Engine...");
-    return generateWithBuiltinNLP(cleanText, topicTitle, classLevel, misconceptionFocus);
+    return generateWithBuiltinNLP(cleanText, topicTitle, classLevel, misconceptionFocus, "", targetModuleId);
   }
 
   /**
    * Built-in Intelligent Heuristic NLP Generator Engine
    */
-  function generateWithBuiltinNLP(text, topicTitle, classLevel, misconceptionFocus, activeFileName = "") {
+  function generateWithBuiltinNLP(text, topicTitle, classLevel, misconceptionFocus, activeFileName = "", targetModuleId = "NEW") {
     const cleanText = sanitizeExtractedText(text);
+
+    let matId = Date.now();
+    let existingMat = null;
+
+    if (targetModuleId && targetModuleId !== "NEW") {
+      matId = parseInt(targetModuleId);
+      if (window.db && window.db.getMaterial) {
+        existingMat = window.db.getMaterial(matId);
+      }
+    }
 
     // Sanitize title to never be raw PDF junk
     let title = (topicTitle || "").trim();
     if (!title || title.includes("%PDF") || title.includes("obj") || title.includes("stream")) {
-      title = extractTitleFromText(cleanText, activeFileName);
+      title = existingMat ? existingMat.name : extractTitleFromText(cleanText, activeFileName);
     }
 
-    const level = classLevel || "Fase E (Kelas X)";
+    const level = classLevel || (existingMat ? `Fase ${existingMat.fase}` : "Fase E (Kelas X)");
     const focus = misconceptionFocus || "Umum & Pengukuran";
 
     // 1. Identify relevant misconceptions from knowledge base
@@ -327,12 +337,12 @@ window.FIVIAContentGenerator = (function() {
 
     // Build Material Payload
     const materialData = {
-      id: Date.now(),
+      id: matId,
       name: title,
-      fase: level.includes("Fase F") ? "F" : "E",
+      fase: level.includes("Fase F") ? "F" : (existingMat ? existingMat.fase : "E"),
       topic: `${focus} — Generasi Guru Bebas Miskonsepsi`,
-      equation: detectedMisconceptions[0]?.formula || "F = m \\cdot a \\quad \\text{atau} \\quad W = F \\cdot s",
-      desc: summaryText || "Materi ini disusun secara otomatis dari sumber belajar guru dengan verifikasi pencegahan miskonsepsi fisika.",
+      equation: detectedMisconceptions[0]?.formula || (existingMat ? existingMat.equation : "F = m \\cdot a \\quad \\text{atau} \\quad W = F \\cdot s"),
+      desc: summaryText || (existingMat ? existingMat.desc : "Materi ini disusun secara otomatis dari sumber belajar guru dengan verifikasi pencegahan miskonsepsi fisika."),
       detailBody: detailBody || cleanText.substr(0, 500),
       misconceptionList: detectedMisconceptions.map(m => ({
         misconception: m.misconception,
@@ -341,7 +351,7 @@ window.FIVIAContentGenerator = (function() {
         example: m.example
       })),
       isTeacherCreated: true,
-      createdAt: new Date().toISOString()
+      updatedAt: new Date().toISOString()
     };
 
     // Build Quiz Payload (5 HOTS Multiple Choice Questions)
@@ -349,12 +359,13 @@ window.FIVIAContentGenerator = (function() {
 
     // Build Game Payload (Myth vs Fact Cards & Quest Cards)
     const gameMaterials = buildGameItemsFromMisconceptions(title, detectedMisconceptions);
+    gameMaterials.targetModuleId = matId;
 
     return {
       material: materialData,
       quiz: {
-        id: `quiz_custom_${materialData.id}`,
-        materialId: materialData.id,
+        id: `quiz_${matId}`,
+        materialId: matId,
         title: `Kuis Evaluasi: ${title}`,
         questions: quizQuestions
       },
@@ -498,7 +509,7 @@ window.FIVIAContentGenerator = (function() {
   /**
    * Generates content using Google Gemini API
    */
-  async function generateWithGeminiAPI(text, topicTitle, classLevel, misconceptionFocus, apiKey) {
+  async function generateWithGeminiAPI(text, topicTitle, classLevel, misconceptionFocus, apiKey, targetModuleId = "NEW") {
     const prompt = `Anda adalah Pakar Edukasi Fisika SMA Kurikulum Merdeka dan AI Master Teacher.
 Tugas Anda: Analisis teks sumber belajar berikut, lalu hasilkan materi pembelajaran fisika yang BEBAS MISKONSEPSI, soal kuis HOTS, dan kartu gim interaktif.
 
@@ -585,14 +596,22 @@ Kembalikan HANYA JSON tersebut tanpa teks pembungkus markdown tambahan.`;
     const parsed = JSON.parse(cleanJsonText);
 
     // Format & validate parsed data
-    const matId = Date.now();
+    let matId = Date.now();
+    if (targetModuleId && targetModuleId !== "NEW") {
+      matId = parseInt(targetModuleId);
+    }
+
     parsed.material.id = matId;
     parsed.material.fase = (classLevel || "").includes("Fase F") ? "F" : "E";
     parsed.material.isTeacherCreated = true;
-    parsed.material.createdAt = new Date().toISOString();
+    parsed.material.updatedAt = new Date().toISOString();
 
-    parsed.quiz.id = `quiz_custom_${matId}`;
+    parsed.quiz.id = `quiz_${matId}`;
     parsed.quiz.materialId = matId;
+
+    if (parsed.gameItems) {
+      parsed.gameItems.targetModuleId = matId;
+    }
 
     return parsed;
   }
@@ -906,6 +925,33 @@ Kembalikan HANYA JSON tersebut tanpa teks pembungkus markdown tambahan.`;
       };
     }
 
+    // Populate target module dropdown dynamically
+    const targetModuleSelect = document.getElementById("gen-target-module");
+    if (targetModuleSelect && window.db && window.db.getTable) {
+      try {
+        const allMats = window.db.getTable("materials");
+        const existingVal = targetModuleSelect.value;
+        targetModuleSelect.innerHTML = `<option value="NEW">➕ Buat Modul Baru</option>`;
+        allMats.forEach(m => {
+          targetModuleSelect.innerHTML += `<option value="${m.id}">Modul ${m.id}: ${m.name}</option>`;
+        });
+        if (existingVal) targetModuleSelect.value = existingVal;
+
+        targetModuleSelect.onchange = () => {
+          const val = targetModuleSelect.value;
+          const topicInput = document.getElementById("gen-topic-title");
+          if (val !== "NEW" && window.db && window.db.getMaterial && topicInput) {
+            const mat = window.db.getMaterial(parseInt(val));
+            if (mat) {
+              topicInput.value = mat.name;
+            }
+          }
+        };
+      } catch (err) {
+        console.warn("Target module populate warning:", err);
+      }
+    }
+
     // 4. Run Generator Action
     const btnRunGen = document.getElementById("btn-run-content-generator");
     if (btnRunGen) {
@@ -915,6 +961,7 @@ Kembalikan HANYA JSON tersebut tanpa teks pembungkus markdown tambahan.`;
         const classLevel = document.getElementById("gen-class-level")?.value;
         const misconceptionFocus = document.getElementById("gen-misc-focus")?.value;
         const apiKey = document.getElementById("gen-gemini-api-key")?.value;
+        const targetModuleId = targetModuleSelect ? targetModuleSelect.value : "NEW";
 
         if (!sourceText || sourceText.trim().length < 30) {
           alert("Mohon masukkan atau unggah dokumen teks sumber belajar terlebih dahulu (minimal 30 karakter).");
@@ -930,7 +977,8 @@ Kembalikan HANYA JSON tersebut tanpa teks pembungkus markdown tambahan.`;
             topicTitle,
             classLevel,
             misconceptionFocus,
-            apiKey
+            apiKey,
+            targetModuleId
           });
 
           if (window.showToast) window.showToast("Generasi berhasil! Membuka pratinjau editor...");

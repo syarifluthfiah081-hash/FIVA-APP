@@ -585,7 +585,7 @@ class LocalDatabase {
 
   saveCustomMaterial(material, quiz, gameItems) {
     try {
-      // 1. Save Material
+      // 1. Save / Update in Custom Materials
       const customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
       const existingMatIdx = customMats.findIndex(m => m.id === material.id);
       if (existingMatIdx !== -1) {
@@ -595,7 +595,15 @@ class LocalDatabase {
       }
       localStorage.setItem("fivia_custom_materials", JSON.stringify(customMats));
 
-      // 2. Save Quiz
+      // Also update base materials table if ID matches standard modules (1-5)
+      const baseMats = this.getTable("materials");
+      const baseIdx = baseMats.findIndex(m => m.id === material.id);
+      if (baseIdx !== -1) {
+        baseMats[baseIdx] = { ...baseMats[baseIdx], ...material };
+        localStorage.setItem(DB_PREFIX + "materials", JSON.stringify(baseMats));
+      }
+
+      // 2. Save / Update Quiz
       if (quiz) {
         const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
         const existingQuizIdx = customQuizzes.findIndex(q => q.id === quiz.id || q.materialId === material.id);
@@ -605,12 +613,25 @@ class LocalDatabase {
           customQuizzes.push(quiz);
         }
         localStorage.setItem("fivia_custom_quizzes", JSON.stringify(customQuizzes));
+
+        // Also update base quizzes table if ID matches standard module quizzes (1-5)
+        const baseQuizzes = this.getTable("quizzes");
+        const baseQIdx = baseQuizzes.findIndex(q => q.materialId === material.id || q.id === quiz.id);
+        if (baseQIdx !== -1) {
+          baseQuizzes[baseQIdx] = quiz;
+          localStorage.setItem(DB_PREFIX + "quizzes", JSON.stringify(baseQuizzes));
+        }
       }
 
       // 3. Save Game Items
       if (gameItems) {
         const customGames = JSON.parse(localStorage.getItem("fivia_custom_game_materials") || "[]");
-        customGames.push(gameItems);
+        const existingGameIdx = customGames.findIndex(g => g.topicTitle === gameItems.topicTitle || g.targetModuleId === material.id);
+        if (existingGameIdx !== -1) {
+          customGames[existingGameIdx] = gameItems;
+        } else {
+          customGames.push(gameItems);
+        }
         localStorage.setItem("fivia_custom_game_materials", JSON.stringify(customGames));
       }
 

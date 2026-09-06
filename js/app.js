@@ -101,7 +101,6 @@ function getMenuForRole(role) {
   if (role === "siswa") {
     menuHtml = `
       <li class="sidebar-menu-item" id="menu-siswa-dashboard"><a href="#dashboard"><i class="fas fa-home"></i> <span>Beranda</span></a></li>
-      <li class="sidebar-menu-item" id="menu-quest"><a href="#quest"><i class="fas fa-gamepad" style="color: var(--brand-orange);"></i> <span>Physics Quest</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
       <li class="sidebar-menu-item" id="menu-siswa-sertifikat"><a href="#sertifikat"><i class="fas fa-award"></i> <span>Sertifikat</span></a></li>
     `;
@@ -110,7 +109,6 @@ function getMenuForRole(role) {
       <li class="sidebar-menu-item" id="menu-guru-dashboard"><a href="#dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard Guru</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-generator"><a href="#generator"><i class="fas fa-wand-magic-sparkles" style="color: #a855f7;"></i> <span>✨ Generator AI & Sumber Belajar</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-group-play"><a href="#quest/group-play"><i class="fas fa-users-line" style="color: var(--fq-cyan);"></i> <span>👥 Group Play</span></a></li>
-      <li class="sidebar-menu-item" id="menu-quest"><a href="#quest"><i class="fas fa-gamepad" style="color: var(--brand-orange);"></i> <span>Physics Quest</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-kelas"><a href="#kelas"><i class="fas fa-users"></i> <span>Manajemen Kelas</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-laporan"><a href="#laporan"><i class="fas fa-file-pdf"></i> <span>Laporan Nilai</span></a></li>
@@ -118,7 +116,6 @@ function getMenuForRole(role) {
   } else if (role === "admin") {
     menuHtml = `
       <li class="sidebar-menu-item" id="menu-admin-dashboard"><a href="#dashboard"><i class="fas fa-user-shield"></i> <span>Admin Control</span></a></li>
-      <li class="sidebar-menu-item" id="menu-quest"><a href="#quest"><i class="fas fa-gamepad" style="color: var(--brand-orange);"></i> <span>Physics Quest</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
     `;
   }

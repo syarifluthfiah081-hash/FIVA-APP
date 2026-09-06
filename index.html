@@ -1724,7 +1724,18 @@
           </div>
 
           <!-- Configuration Fields & Actions -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: #c084fc;">Target Modul Aplikasi:</label>
+              <select id="gen-target-module" class="form-control" style="margin-top: 4px; font-weight: 700; border-color: rgba(168, 85, 247, 0.5);">
+                <option value="NEW">➕ Buat Modul Baru</option>
+                <option value="1">Modul 1: Hakikat Fisika &amp; Metode Ilmiah</option>
+                <option value="2">Modul 2: Pengukuran Dasar Fisika</option>
+                <option value="3">Modul 3: Usaha dan Energi</option>
+                <option value="4">Modul 4: Lingkungan &amp; Energi Terbarukan</option>
+                <option value="5">Modul 5: Pemanasan Global</option>
+              </select>
+            </div>
             <div>
               <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Judul / Topik Materi:</label>
               <input type="text" id="gen-topic-title" class="form-control" placeholder="Contoh: Pengukuran &amp; Angka Penting" style="margin-top: 4px;">
