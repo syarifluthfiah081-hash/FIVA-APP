@@ -410,6 +410,12 @@ window.FIVIAGroupLevelEngine = (function() {
         if (typeof window.FIVIAGroupPlay.startSession === 'function') {
           window.FIVIAGroupPlay.startSession(gpState.classroomId || 'cls_xf1');
         }
+      } else {
+        // Reset turn index to first group for new level round
+        gpState.currentGroupIndex = 0;
+        gpState.activeGroup = gpState.groups[0];
+        const unplayed = (gpState.groups[0].members || []).filter(m => m.status !== 'PLAYED');
+        gpState.activePlayer = unplayed.length > 0 ? unplayed[0] : gpState.groups[0].members[0];
       }
     }
 

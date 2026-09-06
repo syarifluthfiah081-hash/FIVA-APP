@@ -237,34 +237,24 @@ window.FIVIAGroupPlay = (function() {
       sessionState.activePlayer.status = 'PLAYED';
     }
 
-    // Move to next group or next member in round robin
-    const currentGroup = sessionState.activeGroup || sessionState.groups[0];
-    let memberIdx = currentGroup.members.findIndex(m => m.studentId === (sessionState.activePlayer ? sessionState.activePlayer.studentId : ''));
+    // Always rotate to the next group for the next main question
+    sessionState.currentGroupIndex = ((sessionState.currentGroupIndex || 0) + 1) % sessionState.groups.length;
+    const nextGroup = sessionState.groups[sessionState.currentGroupIndex];
+    sessionState.activeGroup = nextGroup;
 
-    if (memberIdx < 0 || memberIdx >= currentGroup.members.length - 1) {
-      // Rotate group turn
-      sessionState.currentGroupIndex = (sessionState.currentGroupIndex + 1) % sessionState.groups.length;
-      const nextGroup = sessionState.groups[sessionState.currentGroupIndex];
-      sessionState.activeGroup = nextGroup;
-
-      // Find next member in round-robin order
-      const unplayed = nextGroup.members.filter(m => m.status !== 'PLAYED');
-      if (unplayed.length > 0) {
-        sessionState.activePlayer = unplayed[0];
-      } else {
-        // Round complete for group, reset member statuses and advance round
-        sessionState.currentRound++;
-        nextGroup.members.forEach(m => m.status = 'READY');
-        sessionState.activePlayer = nextGroup.members[0];
-      }
+    // Find next member in round-robin order for the active group
+    const unplayed = (nextGroup.members || []).filter(m => m.status !== 'PLAYED');
+    if (unplayed.length > 0) {
+      sessionState.activePlayer = unplayed[0];
     } else {
-      // Next member in same group
-      sessionState.activePlayer = currentGroup.members[memberIdx + 1];
+      // Reset member statuses for group if all have played
+      (nextGroup.members || []).forEach(m => m.status = 'READY');
+      sessionState.activePlayer = (nextGroup.members || [])[0];
     }
 
     if (sessionState.activePlayer) {
       sessionState.activePlayer.status = 'PLAYING';
-      sessionState.activePlayer.turnsPlayed++;
+      sessionState.activePlayer.turnsPlayed = (sessionState.activePlayer.turnsPlayed || 0) + 1;
     }
 
     saveSession();
