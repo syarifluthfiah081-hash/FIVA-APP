@@ -1169,6 +1169,21 @@
 
       <!-- 3. TEACHER DASHBOARD SECTION -->
       <section id="teacher-dashboard-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <!-- AI Generator Quick Banner -->
+        <div class="glass-panel" style="padding: 20px 24px; border-radius: 14px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(15, 23, 42, 0.6)); border: 1.5px solid rgba(168, 85, 247, 0.4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-family: 'Poppins', sans-serif; font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-wand-magic-sparkles" style="color: #a855f7;"></i> Generator Sumber Belajar &amp; Pembasmi Miskonsepsi
+            </h3>
+            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);">
+              Buat materi baru dari dokumen/link web, klarifikasi miskonsepsi fisika, dan terbitkan soal HOTS &amp; bahan gim untuk siswa secara otomatis.
+            </p>
+          </div>
+          <a href="#generator" class="btn btn-primary" style="background: linear-gradient(135deg, #a855f7, #6366f1); border: none; font-weight: 800; padding: 10px 20px; white-space: nowrap;">
+            <i class="fas fa-bolt"></i> Buka Generator AI
+          </a>
+        </div>
+
         <div class="dashboard-grid">
           <div class="glass-panel stat-card">
             <div class="stat-info">
@@ -1638,6 +1653,113 @@
         </div>
       </section>
 
+      <!-- 8C. AI GENERATOR & SUMBER BELAJAR SECTION (GURU) -->
+      <section id="generator-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="glass-panel" style="padding: 28px; border-radius: 16px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(168, 85, 247, 0.3);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <h1 style="font-size: 1.8rem; font-family: 'Poppins', sans-serif; font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 10px; margin: 0;">
+                <i class="fas fa-wand-magic-sparkles" style="color: #a855f7;"></i> Generator AI Materi &amp; Media Belajar Guru
+              </h1>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                Unggah dokumen atau tautkan link web artikel untuk secara otomatis digenerasi menjadi <strong>Materi Bebas Miskonsepsi</strong>, <strong>Soal Evaluasi HOTS</strong>, dan <strong>Bahan Gim Interaktif</strong>.
+              </p>
+            </div>
+            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; border: 1px solid #a855f7; font-weight: 700; padding: 6px 14px; font-size: 0.85rem;">
+              <i class="fas fa-shield-alt"></i> Auto Misconception Clarifier
+            </span>
+          </div>
+
+          <!-- Input Source Tabs -->
+          <div style="display: flex; gap: 12px; border-bottom: 2px solid rgba(255,255,255,0.1); margin-bottom: 20px;">
+            <button type="button" id="btn-tab-gen-doc" class="btn btn-outline" style="border-radius: 8px 8px 0 0; border-bottom: none; background: rgba(168, 85, 247, 0.2); border-color: #a855f7; color: #fff; font-weight: 700; padding: 8px 16px;">
+              <i class="fas fa-file-alt"></i> 📄 Unggah / Tempel Dokumen
+            </button>
+            <button type="button" id="btn-tab-gen-url" class="btn btn-outline" style="border-radius: 8px 8px 0 0; border-bottom: none; color: var(--text-secondary); padding: 8px 16px;">
+              <i class="fas fa-globe"></i> 🌐 Input Link Web Artikel
+            </button>
+          </div>
+
+          <!-- Tab Content 1: Document Upload & Paste -->
+          <div id="gen-panel-doc">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+              <div style="background: rgba(15, 23, 42, 0.5); border: 2px dashed rgba(168, 85, 247, 0.4); border-radius: 12px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2.5rem; color: #c084fc; margin-bottom: 12px;"></i>
+                <h4 style="margin: 0 0 6px 0; font-size: 1rem; color: #fff;">Pilih File Dokumen</h4>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 16px;">Format yang didukung: TXT, MD, CSV, JSON, PDF (teks), DOCX</p>
+                <input type="file" id="gen-file-input" accept=".txt,.md,.csv,.json,.pdf,.docx,.html" style="display: none;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('gen-file-input').click();" style="border-color: #a855f7; color: #c084fc;">
+                  <i class="fas fa-folder-open"></i> Cari File di Komputer
+                </button>
+                <div id="gen-file-name-label" style="margin-top: 10px; font-size: 0.8rem; font-weight: 700; color: #10b981;"></div>
+              </div>
+
+              <div>
+                <label style="font-weight: 700; color: #fff; font-size: 0.85rem; margin-bottom: 6px; display: block;">
+                  <i class="fas fa-edit" style="color: #c084fc;"></i> Atau Salin &amp; Tempel Isi Dokumen Teks Di Sini:
+                </label>
+                <textarea id="gen-doc-text" class="form-control" rows="8" placeholder="Tempelkan isi buku ajar, modul fisika, jurnal, atau materi LKPD di sini..." style="background: rgba(15, 23, 42, 0.7); font-size: 0.85rem; line-height: 1.5; color: #f8fafc; border-color: rgba(168, 85, 247, 0.3);"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content 2: Web URL Input -->
+          <div id="gen-panel-url" class="hidden-section">
+            <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <label style="font-weight: 700; color: #fff; font-size: 0.85rem; margin-bottom: 8px; display: block;">
+                <i class="fas fa-link" style="color: #c084fc;"></i> Masukkan Alamat Web Artikel / Berita Sains / Wikipedia:
+              </label>
+              <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <input type="url" id="gen-web-url-input" class="form-control" placeholder="https://id.wikipedia.org/wiki/Pengukuran" style="background: rgba(15, 23, 42, 0.7); color: #fff; border-color: rgba(168, 85, 247, 0.3);">
+                <button type="button" class="btn btn-secondary" id="btn-fetch-web-url" style="white-space: nowrap; border-color: #a855f7; color: #c084fc;">
+                  <i class="fas fa-download"></i> Ambil Konten Web
+                </button>
+              </div>
+              <div id="gen-url-status" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);"></div>
+            </div>
+          </div>
+
+          <!-- Configuration Fields & Actions -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Judul / Topik Materi:</label>
+              <input type="text" id="gen-topic-title" class="form-control" placeholder="Contoh: Pengukuran &amp; Angka Penting" style="margin-top: 4px;">
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Tingkat / Fase Kelas:</label>
+              <select id="gen-class-level" class="form-control" style="margin-top: 4px;">
+                <option value="Fase E (Kelas X)">Fase E (Kelas X SMA)</option>
+                <option value="Fase F (Kelas XI-XII)">Fase F (Kelas XI-XII SMA)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Kategori Miskonsepsi:</label>
+              <select id="gen-misc-focus" class="form-control" style="margin-top: 4px;">
+                <option value="Pengukuran &amp; Dimensi">Pengukuran &amp; Dimensi</option>
+                <option value="Gaya &amp; Hukum Newton">Gaya &amp; Hukum Newton</option>
+                <option value="Usaha &amp; Kekekalan Energi">Usaha &amp; Kekekalan Energi</option>
+                <option value="Suhu &amp; Termodinamika">Suhu &amp; Termodinamika</option>
+                <option value="Listrik &amp; Magnet">Listrik &amp; Magnet</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span style="font-size: 0.8rem; font-weight: 700; color: #c084fc;"><i class="fas fa-key"></i> Google Gemini API Key (Opsional / Mode Online):</span>
+              <div style="font-size: 0.72rem; color: var(--text-secondary);">Kosongkan jika ingin menggunakan Engine Built-in NLP Offline.</div>
+            </div>
+            <input type="password" id="gen-gemini-api-key" class="form-control" placeholder="AIzaSy..." style="width: 250px; font-size: 0.8rem;">
+          </div>
+
+          <div style="text-align: right;">
+            <button type="button" id="btn-run-content-generator" class="btn btn-primary" style="padding: 12px 28px; font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);">
+              <i class="fas fa-bolt"></i> ⚡ Generasi Materi, Soal &amp; Bahan Gim
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- 9. EVALUASI QUIZ SECTION -->
       <section id="quiz-section" class="spa-section dashboard-container hidden-section fade-in-section">
         <div class="glass-panel dashboard-section" style="max-width: 720px; margin: 0 auto;">
@@ -2042,12 +2164,98 @@
   <script src="js/fivia-si-explorer.js"></script>
   <script src="js/fivia-dimension-detective.js"></script>
   <script src="js/fivia-dimension-boss.js"></script>
+  <script src="js/fivia-content-generator.js"></script>
   <script src="js/fivia-engine.js"></script>
 
   <!-- PHASE 4: STUDENT DETAIL ANALYTICS MODAL -->
   <div id="fq-student-detail-modal" class="fivia-quest-modal-overlay">
     <div class="fivia-quest-modal-content" style="max-width: 650px;" id="fq-student-detail-content">
       <!-- Dynamically rendered via fivia-engine.js -->
+    </div>
+  </div>
+
+  <!-- GENERATOR PREVIEW & EDIT MODAL -->
+  <div class="modal-overlay" id="generator-preview-modal">
+    <div class="modal-container" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 24px; background: #0f172a; border: 1px solid rgba(168, 85, 247, 0.4);">
+      <button type="button" class="modal-close" onclick="if(window.closeModal) window.closeModal('generator-preview-modal'); else document.getElementById('generator-preview-modal').classList.remove('active');"><i class="fas fa-times"></i></button>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <h3 style="font-size: 1.4rem; font-family: 'Poppins'; font-weight: 800; color: #c084fc; margin: 0;">
+          <i class="fas fa-check-circle" style="color: #10b981;"></i> Pratinjau &amp; Editor Hasil Generasi AI
+        </h3>
+        <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; font-weight: 700;">Siap Dipublikasikan</span>
+      </div>
+
+      <!-- Preview Modal Tabs -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <button type="button" class="lab-tab-btn active" id="btn-gen-tab-mat">📘 1. Materi &amp; Miskonsepsi</button>
+        <button type="button" class="lab-tab-btn" id="btn-gen-tab-quiz">📝 2. Soal Kuis HOTS</button>
+        <button type="button" class="lab-tab-btn" id="btn-gen-tab-game">🎮 3. Bahan Gim &amp; Misi</button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding-right: 8px;" id="gen-modal-scroll-body">
+        <!-- Tab 1: Materi & Miskonsepsi -->
+        <div id="gen-modal-panel-mat" class="fade-in-section">
+          <div class="form-group">
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Judul Materi:</label>
+            <input type="text" id="gen-preview-mat-title" class="form-control" style="font-weight: 800; font-size: 1.1rem; color: var(--brand-blue);">
+          </div>
+          <div class="form-group">
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Ringkasan Materi:</label>
+            <textarea id="gen-preview-mat-desc" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Persamaan LaTeX Utama:</label>
+            <input type="text" id="gen-preview-mat-eq" class="form-control" style="font-family: monospace; color: var(--brand-orange);">
+          </div>
+
+          <div style="margin-top: 16px; margin-bottom: 16px;">
+            <h4 style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-bottom: 10px;">
+              <i class="fas fa-shield-alt"></i> Klarifikasi Miskonsepsi Sering Terjadi (Misconceptions Fixer):
+            </h4>
+            <div id="gen-preview-misconception-list">
+              <!-- Dynamically populated misconception cards -->
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Isi Lengkap Teori Pembelajaran:</label>
+            <textarea id="gen-preview-mat-body" class="form-control" rows="6" style="font-size: 0.85rem; line-height: 1.6;"></textarea>
+          </div>
+        </div>
+
+        <!-- Tab 2: Soal Kuis -->
+        <div id="gen-modal-panel-quiz" class="hidden-section fade-in-section">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+            Soal-soal evaluasi berikut telah disesuaikan agar bebas dari miskonsepsi dan menguji pemahaman kritis siswa.
+          </p>
+          <div id="gen-preview-quiz-list">
+            <!-- Dynamically populated quiz cards -->
+          </div>
+        </div>
+
+        <!-- Tab 3: Bahan Gim -->
+        <div id="gen-modal-panel-game" class="hidden-section fade-in-section">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+            Kartu Mitos vs Fakta Fisika dan Tantangan Quest ini akan dimasukkan ke modul gim siswa untuk melatih daya kritis.
+          </p>
+          <div id="gen-preview-game-cards">
+            <!-- Dynamically populated game cards -->
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 16px; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="if(window.closeModal) window.closeModal('generator-preview-modal'); else document.getElementById('generator-preview-modal').classList.remove('active');">Batal</button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="btn-export-gen-json" class="btn btn-secondary">
+            <i class="fas fa-download"></i> Ekspor (JSON)
+          </button>
+          <button type="button" id="btn-publish-gen-content" class="btn btn-orange" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 800; padding: 10px 24px;">
+            <i class="fas fa-rocket"></i> 🚀 Publikasikan ke Siswa
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

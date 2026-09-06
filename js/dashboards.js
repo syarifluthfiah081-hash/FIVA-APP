@@ -285,8 +285,9 @@ function renderMaterialsGrid(fase = "E") {
     const card = document.createElement("div");
     card.className = `glass-panel course-card glass-panel-hover ${fase === "F" ? "fase-f" : ""}`;
     card.innerHTML = `
-      <div class="course-header">
+      <div class="course-header" style="display: flex; justify-content: space-between; align-items: center;">
         <span class="course-fase">Fase ${fase}</span>
+        ${mat.isTeacherCreated ? `<span class="badge" style="background: #a855f7; color: #fff; font-size: 0.7rem; font-weight: 800;"><i class="fas fa-wand-magic-sparkles"></i> Disusun Guru AI</span>` : ""}
       </div>
       <div>
         <h4 class="course-title">Modul ${mat.id}: ${mat.name}</h4>
@@ -488,6 +489,32 @@ function renderMaterialDetail(matId) {
         <li>Kirim LKPD Anda untuk dinilai oleh instruktur / guru secara otomatis.</li>
       </ol>
     `;
+  }
+
+  // Render Misconceptions Fixer Section if present
+  if (mat.misconceptionList && Array.isArray(mat.misconceptionList) && mat.misconceptionList.length > 0) {
+    const miscHtml = `
+      <div style="background: rgba(168, 85, 247, 0.1); padding: 22px; border-radius: 14px; margin-top: 24px; margin-bottom: 24px; border: 1.5px solid rgba(168, 85, 247, 0.4);">
+        <h4 style="color: #c084fc; margin-bottom: 14px; font-size: 1.15rem; font-family: 'Poppins', sans-serif; font-weight: 800;">
+          <i class="fas fa-shield-alt" style="color: #a855f7;"></i> Klarifikasi Miskonsepsi Fisika (Penting Dipahami)
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          ${mat.misconceptionList.map((m, idx) => `
+            <div style="background: rgba(15, 23, 42, 0.7); border-radius: 10px; padding: 16px; border-left: 4px solid #ef4444;">
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap;">
+                <span class="badge" style="background: #ef4444; color: #fff; font-weight: 800; font-size: 0.7rem;">MISKONSEPSI #${idx + 1}</span>
+                <span style="font-weight: 700; color: #ef4444; font-size: 0.9rem;">"${m.misconception}"</span>
+              </div>
+              <div style="margin-left: 4px; font-size: 0.9rem; color: #f8fafc; line-height: 1.5; margin-bottom: 6px;">
+                <strong style="color: #10b981;">✅ Kebenaran Fisis:</strong> ${m.fact}
+              </div>
+              ${m.example ? `<div style="font-size: 0.82rem; color: var(--text-secondary); font-style: italic;">💡 Contoh Nyata: ${m.example}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    theoryBody.innerHTML += miscHtml;
   }
 
   // 2. Render Detective Tab Content

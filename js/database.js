@@ -517,13 +517,44 @@ class LocalDatabase {
   getTable(tableName) {
     const key = DB_PREFIX + tableName;
     const data = localStorage.getItem(key);
-    if (!data) return [];
-    try {
-      return JSON.parse(data);
-    } catch (e) {
-      console.error("Error reading localStorage table: " + tableName, e);
-      return [];
+    let items = [];
+    if (data) {
+      try {
+        items = JSON.parse(data);
+      } catch (e) {
+        console.error("Error reading localStorage table: " + tableName, e);
+        items = [];
+      }
     }
+
+    // Merge custom teacher materials & quizzes if querying those tables
+    if (tableName === "materials") {
+      try {
+        const customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+        const existingIds = new Set(items.map(m => m.id));
+        customMats.forEach(cm => {
+          if (!existingIds.has(cm.id)) {
+            items.push(cm);
+          }
+        });
+      } catch (err) {
+        console.warn("Error merging custom materials:", err);
+      }
+    } else if (tableName === "quizzes") {
+      try {
+        const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
+        const existingIds = new Set(items.map(q => q.id));
+        customQuizzes.forEach(cq => {
+          if (!existingIds.has(cq.id)) {
+            items.push(cq);
+          }
+        });
+      } catch (err) {
+        console.warn("Error merging custom quizzes:", err);
+      }
+    }
+
+    return items;
   }
 
   get(tableName) {
@@ -549,6 +580,44 @@ class LocalDatabase {
           }
         });
       }
+    }
+  }
+
+  saveCustomMaterial(material, quiz, gameItems) {
+    try {
+      // 1. Save Material
+      const customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+      const existingMatIdx = customMats.findIndex(m => m.id === material.id);
+      if (existingMatIdx !== -1) {
+        customMats[existingMatIdx] = material;
+      } else {
+        customMats.push(material);
+      }
+      localStorage.setItem("fivia_custom_materials", JSON.stringify(customMats));
+
+      // 2. Save Quiz
+      if (quiz) {
+        const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
+        const existingQuizIdx = customQuizzes.findIndex(q => q.id === quiz.id || q.materialId === material.id);
+        if (existingQuizIdx !== -1) {
+          customQuizzes[existingQuizIdx] = quiz;
+        } else {
+          customQuizzes.push(quiz);
+        }
+        localStorage.setItem("fivia_custom_quizzes", JSON.stringify(customQuizzes));
+      }
+
+      // 3. Save Game Items
+      if (gameItems) {
+        const customGames = JSON.parse(localStorage.getItem("fivia_custom_game_materials") || "[]");
+        customGames.push(gameItems);
+        localStorage.setItem("fivia_custom_game_materials", JSON.stringify(customGames));
+      }
+
+      return true;
+    } catch (e) {
+      console.error("Error saving custom material to database:", e);
+      return false;
     }
   }
 
