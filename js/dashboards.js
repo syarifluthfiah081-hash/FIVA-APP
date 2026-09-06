@@ -1765,6 +1765,10 @@ function renderTeacherReports() {
       <td style="font-family: monospace; font-weight: bold; color: ${gpScore < 0 ? 'var(--danger)' : 'var(--brand-orange)'};">${gpScore} Poin</td>
       <td><span class="badge badge-success"><i class="fas fa-bolt"></i> ${totalXP} XP</span></td>
       <td><span class="badge ${badgeClass}">${predicate}</span></td>
+      <td>
+        <button class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem; border-color: #ef4444; color: #ef4444;" 
+                onclick="window.deleteStudentScores('${sId}', '${sName}')" title="Reset Nilai Siswa Ini"><i class="fas fa-undo"></i> Reset</button>
+      </td>
     `;
     tableBody.appendChild(row);
   });
@@ -1842,6 +1846,268 @@ function openCertificateViewer(certId) {
   }
 }
 
+// Global Class & Score Deletion Handlers
+function deleteClassroomPrompt(targetClassId) {
+  const filterEl = document.getElementById("filter-class");
+  const selectedVal = targetClassId || (filterEl ? filterEl.value : "");
+  
+  const classes = window.FIVIAClassroom ? window.FIVIAClassroom.getClassrooms() : [];
+  
+  if (!selectedVal) {
+    if (classes.length === 0) {
+      if (window.showToast) window.showToast("Tidak ada kelas yang tersimpan untuk dihapus.", "warning");
+      else alert("Tidak ada kelas yang tersimpan untuk dihapus.");
+      return;
+    }
+    let optionsText = "Pilih nomor kelas yang ingin dihapus:\n";
+    classes.forEach((c, idx) => {
+      optionsText += `${idx + 1}. ${c.name} (Kode: ${c.code || c.id})\n`;
+    });
+    const choice = prompt(optionsText + "\nMasukkan nomor kelas (misal: 1):");
+    if (!choice) return;
+    const chosenIdx = parseInt(choice, 10) - 1;
+    if (isNaN(chosenIdx) || chosenIdx < 0 || chosenIdx >= classes.length) {
+      alert("Pilihan nomor kelas tidak valid.");
+      return;
+    }
+    confirmAndDeleteClass(classes[chosenIdx]);
+    return;
+  }
+  
+  const targetClass = classes.find(c => c.id === selectedVal || c.name === selectedVal) || { id: selectedVal, name: selectedVal };
+  confirmAndDeleteClass(targetClass);
+}
+
+function deleteSelectedClassroom() {
+  const filterEl = document.getElementById("filter-class");
+  const selectedVal = filterEl ? filterEl.value : "";
+  if (!selectedVal) {
+    if (window.showToast) window.showToast("Pilih kelas terlebih dahulu dari menu dropdown filter kelas.", "warning");
+    else alert("Pilih kelas terlebih dahulu dari menu dropdown filter kelas.");
+    return;
+  }
+  deleteClassroomPrompt(selectedVal);
+}
+
+function confirmAndDeleteClass(classObj) {
+  const className = classObj.name || classObj.id;
+  const classId = classObj.id;
+
+  const confirmed = confirm(`Apakah Anda yakin ingin menghapus kelas "${className}" beserta SELURUH data siswa di dalamnya?\n\nPERINGATAN: Data siswa dan nilai di kelas ini akan dihapus permanen!`);
+  if (!confirmed) return;
+
+  // 1. Remove classroom from FIVIAClassroom & LocalStorage
+  if (window.FIVIAClassroom && typeof window.FIVIAClassroom.removeClassroom === 'function') {
+    window.FIVIAClassroom.removeClassroom(classId);
+  }
+  let storedClasses = JSON.parse(localStorage.getItem('fivia_classrooms') || '[]');
+  storedClasses = storedClasses.filter(c => c.id !== classId && c.name !== className);
+  localStorage.setItem('fivia_classrooms', JSON.stringify(storedClasses));
+
+  if (window.db && typeof window.db.getTable === 'function') {
+    let dbClasses = window.db.getTable("classes") || [];
+    dbClasses = dbClasses.filter(c => c.id !== classId && c.name !== className);
+    window.db.saveTable("classes", dbClasses);
+  }
+
+  // 2. Remove students belonging to this class
+  let roster = JSON.parse(localStorage.getItem('fivia_student_roster') || '[]');
+  roster = roster.filter(s => s.classId !== classId && s.className !== className);
+  localStorage.setItem('fivia_student_roster', JSON.stringify(roster));
+
+  let classStudents = JSON.parse(localStorage.getItem('fivia_classroom_students') || '[]');
+  classStudents = classStudents.filter(s => s.classId !== classId && s.className !== className);
+  localStorage.setItem('fivia_classroom_students', JSON.stringify(classStudents));
+
+  if (window.db && typeof window.db.getTable === 'function') {
+    let dbStudents = window.db.getTable("students") || [];
+    dbStudents = dbStudents.filter(s => s.classId !== classId && s.className !== className);
+    window.db.saveTable("students", dbStudents);
+
+    let dbUsers = window.db.getTable("users") || [];
+    dbUsers = dbUsers.filter(u => u.classId !== classId && u.className !== className);
+    window.db.saveTable("users", dbUsers);
+  }
+
+  // 3. Update dropdowns
+  updateAllClassDropdowns();
+
+  if (window.showToast) window.showToast(`Kelas "${className}" dan seluruh siswanya berhasil dihapus.`, "success");
+  
+  // 4. Re-render views
+  if (typeof window.renderClassManagement === 'function') window.renderClassManagement();
+  if (typeof window.renderTeacherReports === 'function') window.renderTeacherReports();
+}
+
+function deleteClassScoresPrompt() {
+  const reportSelect = document.getElementById("report-class-select");
+  const selectedVal = reportSelect ? reportSelect.value : "";
+  
+  const classes = window.FIVIAClassroom ? window.FIVIAClassroom.getClassrooms() : [];
+  const classObj = classes.find(c => c.id === selectedVal || c.name === selectedVal);
+  const targetLabel = classObj ? classObj.name : (selectedVal || "Semua Kelas");
+
+  const confirmed = confirm(`Apakah Anda yakin ingin menghapus/reset SELURUH NILAI (Nilai LKPD, Kuis, Skor Group Play, dan XP) untuk kelas "${targetLabel}"?\n\nPERINGATAN: Nilai yang telah dihapus tidak dapat dikembalikan!`);
+  if (!confirmed) return;
+
+  const excelRoster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
+  const dbStudents = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("students") || [] : [];
+  
+  let targetStudentIds = new Set();
+  let targetStudentNames = new Set();
+
+  function isMatch(sClassId, sClassName) {
+    if (!selectedVal) return true;
+    if (sClassId === selectedVal || sClassName === selectedVal) return true;
+    if (classObj && (sClassId === classObj.id || sClassName === classObj.name)) return true;
+    return false;
+  }
+
+  excelRoster.forEach(s => {
+    if (isMatch(s.classId, s.className)) {
+      if (s.studentId || s.id) targetStudentIds.add(s.studentId || s.id);
+      if (s.name || s.studentName) targetStudentNames.add(s.name || s.studentName);
+    }
+  });
+
+  dbStudents.forEach(s => {
+    if (isMatch(s.classId, s.className)) {
+      if (s.id || s.studentId) targetStudentIds.add(s.id || s.studentId);
+      if (s.name || s.studentName) targetStudentNames.add(s.name || s.studentName);
+    }
+  });
+
+  // Reset submissions & quiz scores in window.db
+  if (window.db && typeof window.db.getTable === 'function') {
+    let submissions = window.db.getTable("submissions") || [];
+    if (selectedVal) {
+      submissions = submissions.filter(sub => !targetStudentIds.has(sub.studentId) && !targetStudentNames.has(sub.studentName));
+    } else {
+      submissions = [];
+    }
+    window.db.saveTable("submissions", submissions);
+
+    let quizScores = window.db.getTable("quizScores") || [];
+    if (selectedVal) {
+      quizScores = quizScores.filter(q => !targetStudentIds.has(q.userId) && !targetStudentNames.has(q.userName));
+    } else {
+      quizScores = [];
+    }
+    window.db.saveTable("quizScores", quizScores);
+
+    let students = window.db.getTable("students") || [];
+    students.forEach(s => {
+      if (isMatch(s.classId, s.className)) {
+        s.xp = 0;
+        s.groupPlayScore = 0;
+      }
+    });
+    window.db.saveTable("students", students);
+  }
+
+  // Reset LocalStorage rosters
+  let roster = JSON.parse(localStorage.getItem('fivia_student_roster') || '[]');
+  roster.forEach(s => {
+    if (isMatch(s.classId, s.className)) {
+      s.xp = 0;
+      s.groupPlayScore = 0;
+    }
+  });
+  localStorage.setItem('fivia_student_roster', JSON.stringify(roster));
+
+  let classStudents = JSON.parse(localStorage.getItem('fivia_classroom_students') || '[]');
+  classStudents.forEach(s => {
+    if (isMatch(s.classId, s.className)) {
+      s.xp = 0;
+      s.groupPlayScore = 0;
+    }
+  });
+  localStorage.setItem('fivia_classroom_students', JSON.stringify(classStudents));
+
+  try { localStorage.removeItem("fivia_group_play_session"); } catch(e) {}
+
+  if (window.showToast) window.showToast(`Seluruh nilai dan XP siswa untuk "${targetLabel}" berhasil dihapus/direset.`, "success");
+
+  if (typeof window.renderTeacherReports === 'function') window.renderTeacherReports();
+  if (typeof window.renderClassManagement === 'function') window.renderClassManagement();
+}
+
+function deleteStudentScores(studentId, studentName) {
+  const confirmed = confirm(`Apakah Anda yakin ingin menghapus/reset seluruh nilai dan XP untuk siswa "${studentName}"?`);
+  if (!confirmed) return;
+
+  if (window.db && typeof window.db.getTable === 'function') {
+    let submissions = window.db.getTable("submissions") || [];
+    submissions = submissions.filter(sub => sub.studentId !== studentId && sub.studentName !== studentName);
+    window.db.saveTable("submissions", submissions);
+
+    let quizScores = window.db.getTable("quizScores") || [];
+    quizScores = quizScores.filter(q => q.userId !== studentId && q.userName !== studentName);
+    window.db.saveTable("quizScores", quizScores);
+
+    let dbStudents = window.db.getTable("students") || [];
+    dbStudents.forEach(s => {
+      if (s.id === studentId || s.name === studentName) {
+        s.xp = 0;
+        s.groupPlayScore = 0;
+      }
+    });
+    window.db.saveTable("students", dbStudents);
+  }
+
+  let roster = JSON.parse(localStorage.getItem('fivia_student_roster') || '[]');
+  roster.forEach(s => {
+    if (s.studentId === studentId || s.id === studentId || s.name === studentName) {
+      s.xp = 0;
+      s.groupPlayScore = 0;
+    }
+  });
+  localStorage.setItem('fivia_student_roster', JSON.stringify(roster));
+
+  if (window.showToast) window.showToast(`Nilai dan XP untuk "${studentName}" berhasil direset.`, "success");
+
+  if (typeof window.renderTeacherReports === 'function') window.renderTeacherReports();
+  if (typeof window.renderClassManagement === 'function') window.renderClassManagement();
+}
+
+function updateAllClassDropdowns() {
+  const classes = window.FIVIAClassroom ? window.FIVIAClassroom.getClassrooms() : [];
+
+  const filterSelect = document.getElementById("filter-class");
+  if (filterSelect) {
+    const cur = filterSelect.value;
+    filterSelect.innerHTML = `<option value="">Semua Kelas</option>` +
+      classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (classes.some(c => c.id === cur)) filterSelect.value = cur;
+  }
+
+  const reportSelect = document.getElementById("report-class-select");
+  if (reportSelect) {
+    const cur = reportSelect.value;
+    reportSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (classes.some(c => c.id === cur)) reportSelect.value = cur;
+    else if (classes.length > 0) reportSelect.value = classes[0].id;
+  }
+
+  const addStudentSelect = document.getElementById("add-student-class");
+  if (addStudentSelect) {
+    addStudentSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
+
+  const gpSelect = document.getElementById("gp-classroom-select");
+  if (gpSelect) {
+    const cur = gpSelect.value;
+    gpSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (classes.some(c => c.id === cur)) gpSelect.value = cur;
+    else if (classes.length > 0) gpSelect.value = classes[0].id;
+  }
+}
+
+// Automatically sync dropdowns on initialization
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(updateAllClassDropdowns, 300);
+});
+
 // Map globals
 window.renderStudentDashboard = renderStudentDashboard;
 window.renderTeacherDashboard = renderTeacherDashboard;
@@ -1850,3 +2116,9 @@ window.renderTeacherReports = renderTeacherReports;
 window.renderMaterialsList = renderMaterialsList;
 window.renderMaterialDetail = renderMaterialDetail;
 window.renderCertificatesList = renderCertificatesList;
+window.deleteClassroomPrompt = deleteClassroomPrompt;
+window.deleteSelectedClassroom = deleteSelectedClassroom;
+window.deleteClassScoresPrompt = deleteClassScoresPrompt;
+window.deleteStudentScores = deleteStudentScores;
+window.updateAllClassDropdowns = updateAllClassDropdowns;
+

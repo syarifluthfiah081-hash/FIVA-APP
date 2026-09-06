@@ -1245,11 +1245,12 @@
               <button class="btn btn-cyan" id="btn-import-excel-sidebar" onclick="window.FIVIAClassroomEngine.triggerExcelImport()" style="background: var(--fq-cyan); color: white; border: none;"><i class="fas fa-file-import"></i> 📥 Import Excel</button>
               <button class="btn btn-outline" id="btn-download-template-sidebar" onclick="window.FIVIAExcelImport.downloadExcelTemplate()"><i class="fas fa-file-download"></i> 📄 Download Template</button>
               <button class="btn btn-emerald" id="btn-print-cards-sidebar" onclick="window.FIVIAExcelImport.printStudentCards()" style="background: #10b981; color: white; border: none;"><i class="fas fa-print"></i> 🖨️ Cetak Kartu Siswa</button>
+              <button class="btn btn-danger" id="btn-delete-class-sidebar" onclick="window.deleteClassroomPrompt()" style="background: #ef4444; color: white; border: none;"><i class="fas fa-trash-alt"></i> 🗑️ Hapus Kelas</button>
             </div>
           </div>
           
-          <div class="action-box" style="margin-top: 16px;">
-            <input type="text" class="form-control search-input" id="search-student" placeholder="Cari nama, NIS, atau Kode Siswa...">
+          <div class="action-box" style="margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <input type="text" class="form-control search-input" id="search-student" placeholder="Cari nama, NIS, atau Kode Siswa..." style="flex: 1;">
             <select class="form-control" id="filter-class" style="max-width: 180px;">
               <option value="">Semua Kelas</option>
               <option value="cls_x1">Kelas X-1</option>
@@ -1257,6 +1258,7 @@
               <option value="cls_xi1">Kelas XI IPA-1</option>
               <option value="cls_xi2">Kelas XI IPA-2</option>
             </select>
+            <button class="btn btn-outline" id="btn-delete-current-class" onclick="window.deleteSelectedClassroom()" style="border-color: #ef4444; color: #ef4444; font-size: 0.85rem;" title="Hapus Kelas Terpilih"><i class="fas fa-trash-alt"></i> Hapus Kelas Terpilih</button>
           </div>
 
           <div class="table-responsive">
@@ -1282,18 +1284,22 @@
       <!-- 5. GURU REPORTS SECTION -->
       <section id="teacher-reports-section" class="spa-section dashboard-container hidden-section fade-in-section">
         <div class="glass-panel dashboard-section">
-          <div class="section-header">
+          <div class="section-header" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
             <h3 class="section-title"><i class="fas fa-file-alt" style="color: var(--brand-orange);"></i> Laporan Hasil Belajar Siswa</h3>
-            <button class="btn btn-orange" id="btn-print-reports"><i class="fas fa-print"></i> Cetak Laporan PDF</button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-orange" id="btn-print-reports"><i class="fas fa-print"></i> Cetak Laporan PDF</button>
+              <button class="btn btn-danger" id="btn-delete-reports" onclick="window.deleteClassScoresPrompt()" style="background: #ef4444; color: white; border: none;"><i class="fas fa-eraser"></i> 🗑️ Hapus Nilai</button>
+            </div>
           </div>
           
-          <div class="action-box">
+          <div class="action-box" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <select class="form-control" id="report-class-select" style="max-width: 240px;">
               <option value="cls_x1">Kelas X-1</option>
               <option value="cls_x2">Kelas X-2</option>
               <option value="cls_xi1">Kelas XI IPA-1</option>
               <option value="cls_xi2">Kelas XI IPA-2</option>
             </select>
+            <button class="btn btn-outline" id="btn-delete-class-scores" onclick="window.deleteClassScoresPrompt()" style="border-color: #ef4444; color: #ef4444; font-size: 0.85rem;" title="Hapus Nilai Kelas Ini"><i class="fas fa-eraser"></i> Hapus Nilai Kelas Ini</button>
           </div>
 
           <div class="table-responsive" id="printable-reports-area">
@@ -1308,6 +1314,7 @@
                   <th>Skor Group Play</th>
                   <th>Total XP</th>
                   <th>Predikat</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>

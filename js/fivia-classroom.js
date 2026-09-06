@@ -93,11 +93,25 @@ window.FIVIAClassroom = (function() {
     return { success: true, classroom: cls, student: student };
   }
 
+  function removeClassroom(classIdOrName) {
+    let classes = getClassrooms();
+    const filtered = classes.filter(c => c.id !== classIdOrName && c.name !== classIdOrName);
+    saveClassrooms(filtered);
+    if (window.db && typeof window.db.getTable === 'function') {
+      let dbClasses = window.db.getTable("classes") || [];
+      dbClasses = dbClasses.filter(c => c.id !== classIdOrName && c.name !== classIdOrName);
+      window.db.saveTable("classes", dbClasses);
+    }
+    return filtered;
+  }
+
   return {
     getClassrooms: getClassrooms,
     createClassroom: createClassroom,
+    removeClassroom: removeClassroom,
     getClassroomByCode: getClassroomByCode,
     getRoster: getRoster,
     joinClassroom: joinClassroom
   };
 })();
+
