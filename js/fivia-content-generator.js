@@ -71,47 +71,138 @@ window.FIVIAContentGenerator = (function() {
   ];
 
   /**
-   * Client-side File Text Reader
+   * Cleans text extracted from PDF, Word or web content, removing raw binary & PDF/ZIP metadata garbage
    */
-  function readTextFromFile(file) {
-    return new Promise((resolve, reject) => {
-      if (!file) {
-        reject(new Error("File tidak ditemukan."));
-        return;
+  function sanitizeExtractedText(rawText) {
+    if (!rawText) return "";
+    return rawText
+      .replace(/%PDF-[\d\.]+/gi, "")
+      .replace(/\d+\s+\d+\s+obj[\s\S]*?endobj/gi, "")
+      .replace(/stream[\s\S]*?endstream/gi, "")
+      .replace(/<<[\s\S]*?>>/g, "")
+      .replace(/\/ViewerPreferences|\/MarkInfo|\/Metadata|\/Font|\/ProcSet|\/MediaBox|\/Group|\/Tabs/gi, "")
+      .replace(/[^\x20-\x7E\u00A0-\u024F\n\r\t]/g, " ") // keep readable characters and extended latin
+      .replace(/[\n\r]+/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .trim();
+  }
+
+  /**
+   * Fallback PDF text stream parser (offline / built-in)
+   */
+  function extractPdfTextFromBinaryBuffer(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let str = "";
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      let s = "";
+      for (let j = 0; j < chunk.length; j++) {
+        const b = chunk[j];
+        if ((b >= 32 && b <= 126) || b === 10 || b === 13 || b === 9) {
+          s += String.fromCharCode(b);
+        } else {
+          s += " ";
+        }
       }
+      str += s;
+    }
 
-      const fileName = file.name || "";
-      const ext = fileName.split(".").pop().toLowerCase();
+    // Extract text in parentheses (PDF string literals: (Hello World))
+    const matches = str.match(/\(([^()]{2,})\)/g);
+    if (matches && matches.length > 0) {
+      const textPieces = matches
+        .map(m => m.slice(1, -1).trim())
+        .filter(t => 
+          t.length > 2 && 
+          !t.startsWith("/") && 
+          !t.startsWith("%PDF") && 
+          !t.includes("endobj") && 
+          !t.includes("Font") &&
+          !t.includes("MediaBox") &&
+          !t.includes("Metadata") &&
+          !/^\d+\s+\d+\s+R$/.test(t)
+        );
 
-      const reader = new FileReader();
+      if (textPieces.length > 0) {
+        return sanitizeExtractedText(textPieces.join(" "));
+      }
+    }
 
-      if (["txt", "md", "csv", "json", "html"].includes(ext)) {
-        reader.onload = (e) => resolve(e.target.result);
+    return sanitizeExtractedText(str);
+  }
+
+  /**
+   * Client-side File Text Reader supporting TXT, MD, PDF, DOCX, CSV, JSON
+   */
+  async function readTextFromFile(file) {
+    if (!file) throw new Error("File tidak ditemukan.");
+
+    const fileName = file.name || "";
+    const ext = fileName.split(".").pop().toLowerCase();
+
+    // 1. Text-based files
+    if (["txt", "md", "csv", "json", "html"].includes(ext)) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(sanitizeExtractedText(e.target.result));
         reader.onerror = () => reject(new Error("Gagal membaca file teks."));
         reader.readAsText(file);
-      } else {
-        // Fallback reading as text buffer for PDF/DOCX preview
-        reader.onload = (e) => {
-          const content = e.target.result;
-          if (typeof content === "string") {
-            resolve(content);
-          } else {
-            // Extract raw readable ASCII text from binary string
-            const view = new Uint8Array(content);
-            let text = "";
-            for (let i = 0; i < view.length; i++) {
-              const charCode = view[i];
-              if ((charCode >= 32 && charCode <= 126) || charCode === 10 || charCode === 13) {
-                text += String.fromCharCode(charCode);
-              }
-            }
-            resolve(text);
-          }
-        };
-        reader.onerror = () => reject(new Error("Gagal membaca dokumen binary."));
-        reader.readAsArrayBuffer(file);
-      }
+      });
+    }
+
+    // 2. Read ArrayBuffer for PDF / DOCX
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => reject(new Error("Gagal membaca file."));
+      reader.readAsArrayBuffer(file);
     });
+
+    // 3. PDF Files
+    if (ext === "pdf") {
+      try {
+        if (window.pdfjsLib) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+          const pdfDoc = await loadingTask.promise;
+          let fullText = "";
+
+          for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(" ");
+            fullText += pageText + "\n\n";
+          }
+
+          const cleanResult = sanitizeExtractedText(fullText);
+          if (cleanResult && cleanResult.length > 20) {
+            return cleanResult;
+          }
+        }
+      } catch (err) {
+        console.warn("PDF.js parsing error, using fallback PDF stream parser:", err);
+      }
+
+      return extractPdfTextFromBinaryBuffer(arrayBuffer);
+    }
+
+    // 4. DOCX Files
+    if (ext === "docx" || ext === "doc") {
+      try {
+        if (window.mammoth) {
+          const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+          if (result && result.value) {
+            return sanitizeExtractedText(result.value);
+          }
+        }
+      } catch (err) {
+        console.warn("Mammoth.js DOCX parsing error:", err);
+      }
+    }
+
+    // 5. Binary Fallback
+    return extractPdfTextFromBinaryBuffer(arrayBuffer);
   }
 
   /**
@@ -195,13 +286,20 @@ window.FIVIAContentGenerator = (function() {
   /**
    * Built-in Intelligent Heuristic NLP Generator Engine
    */
-  function generateWithBuiltinNLP(text, topicTitle, classLevel, misconceptionFocus) {
-    const title = topicTitle || extractTitleFromText(text) || "Pengukuran dan Konsep Dasar Fisika";
+  function generateWithBuiltinNLP(text, topicTitle, classLevel, misconceptionFocus, activeFileName = "") {
+    const cleanText = sanitizeExtractedText(text);
+
+    // Sanitize title to never be raw PDF junk
+    let title = (topicTitle || "").trim();
+    if (!title || title.includes("%PDF") || title.includes("obj") || title.includes("stream")) {
+      title = extractTitleFromText(cleanText, activeFileName);
+    }
+
     const level = classLevel || "Fase E (Kelas X)";
     const focus = misconceptionFocus || "Umum & Pengukuran";
 
     // 1. Identify relevant misconceptions from knowledge base
-    const lowerText = text.toLowerCase();
+    const lowerText = cleanText.toLowerCase();
     let detectedMisconceptions = MISCONCEPTION_KNOWLEDGE_BASE.filter(item => {
       return item.keywords.some(kw => lowerText.includes(kw));
     });
@@ -210,8 +308,20 @@ window.FIVIAContentGenerator = (function() {
       detectedMisconceptions = [MISCONCEPTION_KNOWLEDGE_BASE[0], MISCONCEPTION_KNOWLEDGE_BASE[1], MISCONCEPTION_KNOWLEDGE_BASE[3]];
     }
 
-    // Extract sentences for summary
-    const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 15);
+    // Extract sentences for summary, ensuring no binary PDF fragments remain
+    const sentences = cleanText
+      .split(/(?<=[.!?])\s+|\n+/)
+      .map(s => s.trim())
+      .filter(s => 
+        s.length > 15 && 
+        !s.startsWith("%") && 
+        !s.startsWith("/") && 
+        !s.includes("obj") && 
+        !s.includes("stream") && 
+        !s.includes("MediaBox") &&
+        !s.includes("Metadata")
+      );
+
     const summaryText = sentences.slice(0, 5).join(" ");
     const detailBody = sentences.slice(0, 15).join(" ");
 
@@ -223,7 +333,7 @@ window.FIVIAContentGenerator = (function() {
       topic: `${focus} — Generasi Guru Bebas Miskonsepsi`,
       equation: detectedMisconceptions[0]?.formula || "F = m \\cdot a \\quad \\text{atau} \\quad W = F \\cdot s",
       desc: summaryText || "Materi ini disusun secara otomatis dari sumber belajar guru dengan verifikasi pencegahan miskonsepsi fisika.",
-      detailBody: detailBody || text.substr(0, 500),
+      detailBody: detailBody || cleanText.substr(0, 500),
       misconceptionList: detectedMisconceptions.map(m => ({
         misconception: m.misconception,
         fact: m.fact,
@@ -253,14 +363,39 @@ window.FIVIAContentGenerator = (function() {
   }
 
   /**
-   * Helper to extract title candidate from text
+   * Helper to extract title candidate from text or file name
    */
-  function extractTitleFromText(text) {
-    const lines = text.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length > 0 && lines[0].length < 80) {
-      return lines[0].replace(/^[#*=\-\s]+/, '');
+  function extractTitleFromText(text, fallbackFileName = "") {
+    const cleanText = sanitizeExtractedText(text);
+    const lines = cleanText
+      .split(/\n/)
+      .map(l => l.trim())
+      .filter(l => 
+        l.length >= 3 && 
+        l.length <= 80 && 
+        !l.startsWith("%") && 
+        !l.startsWith("/") && 
+        !l.includes("obj") && 
+        !l.includes("stream") && 
+        !l.includes("Metadata") &&
+        !/^\d+$/.test(l)
+      );
+
+    if (lines.length > 0) {
+      const candidate = lines[0].replace(/^[#*=\-\s]+/, '').trim();
+      if (candidate.length >= 3) return candidate;
     }
-    return null;
+
+    if (fallbackFileName) {
+      const cleanName = fallbackFileName
+        .replace(/\.[^/.]+$/, "")
+        .replace(/^[0-9_\-\s]+/, "")
+        .replace(/[_\-]+/g, " ")
+        .trim();
+      if (cleanName.length >= 3) return cleanName;
+    }
+
+    return "Pengukuran dan Konsep Dasar Fisika";
   }
 
   /**
@@ -708,20 +843,32 @@ Kembalikan HANYA JSON tersebut tanpa teks pembungkus markdown tambahan.`;
     const fileInput = document.getElementById("gen-file-input");
     const fileNameLabel = document.getElementById("gen-file-name-label");
     const docTextArea = document.getElementById("gen-doc-text");
+    let activeLoadedFileName = "";
 
     if (fileInput && docTextArea) {
       fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        activeLoadedFileName = file.name || "";
         if (fileNameLabel) fileNameLabel.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
 
         try {
           const text = await readTextFromFile(file);
           docTextArea.value = text;
+
+          // Auto suggest Topic Title if field is empty or contains raw PDF/ZIP tags
+          const topicInput = document.getElementById("gen-topic-title");
+          if (topicInput) {
+            const currentVal = topicInput.value ? topicInput.value.trim() : "";
+            if (!currentVal || currentVal.includes("%PDF") || currentVal.includes("obj") || currentVal.includes("stream")) {
+              topicInput.value = extractTitleFromText(text, file.name);
+            }
+          }
+
           if (window.showToast) window.showToast(`Berhasil membaca dokumen "${file.name}"!`);
         } catch (err) {
-          alert(`Error: ${err.message}`);
+          alert(`Error membaca file: ${err.message}`);
         }
       };
     }
