@@ -129,10 +129,14 @@
 }
 
 /* =========================================================
-   FULLSCREEN NO-SCROLL GAME ARENA MODE
+   FULLSCREEN GAME ARENA MODE (AUTO SCROLL & RESPONSIVE FIT)
    ========================================================= */
-body.fq-fullscreen-active {
-  overflow: hidden !important;
+body.fq-fullscreen-active,
+:fullscreen body,
+:-webkit-full-screen body,
+:-moz-full-screen body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   margin: 0 !important;
   padding: 0 !important;
 }
@@ -142,31 +146,67 @@ body.fq-fullscreen-active .app-header {
   display: none !important;
 }
 
-body.fq-fullscreen-active #main-content {
+body.fq-fullscreen-active #main-content,
+:fullscreen #main-content {
   margin: 0 !important;
   padding: 0 !important;
   width: 100vw !important;
-  height: 100vh !important;
+  min-height: 100vh !important;
   max-width: 100vw !important;
-  max-height: 100vh !important;
-  overflow: hidden !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
 }
 
 body.fq-fullscreen-active #fq-group-play-container,
-body.fq-fullscreen-active #fq-group-levels-container {
+body.fq-fullscreen-active #fq-group-levels-container,
+:fullscreen #fq-group-play-container,
+:fullscreen #fq-group-levels-container {
   max-width: 100vw !important;
   width: 100vw !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
+  min-height: 100vh !important;
+  height: auto !important;
+  max-height: none !important;
   margin: 0 !important;
-  padding: 12px 18px !important;
+  padding: 16px 20px !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
-  overflow: hidden !important;
+  justify-content: flex-start !important;
+  overflow-y: auto !important;
 }
 
-body.fq-fullscreen-active .fq-view {
-  height: 100% !important;
+body.fq-fullscreen-active .fivia-quest,
+:fullscreen .fivia-quest {
+  border-radius: 0 !important;
+  min-height: 100vh !important;
+  height: auto !important;
+  overflow-y: auto !important;
 }
+
+body.fq-fullscreen-active .fq-view,
+:fullscreen .fq-view {
+  min-height: 100% !important;
+  height: auto !important;
+  overflow-y: auto !important;
+}
+
+/* Ensure images & diagrams in Fullscreen auto-fit responsively & allow vertical scrolling */
+body.fq-fullscreen-active img,
+:fullscreen img,
+body.fq-fullscreen-active svg,
+:fullscreen svg {
+  max-width: 100% !important;
+  max-height: 52vh !important;
+  height: auto !important;
+  object-fit: contain !important;
+  border-radius: 8px;
+}
+
+/* Modals in fullscreen mode */
+body.fq-fullscreen-active .fivia-quest-modal-content,
+:fullscreen .fivia-quest-modal-content {
+  max-height: 88vh !important;
+  overflow-y: auto !important;
+}
+
