@@ -167,7 +167,19 @@ function showQuestion(idx) {
   else if (type === "matching") {
     const currentMatches = studentAnswers[idx] && typeof studentAnswers[idx] === 'object' ? studentAnswers[idx] : {};
     const pairs = q.pairs || [];
-    const rightOptions = pairs.map(p => p.right);
+    const rawRightList = pairs.map(p => p.right);
+    if (!q._shuffledRight || q._shuffledRight.length !== rawRightList.length) {
+      const s = [...rawRightList];
+      for (let i = s.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [s[i], s[j]] = [s[j], s[i]];
+      }
+      if (s.length > 1 && s.every((v, kIdx) => v === rawRightList[kIdx])) {
+        [s[0], s[1]] = [s[1], s[0]];
+      }
+      q._shuffledRight = s;
+    }
+    const rightOptions = q._shuffledRight;
     
     html += `<div style="font-size:0.9rem; color: var(--brand-orange); font-weight: bold; margin-bottom: 8px;"><i class="fas fa-project-diagram"></i> Pasangkan setiap item di sebelah kiri dengan pilihan yang tepat di sebelah kanan:</div>`;
     html += `<div style="display: flex; flex-direction: column; gap: 14px;">`;

@@ -561,7 +561,19 @@ window.FIVIAGroupLevelEngine = (function() {
         `;
       } else if (qType === "matching") {
         const pairs = (q.pairs && q.pairs.length > 0) ? q.pairs : (window.extractPairsFromQuestion ? window.extractPairsFromQuestion(q) : extractPairsFromText(q.correctAnswer || q.explanation || ''));
-        const rightOptions = pairs.map(p => p.right);
+        const rawRightList = pairs.map(p => p.right);
+        if (!q._shuffledRight || q._shuffledRight.length !== rawRightList.length) {
+          const s = [...rawRightList];
+          for (let i = s.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [s[i], s[j]] = [s[j], s[i]];
+          }
+          if (s.length > 1 && s.every((v, idx) => v === rawRightList[idx])) {
+            [s[0], s[1]] = [s[1], s[0]];
+          }
+          q._shuffledRight = s;
+        }
+        const rightOptions = q._shuffledRight;
         optionsUI = `
           <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 10px;">
             <div style="color: var(--fq-amber); font-weight: 800; font-size: 0.95rem;"><i class="fas fa-project-diagram"></i> Pasangkan elemen di sebelah kiri dengan jawaban di sebelah kanan:</div>
