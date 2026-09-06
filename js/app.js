@@ -212,11 +212,14 @@ function handleRouting() {
 
   // Route Definitions
   if (hash.startsWith("#quest")) {
-    highlightSidebar("menu-quest");
+    highlightSidebar("menu-guru-group-play");
     const questSec = document.getElementById("fivia-quest-section");
     if (questSec) questSec.classList.remove("hidden-section");
-    if (window.FIVIAQuest && window.FIVIAQuest.handleSubRouting) {
+    if (window.FIVIAQuest && typeof window.FIVIAQuest.handleSubRouting === 'function') {
       window.FIVIAQuest.handleSubRouting(hash);
+    }
+    if ((hash === '#quest/group-play' || hash === '#quest/group-levels') && window.FIVIAGroupLevelEngine && typeof window.FIVIAGroupLevelEngine.renderLevelMapUI === 'function') {
+      window.FIVIAGroupLevelEngine.renderLevelMapUI();
     }
   }
 
