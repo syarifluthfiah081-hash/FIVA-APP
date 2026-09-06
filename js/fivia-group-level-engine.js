@@ -68,14 +68,22 @@ window.FIVIAGroupLevelEngine = (function() {
           ];
 
       // Collect base & custom materials for module selector
-      let baseMats = [];
-      if (window.db && typeof window.db.getMaterials === 'function') {
-        baseMats = window.db.getMaterials() || [];
+      let allMats = [];
+      if (window.db) {
+        if (typeof window.db.getMaterials === 'function') {
+          allMats = window.db.getMaterials() || [];
+        } else if (typeof window.db.getTable === 'function') {
+          allMats = window.db.getTable("materials") || [];
+        }
       }
-      let customMats = [];
+      let extraCustomMats = [];
       try {
-        customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+        const storedCustom = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+        extraCustomMats = storedCustom.filter(cm => !allMats.some(m => String(m.id) === String(cm.id)));
       } catch(e) {}
+
+      const baseMats = allMats.filter(m => parseInt(m.id) <= 5 && !m.isTeacherCreated);
+      const customMats = [...allMats.filter(m => parseInt(m.id) > 5 || m.isTeacherCreated), ...extraCustomMats];
 
       const html = `
         <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
@@ -104,13 +112,13 @@ window.FIVIAGroupLevelEngine = (function() {
               <div style="color: var(--fq-cyan); font-size: 0.88rem; font-weight: 700;">Gim akan memainkan tantangan fisika yang dibuat secara khusus berdasarkan modul berikut.</div>
             </div>
             <div>
-              <select class="fq-select" style="min-width: 320px; min-height: 52px; font-weight: 800; font-size: 1.05rem; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 0 16px;" onchange="window.FIVIAGroupLevelEngine.setSelectedModule(this.value)">
+              <select class="fq-select" style="min-width: 340px; min-height: 52px; font-weight: 800; font-size: 1.05rem; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 0 16px;" onchange="window.FIVIAGroupLevelEngine.setSelectedModule(this.value)">
                 <option value="ALL" ${selectedModuleId === 'ALL' ? 'selected' : ''}>🌟 SEMUA MODUL MATERI (ACAK GABUNGAN)</option>
-                <optgroup label="📖 Modul Kurikulum Utama (SMA Phase E/F)">
-                  ${baseMats.map(m => `<option value="${m.id}" ${String(selectedModuleId) === String(m.id) ? 'selected' : ''}>${m.name} (${m.topic || 'Fisika'})</option>`).join('')}
+                <optgroup label="📖 Modul Kurikulum Utama (Materi &amp; Lab)">
+                  ${baseMats.map(m => `<option value="${m.id}" ${String(selectedModuleId) === String(m.id) ? 'selected' : ''}>Modul ${m.id}: ${m.name}</option>`).join('')}
                 </optgroup>
                 ${customMats.length > 0 ? `
-                  <optgroup label="🤖 Modul Hasil Generate AI Guru">
+                  <optgroup label="🤖 Modul Hasil Generate AI / Custom Guru">
                     ${customMats.map(cm => `<option value="${cm.id}" ${String(selectedModuleId) === String(cm.id) ? 'selected' : ''}>✨ ${cm.name || cm.title} (Custom Guru)</option>`).join('')}
                   </optgroup>
                 ` : ''}

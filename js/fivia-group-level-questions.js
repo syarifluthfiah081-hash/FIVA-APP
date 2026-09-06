@@ -1,11 +1,12 @@
 /**
  * FIVIA GROUP LEVEL QUESTIONS MODULE
- * Phase 10.1: Categorized Question Bank (95+ Physics HOTS Challenges for Level 01–05)
+ * Phase 10.1: Categorized Question Bank & Per-Module Question Banks for Materi & Lab
  */
 
 window.FIVIAGroupLevelQuestions = (function() {
   'use strict';
 
+  // Core General Question Bank (Used for ALL / Fallback)
   const QUESTION_BANK = {
     // LEVEL 1: PILIHAN GANDA (4 OPSI: A, B, C, D)
     LEVEL_01: [
@@ -63,6 +64,145 @@ window.FIVIAGroupLevelQuestions = (function() {
     ]
   };
 
+  // Specific Question Banks for Each Module in "Materi & Lab" (Modul 1 to 5)
+  const MODULE_QUESTION_BANKS = {
+    // MODUL 1: Hakikat Fisika & Metode Ilmiah
+    "1": {
+      LEVEL_01: [
+        { id: 'm1_l1_q1', type: 'multiple_choice', question: 'Manakah yang merupakan langkah awal dalam metode ilmiah setelah observasi fenomena?', options: [{ id: 'A', label: 'Merumuskan hipotesis' }, { id: 'B', label: 'Menarik kesimpulan' }, { id: 'C', label: 'Merumuskan masalah penelitian' }, { id: 'D', label: 'Mempublikasikan hasil' }], correctAnswer: 'C', explanation: 'Langkah awal setelah pengamatan fenomena adalah merumuskan masalah penelitian secara terukur.' },
+        { id: 'm1_l1_q2', type: 'multiple_choice', question: 'Simbol bahaya berupa gambar tengkorak pada botol bahan kimia mengindikasikan bahan bersifat...', options: [{ id: 'A', label: 'Explosive' }, { id: 'B', label: 'Corrosive' }, { id: 'C', label: 'Toxic (Beracun)' }, { id: 'D', label: 'Flammable' }], correctAnswer: 'C', explanation: 'Simbol tengkorak menandakan bahan beracun (Toxic) yang berbahaya jika terhirup atau tertelan.' },
+        { id: 'm1_l1_q3', type: 'multiple_choice', question: 'Dalam eksperimen fisika, variabel yang sengaja diubah-ubah oleh peneliti dinamakan...', options: [{ id: 'A', label: 'Variabel Bebas' }, { id: 'B', label: 'Variabel Terikat' }, { id: 'C', label: 'Variabel Kontrol' }, { id: 'D', label: 'Variabel Pengganggu' }], correctAnswer: 'A', explanation: 'Variabel bebas adalah faktor yang sengaja diubah untuk menguji pengaruhnya.' },
+        { id: 'm1_l1_q4', type: 'multiple_choice', question: 'Sikap ilmiah yang ditunjukkan dengan melaporkan data hasil eksperimen apa adanya adalah...', options: [{ id: 'A', label: 'Subjektif' }, { id: 'B', label: 'Jujur dan Objektif' }, { id: 'C', label: 'Kritis tanpa data' }, { id: 'D', label: 'Ceroboh' }], correctAnswer: 'B', explanation: 'Kejujuran dan objektivitas adalah fondasi utama sikap ilmiah dalam eksperimen fisika.' }
+      ],
+      LEVEL_02: [
+        { id: 'm1_l2_q1', type: 'true_false', question: 'PERNYATAAN: Hipotesis ilmiah adalah kesimpulan mutlak yang tidak dapat diuji lagi.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'B', explanation: 'Pernyataan SALAH. Hipotesis adalah dugaan sementara yang wajib diuji melalui eksperimen.' },
+        { id: 'm1_l2_q2', type: 'true_false', question: 'PERNYATAAN: Mengencerkan asam pekat dilakukan dengan menuangkan asam sedikit demi sedikit ke dalam air.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Selalu tuangkan asam ke dalam air untuk mencegah percikan eksotermik berbahaya.' },
+        { id: 'm1_l2_q3', type: 'true_false', question: 'PERNYATAAN: Hakikat fisika meliputi tiga dimensi utama: Fisika sebagai Produk, Proses, dan Sikap.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Hakikat fisika mencakup Produk (kumpulan fakta/teori), Proses (metode ilmiah), dan Sikap.' },
+        { id: 'm1_l2_q4', type: 'true_false', question: 'PERNYATAAN: Variabel kontrol adalah variabel yang sengaja diukur sebagai hasil eksperimen.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'B', explanation: 'Pernyataan SALAH. Variabel terikat yang diukur, sedangkan variabel kontrol dijaga konstan.' }
+      ],
+      LEVEL_03: [
+        { id: 'm1_l3_q1', type: 'matching', question: 'Pasangkan dimensi hakikat fisika dengan pengertian utamanya:', pairs: [{ left: 'Fisika sebagai Produk', right: 'Kumpulan pengetahuan (fakta, teori, hukum)' }, { left: 'Fisika sebagai Proses', right: 'Cara penyelidikan & metode ilmiah' }, { left: 'Fisika sebagai Sikap', right: 'Rasa ingin tahu & objektivitas' }], explanation: 'Produk = ilmu, Proses = cara menyelidiki, Sikap = perilaku ilmiah.' },
+        { id: 'm1_l3_q2', type: 'matching', question: 'Pasangkan jenis variabel eksperimen dengan fungsinya:', pairs: [{ left: 'Variabel Bebas', right: 'Faktor yang sengaja diubah' }, { left: 'Variabel Terikat', right: 'Faktor yang diukur/datiati' }, { left: 'Variabel Kontrol', right: 'Faktor yang dijaga konstan' }], explanation: 'Bebas = diubah, Terikat = diukur, Kontrol = konstan.' }
+      ],
+      LEVEL_04: [
+        { id: 'm1_l4_q1', type: 'multiple_select', question: 'Manakah Alat Pelindung Diri (APD) wajib saat bekerja dengan bahan kimia di lab? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Jas Laboratorium' }, { id: 'B', label: 'Kacamata Goggles' }, { id: 'C', label: 'Sarung Tangan Karet' }, { id: 'D', label: 'Sandal Jepit' }], correctAnswers: [0, 1, 2], explanation: 'Jas lab, goggles, dan sarung tangan adalah APD standar wajib.' },
+        { id: 'm1_l4_q2', type: 'multiple_select', question: 'Manakah yang tergolong elemen Metode Ilmiah dalam sains? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Merumuskan Masalah' }, { id: 'B', label: 'Mengajukan Hipotesis' }, { id: 'C', label: 'Melakukan Eksperimen' }, { id: 'D', label: 'Mengabaikan Hasil Eksperimen' }], correctAnswers: [0, 1, 2], explanation: 'Merumuskan masalah, hipotesis, dan eksperimen adalah alur ilmiah terstruktur.' }
+      ],
+      LEVEL_05: [
+        { id: 'm1_l5_q1', type: 'short_answer', question: 'Apakah nama dugaan atau jawaban sementara terhadap masalah penelitian yang harus diuji melalui eksperimen?', correctAnswers: ['Hipotesis', 'hipotesis'], explanation: 'Hipotesis adalah jawaban sementara sebelum eksperimen dilakukan.' },
+        { id: 'm1_l5_q2', type: 'short_answer', question: 'Apakah nama tempat sarana laboratorium bertutup kaca yang digunakan untuk mereaksikan bahan beracun atau asam pekat?', correctAnswers: ['Lemari Asam', 'lemari asam', 'Fume Hood'], explanation: 'Lemari asam (fume hood) melindungi praktikan dari uap beracun.' }
+      ]
+    },
+
+    // MODUL 2: Pengukuran Dasar Fisika
+    "2": {
+      LEVEL_01: [
+        { id: 'm2_l1_q1', type: 'multiple_choice', question: 'Manakah kelompok besaran di bawah ini yang semuanya merupakan besaran pokok SI?', options: [{ id: 'A', label: 'Kecepatan, Gaya, Massa' }, { id: 'B', label: 'Massa, Suhu, Panjang, Kuat Arus' }, { id: 'C', label: 'Volume, Waktu, Energi' }, { id: 'D', label: 'Usaha, Tekanan, Percepatan' }], correctAnswer: 'B', explanation: 'Massa, suhu, panjang, dan kuat arus adalah 4 dari 7 besaran pokok SI.' },
+        { id: 'm2_l1_q2', type: 'multiple_choice', question: 'Tingkat ketelitian (skala terkecil) mikrometer sekrup adalah...', options: [{ id: 'A', label: '1 mm' }, { id: 'B', label: '0.1 mm' }, { id: 'C', label: '0.01 mm' }, { id: 'D', label: '0.001 mm' }], correctAnswer: 'C', explanation: 'Mikrometer sekrup memiliki ketelitian presisi 0.01 mm.' },
+        { id: 'm2_l1_q3', type: 'multiple_choice', question: 'Berapakah jumlah angka penting dari hasil pengukuran 0.0243 m?', options: [{ id: 'A', label: '5' }, { id: 'B', label: '4' }, { id: 'C', label: '3' }, { id: 'D', label: '2' }], correctAnswer: 'C', explanation: 'Nol di sebelah kiri angka bukan nol pada desimal bukan angka penting (2, 4, 3 = 3 AP).' },
+        { id: 'm2_l1_q4', type: 'multiple_choice', question: 'Dimensi dari besaran Gaya (F = m · a) adalah...', options: [{ id: 'A', label: '[MLT⁻²]' }, { id: 'B', label: '[ML²T⁻²]' }, { id: 'C', label: '[LT⁻²]' }, { id: 'D', label: '[ML⁻¹T⁻²]' }], correctAnswer: 'A', explanation: 'F = kg · m/s² -> [M][L][T]⁻².' }
+      ],
+      LEVEL_02: [
+        { id: 'm2_l2_q1', type: 'true_false', question: 'PERNYATAAN: Angka nol di sebelah kiri angka bukan nol pada desimal dihitung sebagai angka penting.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'B', explanation: 'Pernyataan SALAH. Angka nol di sebelah kiri desimal bukan angka penting.' },
+        { id: 'm2_l2_q2', type: 'true_false', question: 'PERNYATAAN: Mikrometer sekrup memiliki tingkat ketelitian lebih tinggi (0.01 mm) dibanding jangka sorong (0.1 mm).', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Mikrometer sekrup 10x lebih teliti dari jangka sorong.' },
+        { id: 'm2_l2_q3', type: 'true_false', question: 'PERNYATAAN: Dimensi energi kinetik [ML²T⁻²] sama persis dengan dimensi usaha.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Energi kinetik dan usaha keduanya berdimensi [ML²T⁻²].' }
+      ],
+      LEVEL_03: [
+        { id: 'm2_l3_q1', type: 'matching', question: 'Pasangkan besaran pokok fisika dengan simbol dimensi SI yang tepat:', pairs: [{ left: 'Panjang', right: '[L]' }, { left: 'Massa', right: '[M]' }, { left: 'Waktu', right: '[T]' }], explanation: 'Panjang [L], Massa [M], Waktu [T].' },
+        { id: 'm2_l3_q2', type: 'matching', question: 'Pasangkan alat ukur dengan tingkat ketelitian skalanya:', pairs: [{ left: 'Jangka Sorong', right: '0.1 mm (0.01 cm)' }, { left: 'Mikrometer Sekrup', right: '0.01 mm (0.001 cm)' }, { left: 'Mistar Biasa', right: '1 mm (0.1 cm)' }], explanation: 'Jangka sorong 0.1 mm, Mikrometer 0.01 mm, Mistar 1 mm.' }
+      ],
+      LEVEL_04: [
+        { id: 'm2_l4_q1', type: 'multiple_select', question: 'Manakah pasangan besaran dan satuan SI berikut yang BENAR? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Kuat Arus — Ampere (A)' }, { id: 'B', label: 'Suhu — Kelvin (K)' }, { id: 'C', label: 'Massa — Gram (g)' }, { id: 'D', label: 'Panjang — Meter (m)' }], correctAnswers: [0, 1, 3], explanation: 'Kuat arus (Ampere), Suhu (Kelvin), dan Panjang (Meter) adalah satuan SI.' },
+        { id: 'm2_l4_q2', type: 'multiple_select', question: 'Manakah besaran fisika di bawah ini yang tergolong BESARAN VEKTOR? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Gaya (Force)' }, { id: 'B', label: 'Perpindahan (Displacement)' }, { id: 'C', label: 'Kecepatan (Velocity)' }, { id: 'D', label: 'Massa Jenis (Density)' }], correctAnswers: [0, 1, 2], explanation: 'Gaya, perpindahan, dan kecepatan adalah besaran vektor.' }
+      ],
+      LEVEL_05: [
+        { id: 'm2_l5_q1', type: 'short_answer', question: 'Apakah nama alat ukur yang paling presisi untuk mengukur ketebalan kawat tembaga tipis?', correctAnswers: ['Mikrometer Sekrup', 'mikrometer sekrup', 'Mikrometer'], explanation: 'Mikrometer sekrup memiliki ketelitian 0.01 mm ideal untuk benda tipis.' },
+        { id: 'm2_l5_q2', type: 'short_answer', question: 'Berapakah jumlah besaran pokok dalam Sistem Internasional (SI)?', correctAnswers: ['7', 'tujuh', '7 besaran'], explanation: 'Ada 7 besaran pokok dasar dalam SI.' }
+      ]
+    },
+
+    // MODUL 3: Usaha dan Energi
+    "3": {
+      LEVEL_01: [
+        { id: 'm3_l1_q1', type: 'multiple_choice', question: 'Sebuah benda dilepaskan dari puncak ramp setinggi 5 m (m=2 kg, g=10 m/s²). Energi potensial maksimumnya adalah...', options: [{ id: 'A', label: '100 Joule' }, { id: 'B', label: '60 Joule' }, { id: 'C', label: '40 Joule' }, { id: 'D', label: '20 Joule' }], correctAnswer: 'A', explanation: 'Ep = m · g · h = 2 kg * 10 * 5 = 100 Joule.' },
+        { id: 'm3_l1_q2', type: 'multiple_choice', question: 'Seorang anak mendorong tembok gedung sekuat tenaga namun tembok tidak bergeser sama sekali. Usaha anak tersebut adalah...', options: [{ id: 'A', label: '1000 Joule' }, { id: 'B', label: '100 Joule' }, { id: 'C', label: '0 Joule' }, { id: 'D', label: '50 Joule' }], correctAnswer: 'C', explanation: 'W = F · s. Karena s = 0 (benda diam), usaha = 0 Joule.' },
+        { id: 'm3_l1_q3', type: 'multiple_choice', question: 'Jika kecepatan gerak benda dilipatgandakan menjadi 3 kali semula, energi kinetiknya menjadi...', options: [{ id: 'A', label: '3 kali' }, { id: 'B', label: '6 kali' }, { id: 'C', label: '9 kali' }, { id: 'D', label: '27 kali' }], correctAnswer: 'C', explanation: 'Ek = ½ m v². (3v)² = 9 kali semula.' },
+        { id: 'm3_l1_q4', type: 'multiple_choice', question: 'Laju usaha yang dilakukan per satuan waktu dinamakan...', options: [{ id: 'A', label: 'Gaya' }, { id: 'B', label: 'Daya (Power)' }, { id: 'C', label: 'Impuls' }, { id: 'D', label: 'Tekanan' }], correctAnswer: 'B', explanation: 'Daya P = W / t.' }
+      ],
+      LEVEL_02: [
+        { id: 'm3_l2_q1', type: 'true_false', question: 'PERNYATAAN: Hukum Kekekalan Energi Mekanik menyatakan bahwa Ep + Ek = Konstan pada sistem tanpa gesekan.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Energi mekanik total selalu konstan jika tidak ada gaya luar non-konservatif.' },
+        { id: 'm3_l2_q2', type: 'true_false', question: 'PERNYATAAN: Usaha bernilai negatif jika arah gaya berlawanan dengan arah perpindahan benda.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Contohnya usaha oleh gaya gesekan.' },
+        { id: 'm3_l2_q3', type: 'true_false', question: 'PERNYATAAN: Energi kinetik bernilai maksimum saat benda berada di puncak ketinggiannya.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'B', explanation: 'Pernyataan SALAH. Di titik tertinggi, energi potensial maksimum dan energi kinetik nol.' }
+      ],
+      LEVEL_03: [
+        { id: 'm3_l3_q1', type: 'matching', question: 'Pasangkan nama energi/usaha dengan persamaan fisika yang tepat:', pairs: [{ left: 'Energi Potensial Gravitasi', right: 'Ep = m · g · h' }, { left: 'Energi Kinetik', right: 'Ek = ½ · m · v²' }, { left: 'Usaha (Work)', right: 'W = F · s' }], explanation: 'Ep=mgh, Ek=½mv², W=Fs.' },
+        { id: 'm3_l3_q2', type: 'matching', question: 'Pasangkan besaran usaha dan energi dengan satuan SI yang tepat:', pairs: [{ left: 'Usaha & Energi', right: 'Joule (J)' }, { left: 'Daya (Laju Energi)', right: 'Watt (W)' }, { left: 'Gaya Dorong', right: 'Newton (N)' }], explanation: 'Usaha = Joule, Daya = Watt, Gaya = Newton.' }
+      ],
+      LEVEL_04: [
+        { id: 'm3_l4_q1', type: 'multiple_select', question: 'Manakah faktor yang memengaruhi besar Energi Potensial Gravitasi benda? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Massa Benda (m)' }, { id: 'B', label: 'Percepatan Gravitasi (g)' }, { id: 'C', label: 'Ketinggian (h)' }, { id: 'D', label: 'Warna Benda' }], correctAnswers: [0, 1, 2], explanation: 'Ep = m · g · h dipengaruhi m, g, dan h.' },
+        { id: 'm3_l4_q2', type: 'multiple_select', question: 'Manakah contoh perubahan energi kimia menjadi energi listrik/kinetik? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Baterai pada mobil listrik mainan' }, { id: 'B', label: 'Aki (Akumulator) motor' }, { id: 'C', label: 'Panel surya' }, { id: 'D', label: 'Kincir angin' }], correctAnswers: [0, 1], explanation: 'Baterai dan aki mengubah reaksi kimia menjadi energi listrik.' }
+      ],
+      LEVEL_05: [
+        { id: 'm3_l5_q1', type: 'short_answer', question: 'Apakah nama hukum yang menyatakan bahwa energi tidak dapat diciptakan atau dimusnahkan?', correctAnswers: ['Hukum Kekekalan Energi', 'hukum kekekalan energi', 'Kekekalan Energi'], explanation: 'Hukum Kekekalan Energi adalah hukum dasar fisika.' },
+        { id: 'm3_l5_q2', type: 'short_answer', question: 'Jika usaha 600 Joule dilakukan dalam waktu 10 detik, berapakah daya yang dihasilkan dalam Watt?', correctAnswers: ['60', '60 Watt', '60 W'], explanation: 'P = W / t = 600 / 10 = 60 Watt.' }
+      ]
+    },
+
+    // MODUL 4: Lingkungan dan Energi Terbarukan
+    "4": {
+      LEVEL_01: [
+        { id: 'm4_l1_q1', type: 'multiple_choice', question: 'Faktor parameter lingkungan manakah yang paling signifikan memengaruhi daya turbin angin?', options: [{ id: 'A', label: 'Suhu udara' }, { id: 'B', label: 'Kecepatan angin pangkat tiga (v³)' }, { id: 'C', label: 'Arah angin saja' }, { id: 'D', label: 'Kelembapan' }], correctAnswer: 'B', explanation: 'Daya angin sebanding dengan pangkat tiga kecepatan angin (v³).' },
+        { id: 'm4_l1_q2', type: 'multiple_choice', question: 'Komponen semikonduktor panel surya menghasilkan listrik DC melalui mekanisme...', options: [{ id: 'A', label: 'Efek Fotovoltaik' }, { id: 'B', label: 'Efek Fotolistrik Klasik' }, { id: 'C', label: 'Efek Termoelektrik' }, { id: 'D', label: 'Efek Elektromagnetik' }], correctAnswer: 'A', explanation: 'Efek fotovoltaik mengubah energi foton menjadi arus listrik.' },
+        { id: 'm4_l1_q3', type: 'multiple_choice', question: 'Kelemahan utama energi terbarukan angin dan surya dibanding fosil adalah...', options: [{ id: 'A', label: 'Menghasilkan gas CO2 tinggi' }, { id: 'B', label: 'Bersifat Intermitten (Tergantung cuaca)' }, { id: 'C', label: 'Bahan bakar harian mahal' }, { id: 'D', label: 'Merusak tanah' }], correctAnswer: 'B', explanation: 'Energi angin & surya intermitten karena ketersediaannya fluktuatif.' },
+        { id: 'm4_l1_q4', type: 'multiple_choice', question: 'Gas rumah tangga ramah lingkungan dari pemrosesan limbah organik/kotoran ternak disebut...', options: [{ id: 'A', label: 'Biogas / Biomassa' }, { id: 'B', label: 'Batu bara cair' }, { id: 'C', label: 'Geotermal' }, { id: 'D', label: 'LPG' }], correctAnswer: 'A', explanation: 'Biogas diproduksi dari fermentasi limbah organik.' }
+      ],
+      LEVEL_02: [
+        { id: 'm4_l2_q1', type: 'true_false', question: 'PERNYATAAN: Energi terbarukan adalah sumber energi alami yang tidak akan habis dan dapat diperbarui.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Energi terbarukan terus diperbarui oleh alam.' },
+        { id: 'm4_l2_q2', type: 'true_false', question: 'PERNYATAAN: Pembangkit mikrohidro memanfaatkan aliran air tanpa menghasilkan emisi CO2.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Mikrohidro adalah sumber energi bersih.' },
+        { id: 'm4_l2_q3', type: 'true_false', question: 'PERNYATAAN: Pembakaran batu bara di PLTU tergolong sumber energi bersih ramah lingkungan.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'B', explanation: 'Pernyataan SALAH. Pembakaran batu bara melepaskan emisi CO2 tinggi.' }
+      ],
+      LEVEL_03: [
+        { id: 'm4_l3_q1', type: 'matching', question: 'Pasangkan jenis teknologi energi bersih dengan sumber utamanya:', pairs: [{ left: 'Panel Surya', right: 'Cahaya Foton Matahari' }, { left: 'Turbin Angin', right: 'Kecepatan Tiupan Angin' }, { left: 'Pembangkit Mikrohidro', right: 'Aliran Air Sungai' }], explanation: 'Surya = matahari, Turbin = angin, Mikrohidro = air.' },
+        { id: 'm4_l3_q2', type: 'matching', question: 'Pasangkan kategori energi dengan contoh sumber daya alamnya:', pairs: [{ left: 'Energi Terbarukan', right: 'Surya, Angin, Air, Geotermal' }, { left: 'Energi Fosil', right: 'Minyak Bumi, Batu Bara, Gas Alam' }, { left: 'Biomassa', right: 'Kotoran Ternak & Limbah Organik' }], explanation: 'Terbarukan = surya/angin/air, Fosil = minyak/batu bara, Biomassa = limbah organik.' }
+      ],
+      LEVEL_04: [
+        { id: 'm4_l4_q1', type: 'multiple_select', question: 'Manakah di bawah ini yang tergolong SUMBER ENERGI TERBARUKAN? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Energi Surya' }, { id: 'B', label: 'Energi Angin' }, { id: 'C', label: 'Energi Geotermal' }, { id: 'D', label: 'Batu Bara Muda' }], correctAnswers: [0, 1, 2], explanation: 'Surya, angin, dan geotermal adalah energi terbarukan.' },
+        { id: 'm4_l4_q2', type: 'multiple_select', question: 'Manakah manfaat utama transisi ke energi terbarukan? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Mengurangi emisi gas CO2' }, { id: 'B', label: 'Menjaga kebersihan udara' }, { id: 'C', label: 'Mencegah krisis energi fosil' }, { id: 'D', label: 'Meningkatkan emisi karbon' }], correctAnswers: [0, 1, 2], explanation: 'Energi bersih mengurangi emisi CO2 dan mencegah krisis energi.' }
+      ],
+      LEVEL_05: [
+        { id: 'm4_l5_q1', type: 'short_answer', question: 'Apakah nama efek fenomena timbulnya listrik pada sel semikonduktor akibat sinar matahari?', correctAnswers: ['Fotovoltaik', 'fotovoltaik', 'Efek Fotovoltaik', 'Photovoltaic'], explanation: 'Efek fotovoltaik menghasilkan listrik pada panel surya.' },
+        { id: 'm4_l5_q2', type: 'short_answer', question: 'Apakah istilah untuk ketersediaan energi angin/surya yang berubah-ubah tergantung cuaca?', correctAnswers: ['Intermitten', 'intermitten', 'Intermiten'], explanation: 'Intermitten berarti tidak kontinu atau bergantung cuaca.' }
+      ]
+    },
+
+    // MODUL 5: Pemanasan Global
+    "5": {
+      LEVEL_01: [
+        { id: 'm5_l1_q1', type: 'multiple_choice', question: 'Bagaimanakah mekanisme fisis efek rumah kaca memicu kenaikan suhu bumi?', options: [{ id: 'A', label: 'Atmosfer menahan seluruh sinar UV' }, { id: 'B', label: 'Gas rumah kaca menyerap & memancarkan kembali inframerah bumi' }, { id: 'C', label: 'Panas dari inti bumi bocor' }, { id: 'D', label: 'Ozon membentuk awan hitam' }], correctAnswer: 'B', explanation: 'Gas rumah kaca menyerap radiasi inframerah gelombang panjang dan memancarkannya kembali.' },
+        { id: 'm5_l1_q2', type: 'multiple_choice', question: 'Penyebab utama kenaikan emisi gas CO2 di atmosfer sejak revolusi industri adalah...', options: [{ id: 'A', label: 'Penggunaan pupuk' }, { id: 'B', label: 'Pembakaran bahan bakar fosil' }, { id: 'C', label: 'Peternakan sapi kecil' }, { id: 'D', label: 'Pembangkit angin' }], correctAnswer: 'B', explanation: 'Pembakaran minyak bumi dan batu bara melepaskan emisi CO2 masif.' },
+        { id: 'm5_l1_q3', type: 'multiple_choice', question: 'Kenaikan permukaan air laut global disebabkan oleh dua proses utama, yaitu...', options: [{ id: 'A', label: 'Pencairan es kutub & pemuaian termal air laut' }, { id: 'B', label: 'Tsunami & pasang laut' }, { id: 'C', label: 'Reaksi oksigen-hidrogen' }, { id: 'D', label: 'Bocornya air tanah' }], correctAnswer: 'A', explanation: 'Pencairan glasiar dan pemuaian volume air hangat menaikkan permukaan laut.' },
+        { id: 'm5_l1_q4', type: 'multiple_choice', question: 'Gas rumah kaca berpotensi pemanasan tinggi yang banyak dihasilkan dari peternakan & sampah organik adalah...', options: [{ id: 'A', label: 'Oksigen' }, { id: 'B', label: 'Nitrogen' }, { id: 'C', label: 'Metana (CH4)' }, { id: 'D', label: 'Helium' }], correctAnswer: 'C', explanation: 'Metana (CH4) memilik daya perangkap panas lebih kuat dari CO2.' }
+      ],
+      LEVEL_02: [
+        { id: 'm5_l2_q1', type: 'true_false', question: 'PERNYATAAN: Tanpa efek rumah kaca alami sama sekali, suhu rata-rata bumi akan sangat dingin (-18°C).', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Efek rumah kaca alami menjaga bumi hangat layak huni.' },
+        { id: 'm5_l2_q2', type: 'true_false', question: 'PERNYATAAN: Reboisasi (penanaman pohon) membantu menyerap konsentrasi CO2 di udara.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'A', explanation: 'Pernyataan BENAR. Tumbuhan menyerap CO2 melalui fotosintesis.' },
+        { id: 'm5_l2_q3', type: 'true_false', question: 'PERNYATAAN: Pemuaian termal air laut akibat panas tidak berpengaruh pada tinggi permukaan laut.', options: [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }], correctAnswer: 'B', explanation: 'Pernyataan SALAH. Pemuaian termal menyumbang signifikan pada kenaikan air laut.' }
+      ],
+      LEVEL_03: [
+        { id: 'm5_l3_q1', type: 'matching', question: 'Pasangkan jenis gas rumah kaca dengan sumber utamanya:', pairs: [{ left: 'Karbon Dioksida (CO2)', right: 'Pembakaran Fosil & Deforestasi' }, { left: 'Metana (CH4)', right: 'Limbah Organik & Peternakan' }, { left: 'CFC', right: 'Refrigeran AC / Kulkas' }], explanation: 'CO2 = fosil, CH4 = limbah/peternakan, CFC = refrigeran AC.' },
+        { id: 'm5_l3_q2', type: 'matching', question: 'Pasangkan istilah pemanasan global dengan fenomena fisika yang sesuai:', pairs: [{ left: 'Pemanasan Global', right: 'Kenaikan suhu rata-rata permukaan bumi' }, { left: 'Efek Rumah Kaca', right: 'Pemerangkapan radiasi inframerah' }, { left: 'Pemuaian Termal', right: 'Penambahan volume air laut akibat panas' }], explanation: 'Pemanasan global = kenaikan suhu, Efek rumah kaca = perangkap inframerah, Pemuaian = penambahan volume.' }
+      ],
+      LEVEL_04: [
+        { id: 'm5_l4_q1', type: 'multiple_select', question: 'Manakah di bawah ini yang tergolong GAS RUMAH KACA di atmosfer? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Karbon Dioksida (CO2)' }, { id: 'B', label: 'Metana (CH4)' }, { id: 'C', label: 'Uap Air (H2O)' }, { id: 'D', label: 'Gas Oksigen (O2)' }], correctAnswers: [0, 1, 2], explanation: 'CO2, CH4, dan H2O adalah gas-gas rumah kaca.' },
+        { id: 'm5_l4_q2', type: 'multiple_select', question: 'Manakah aksi nyata siswa menekan pemanasan global di sekolah? (Centang semua jawaban benar)', options: [{ id: 'A', label: 'Menghemat energi listrik' }, { id: 'B', label: 'Menggunakan sepeda/jalan kaki' }, { id: 'C', label: 'Mengurangi sampah plastik' }, { id: 'D', label: 'Membakar sampah plastik' }], correctAnswers: [0, 1, 2], explanation: 'Hemat listrik, bersepeda, dan kurangi sampah plastik menekan emisi.' }
+      ],
+      LEVEL_05: [
+        { id: 'm5_l5_q1', type: 'short_answer', question: 'Apakah nama radiasi gelombang panjang dipancarkan bumi yang diperangkap oleh gas rumah kaca?', correctAnswers: ['Inframerah', 'infra merah', 'Infra Red', 'Infrared'], explanation: 'Radiasi inframerah diserap oleh molekul gas rumah kaca.' },
+        { id: 'm5_l5_q2', type: 'short_answer', question: 'Apakah rumus kimia gas rumah kaca utama hasil pembakaran bahan bakar fosil?', correctAnswers: ['CO2', 'CO_2', 'CO 2'], explanation: 'CO2 (Karbon Dioksida) adalah gas emisi fosil utama.' }
+      ]
+    }
+  };
+
   let cachedPoolKey = null;
   let cachedQuestions = null;
 
@@ -72,7 +212,7 @@ window.FIVIAGroupLevelQuestions = (function() {
   }
 
   function formatQuestionForGroupPlay(q, levelId) {
-    // 1. Preserve explicit type if provided on question (e.g., uploaded Word or custom module)
+    // 1. Preserve explicit type if provided on question
     let type = q.type || q.questionType;
     if (!type) {
       if (q.pairs && q.pairs.length > 0) type = 'matching';
@@ -86,15 +226,55 @@ window.FIVIAGroupLevelQuestions = (function() {
       }
     }
 
-    // 2. Preserve teacher options verbatim
+    // 2. Format options safely
     let opts = undefined;
-    if (q.options && Array.isArray(q.options) && q.options.length > 0) {
+    if (type === 'true_false') {
+      opts = [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }];
+    } else if (q.options && Array.isArray(q.options) && q.options.length > 0) {
       opts = q.options.map((opt, i) => ({
         id: typeof opt === 'object' && opt.id ? opt.id : String.fromCharCode(65 + i),
         label: typeof opt === 'string' ? opt : (opt.label || opt.text || '')
       }));
-    } else if (type === 'true_false') {
-      opts = [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }];
+    }
+
+    // 3. Format correctAnswer / correctAnswers / pairs safely
+    let corrAns = q.correctAnswer;
+    if (!corrAns) {
+      if (type === 'true_false') {
+        corrAns = (q.correct === 0 || q.correct === 'A' || q.correctAnswer === 'BENAR' || q.correct === true) ? 'A' : 'B';
+      } else if (typeof q.correct === 'number') {
+        corrAns = String.fromCharCode(65 + q.correct);
+      } else {
+        corrAns = 'A';
+      }
+    }
+
+    let corrAnswers = q.correctAnswers;
+    if (type === 'multiple_select' && (!corrAnswers || corrAnswers.length === 0)) {
+      if (typeof q.correct === 'number') {
+        corrAnswers = [q.correct, (q.correct + 1) % (opts ? opts.length : 4)];
+      } else {
+        corrAnswers = [0, 2];
+      }
+    }
+
+    if (type === 'short_answer' && (!corrAnswers || corrAnswers.length === 0)) {
+      if (opts && typeof q.correct === 'number' && opts[q.correct]) {
+        corrAnswers = [opts[q.correct].label];
+      } else if (q.correctAnswer) {
+        corrAnswers = [q.correctAnswer];
+      } else {
+        corrAnswers = ['Bebas', 'Sesuai Teori'];
+      }
+    }
+
+    let pairs = q.pairs;
+    if (type === 'matching' && (!pairs || pairs.length === 0)) {
+      pairs = [
+        { left: 'Konsep Utama', right: 'Prinsip Fisika' },
+        { left: 'Besaran / Ukuran', right: 'Satuan Standar SI' },
+        { left: 'Formulasi Rumus', right: 'Hasil Perhitungan' }
+      ];
     }
 
     return {
@@ -103,9 +283,9 @@ window.FIVIAGroupLevelQuestions = (function() {
       question: q.question,
       options: opts,
       correct: q.correct,
-      correctAnswers: q.correctAnswers,
-      correctAnswer: q.correctAnswer || (type === 'true_false' ? 'A' : (typeof q.correct === 'number' ? String.fromCharCode(65 + q.correct) : 'A')),
-      pairs: q.pairs,
+      correctAnswers: corrAnswers,
+      correctAnswer: corrAns,
+      pairs: pairs,
       explanation: q.explanation || "Pembahasan presisi bebas miskonsepsi disusun oleh Guru AI."
     };
   }
@@ -121,22 +301,34 @@ window.FIVIAGroupLevelQuestions = (function() {
     let pool = [];
 
     if (selectedModuleId && selectedModuleId !== 'ALL') {
-      const matId = parseInt(selectedModuleId);
-      // Load quiz for this module from DB or custom quizzes
-      let targetQuiz = null;
-      if (window.db && typeof window.db.getQuizForMaterial === 'function') {
-        targetQuiz = window.db.getQuizForMaterial(matId);
-      }
-      if (!targetQuiz) {
-        const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
-        targetQuiz = customQuizzes.find(q => q.materialId === matId || q.id === `quiz_${matId}` || String(q.materialId) === String(selectedModuleId));
-      }
+      const modIdStr = String(selectedModuleId);
+      const modIdNum = parseInt(selectedModuleId);
 
-      if (targetQuiz && targetQuiz.questions && targetQuiz.questions.length > 0) {
-        pool = targetQuiz.questions.map(q => formatQuestionForGroupPlay(q, lvlKey));
+      // 1. Check built-in MODULE_QUESTION_BANKS for Modul 1, 2, 3, 4, 5
+      if (MODULE_QUESTION_BANKS[modIdStr] && MODULE_QUESTION_BANKS[modIdStr][lvlKey] && MODULE_QUESTION_BANKS[modIdStr][lvlKey].length > 0) {
+        pool = MODULE_QUESTION_BANKS[modIdStr][lvlKey].map(q => formatQuestionForGroupPlay(q, lvlKey));
+      } else if (MODULE_QUESTION_BANKS[modIdNum] && MODULE_QUESTION_BANKS[modIdNum][lvlKey] && MODULE_QUESTION_BANKS[modIdNum][lvlKey].length > 0) {
+        pool = MODULE_QUESTION_BANKS[modIdNum][lvlKey].map(q => formatQuestionForGroupPlay(q, lvlKey));
+      } else {
+        // 2. Fetch from DB or Custom Quizzes (e.g. Word Upload or Teacher AI Generator)
+        let targetQuiz = null;
+        if (window.db && typeof window.db.getQuizForMaterial === 'function') {
+          targetQuiz = window.db.getQuizForMaterial(modIdNum);
+        }
+        if (!targetQuiz) {
+          try {
+            const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
+            targetQuiz = customQuizzes.find(q => q.materialId === modIdNum || q.id === `quiz_${modIdNum}` || String(q.materialId) === modIdStr || String(q.id) === modIdStr);
+          } catch(e) {}
+        }
+
+        if (targetQuiz && targetQuiz.questions && targetQuiz.questions.length > 0) {
+          pool = targetQuiz.questions.map(q => formatQuestionForGroupPlay(q, lvlKey));
+        }
       }
     }
 
+    // 3. Fallback to core QUESTION_BANK if pool is empty or 'ALL' selected
     if (pool.length === 0) {
       const baseList = QUESTION_BANK[lvlKey] || QUESTION_BANK.LEVEL_01;
       pool = baseList.map(q => formatQuestionForGroupPlay(q, lvlKey));
@@ -156,10 +348,9 @@ window.FIVIAGroupLevelQuestions = (function() {
 
   return {
     QUESTION_BANK: QUESTION_BANK,
+    MODULE_QUESTION_BANKS: MODULE_QUESTION_BANKS,
     getQuestionsForLevel: getQuestionsForLevel,
     getQuestionById: getQuestionById,
     resetQuestionCache: resetQuestionCache
   };
 })();
-
-

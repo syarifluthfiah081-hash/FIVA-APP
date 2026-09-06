@@ -715,6 +715,15 @@ class LocalDatabase {
     return true;
   }
 
+  getMaterials() {
+    const baseMats = this.getTable("materials");
+    const customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+    const map = new Map();
+    (baseMats || []).forEach(m => map.set(m.id, m));
+    (customMats || []).forEach(m => map.set(m.id, m));
+    return Array.from(map.values());
+  }
+
   getMaterial(id) {
     const materials = this.getTable("materials");
     return materials.find(m => m.id === parseInt(id));
