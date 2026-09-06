@@ -117,11 +117,6 @@ window.FIVIAGroupLevelEngine = (function() {
                 <optgroup label="📖 Modul Kurikulum Utama (Materi &amp; Lab)">
                   ${baseMats.map(m => `<option value="${m.id}" ${String(selectedModuleId) === String(m.id) ? 'selected' : ''}>Modul ${m.id}: ${m.name}</option>`).join('')}
                 </optgroup>
-                ${customMats.length > 0 ? `
-                  <optgroup label="🤖 Modul Hasil Generate AI / Custom Guru">
-                    ${customMats.map(cm => `<option value="${cm.id}" ${String(selectedModuleId) === String(cm.id) ? 'selected' : ''}>✨ ${cm.name || cm.title} (Custom Guru)</option>`).join('')}
-                  </optgroup>
-                ` : ''}
               </select>
             </div>
           </div>
