@@ -530,13 +530,23 @@ class LocalDatabase {
     // Merge custom teacher materials & quizzes if querying those tables
     if (tableName === "materials") {
       try {
-        const customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+        let customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+        // Purge any raw %PDF binary test junk module
+        const origLength = customMats.length;
+        customMats = customMats.filter(m => m && m.name && !m.name.includes("%PDF") && !m.name.includes("stream") && m.id !== 1788664975774);
+        if (customMats.length !== origLength) {
+          localStorage.setItem("fivia_custom_materials", JSON.stringify(customMats));
+        }
+
         const existingIds = new Set(items.map(m => m.id));
         customMats.forEach(cm => {
           if (!existingIds.has(cm.id)) {
             items.push(cm);
           }
         });
+
+        // Filter returned items array as well
+        items = items.filter(m => m && m.name && !m.name.includes("%PDF") && !m.name.includes("stream") && m.id !== 1788664975774);
       } catch (err) {
         console.warn("Error merging custom materials:", err);
       }
@@ -638,6 +648,28 @@ class LocalDatabase {
       return true;
     } catch (e) {
       console.error("Error saving custom material to database:", e);
+      return false;
+    }
+  }
+
+  deleteCustomMaterial(materialId) {
+    try {
+      const id = parseInt(materialId);
+      let customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+      customMats = customMats.filter(m => m.id !== id);
+      localStorage.setItem("fivia_custom_materials", JSON.stringify(customMats));
+
+      let customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
+      customQuizzes = customQuizzes.filter(q => q.materialId !== id && q.id !== `quiz_${id}` && q.id !== `quiz_custom_${id}`);
+      localStorage.setItem("fivia_custom_quizzes", JSON.stringify(customQuizzes));
+
+      let customGames = JSON.parse(localStorage.getItem("fivia_custom_game_materials") || "[]");
+      customGames = customGames.filter(g => g.targetModuleId !== id);
+      localStorage.setItem("fivia_custom_game_materials", JSON.stringify(customGames));
+
+      return true;
+    } catch (e) {
+      console.error("Error deleting custom material:", e);
       return false;
     }
   }

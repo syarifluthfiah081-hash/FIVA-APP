@@ -279,25 +279,50 @@ function renderMaterialsGrid(fase = "E") {
   if (!grid) return;
   grid.innerHTML = "";
   
+  const user = window.auth ? window.auth.getCurrentUser() : null;
+  const isTeacherOrAdmin = user && (user.role === "guru" || user.role === "admin");
   const materials = window.db.getTable("materials").filter(m => m.fase === fase);
+
   materials.forEach(mat => {
     const lab = window.db.getLabByMaterialId(mat.id);
+    const isCustom = mat.isTeacherCreated || mat.id > 5;
     const card = document.createElement("div");
     card.className = `glass-panel course-card glass-panel-hover ${fase === "F" ? "fase-f" : ""}`;
     card.innerHTML = `
       <div class="course-header" style="display: flex; justify-content: space-between; align-items: center;">
         <span class="course-fase">Fase ${fase}</span>
-        ${mat.isTeacherCreated ? `<span class="badge" style="background: #a855f7; color: #fff; font-size: 0.7rem; font-weight: 800;"><i class="fas fa-wand-magic-sparkles"></i> Disusun Guru AI</span>` : ""}
+        ${isCustom ? `<span class="badge" style="background: #a855f7; color: #fff; font-size: 0.7rem; font-weight: 800;"><i class="fas fa-wand-magic-sparkles"></i> Disusun Guru AI</span>` : ""}
       </div>
       <div>
         <h4 class="course-title">Modul ${mat.id}: ${mat.name}</h4>
         <p class="course-desc">${mat.desc}</p>
       </div>
-      <div class="course-footer" style="margin-top: 20px;">
-        <a href="#materi/${mat.id}" class="btn btn-primary">Buka Materi</a>
+      <div class="course-footer" style="margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="#materi/${mat.id}" class="btn btn-primary" style="flex: 1; text-align: center;">Buka Materi</a>
         ${lab ? `<a href="#lab/${lab.id}" class="btn btn-orange">FIVIA Virtual Lab</a>` : ""}
+        ${(isCustom && isTeacherOrAdmin) ? `
+          <button type="button" class="btn btn-outline btn-delete-mat" data-id="${mat.id}" style="border-color: #ef4444; color: #ef4444; padding: 6px 12px;" title="Hapus Modul Ini">
+            <i class="fas fa-trash"></i> Hapus
+          </button>
+        ` : ""}
       </div>
     `;
+
+    const btnDel = card.querySelector(".btn-delete-mat");
+    if (btnDel) {
+      btnDel.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm(`Apakah Anda yakin ingin menghapus "${mat.name}"?`)) {
+          if (window.db && window.db.deleteCustomMaterial) {
+            window.db.deleteCustomMaterial(mat.id);
+          }
+          if (window.showToast) window.showToast("Modul berhasil dihapus!");
+          renderMaterialsGrid(fase);
+        }
+      };
+    }
+
     grid.appendChild(card);
   });
 }
