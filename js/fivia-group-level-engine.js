@@ -103,6 +103,7 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
 
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="fq-btn fq-bgm-toggle-btn" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem; background: rgba(16,185,129,0.2); border: 1.5px solid var(--fq-emerald); color: #6ee7b7; font-weight: 900;" onclick="window.toggleBGM()"><i class="fas fa-music"></i> 🎵 BGM: ON</button>
               <button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.openWordImportModal()"><i class="fas fa-file-word"></i> 📝 UPLOAD WORD (.docx)</button>
               <button class="fq-btn fq-btn-emerald" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
               <button class="fq-btn fq-btn-emerald" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="if(window.FIVIAClassroomEngine) window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
@@ -595,6 +596,7 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
 
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button class="fq-btn fq-bgm-toggle-btn" style="min-height: 38px; padding: 4px 12px; font-size: 0.8rem; background: rgba(16,185,129,0.2); border: 1.5px solid var(--fq-emerald); color: #6ee7b7; font-weight: 900;" onclick="window.toggleBGM()"><i class="fas fa-music"></i> 🎵 BGM: ON</button>
               <!-- 2-MINUTE COUNTDOWN TIMER BADGE -->
               <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 4px 16px; text-align: center; box-shadow: 0 0 15px rgba(6,182,212,0.25);">
                 <div style="font-size: 0.65rem; color: var(--fq-cyan); font-weight: 800; letter-spacing: 1px;">⏱️ SISA WAKTU</div>
