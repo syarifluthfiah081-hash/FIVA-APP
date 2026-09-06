@@ -72,41 +72,40 @@ window.FIVIAGroupLevelQuestions = (function() {
   }
 
   function formatQuestionForGroupPlay(q, levelId) {
-    const targetType = 
-      levelId === 'LEVEL_01' ? 'multiple_choice' :
-      levelId === 'LEVEL_02' ? 'true_false' :
-      levelId === 'LEVEL_03' ? 'matching' :
-      levelId === 'LEVEL_04' ? 'multiple_select' :
-      levelId === 'LEVEL_05' ? 'short_answer' :
-      (q.type || (q.pairs ? "matching" : q.correctAnswers ? (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number' ? "multiple_select" : "short_answer") : "multiple_choice"));
-
-    let opts = (q.options || []).map((opt, i) => ({
-      id: typeof opt === 'object' && opt.id ? opt.id : String.fromCharCode(65 + i),
-      label: typeof opt === 'string' ? opt : (opt.label || opt.text || '')
-    }));
-
-    if (targetType === 'true_false') {
-      opts = [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }];
-    } else if (targetType === 'multiple_choice') {
-      if (opts.length < 2 || opts[0].label === 'BENAR') {
-        opts = [
-          { id: 'A', label: (q.options && q.options[0]) ? (q.options[0].label || q.options[0]) : 'Pernyataan Tepat' },
-          { id: 'B', label: (q.options && q.options[1]) ? (q.options[1].label || q.options[1]) : 'Pernyataan Miskonsepsi' },
-          { id: 'C', label: 'Hanya berlaku pada kondisi ideal' },
-          { id: 'D', label: 'Tidak dapat ditentukan dari data' }
-        ];
+    // 1. Preserve explicit type if provided on question (e.g., uploaded Word or custom module)
+    let type = q.type || q.questionType;
+    if (!type) {
+      if (q.pairs && q.pairs.length > 0) type = 'matching';
+      else if (q.correctAnswers) {
+        type = (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number') ? 'multiple_select' : 'short_answer';
+      } else {
+        type = levelId === 'LEVEL_02' ? 'true_false' :
+               levelId === 'LEVEL_03' ? 'matching' :
+               levelId === 'LEVEL_04' ? 'multiple_select' :
+               levelId === 'LEVEL_05' ? 'short_answer' : 'multiple_choice';
       }
+    }
+
+    // 2. Preserve teacher options verbatim
+    let opts = undefined;
+    if (q.options && Array.isArray(q.options) && q.options.length > 0) {
+      opts = q.options.map((opt, i) => ({
+        id: typeof opt === 'object' && opt.id ? opt.id : String.fromCharCode(65 + i),
+        label: typeof opt === 'string' ? opt : (opt.label || opt.text || '')
+      }));
+    } else if (type === 'true_false') {
+      opts = [{ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' }];
     }
 
     return {
       id: q.id || `gp_${Math.random().toString(36).substr(2, 5)}`,
-      type: targetType,
+      type: type,
       question: q.question,
       options: opts,
       correct: q.correct,
-      correctAnswers: Array.isArray(q.correctAnswers) ? q.correctAnswers : (targetType === 'multiple_select' ? [0, 1] : (targetType === 'short_answer' ? [String(q.correctAnswer || q.correct || 'Suhu')] : undefined)),
-      correctAnswer: q.correctAnswer || (targetType === 'true_false' ? 'A' : (typeof q.correct === 'number' ? String.fromCharCode(65 + q.correct) : 'A')),
-      pairs: q.pairs || (targetType === 'matching' ? [{ left: 'Konsep A', right: 'Prinsip A' }, { left: 'Konsep B', right: 'Prinsip B' }] : undefined),
+      correctAnswers: q.correctAnswers,
+      correctAnswer: q.correctAnswer || (type === 'true_false' ? 'A' : (typeof q.correct === 'number' ? String.fromCharCode(65 + q.correct) : 'A')),
+      pairs: q.pairs,
       explanation: q.explanation || "Pembahasan presisi bebas miskonsepsi disusun oleh Guru AI."
     };
   }
@@ -130,7 +129,7 @@ window.FIVIAGroupLevelQuestions = (function() {
       }
       if (!targetQuiz) {
         const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
-        targetQuiz = customQuizzes.find(q => q.materialId === matId || q.id === `quiz_${matId}`);
+        targetQuiz = customQuizzes.find(q => q.materialId === matId || q.id === `quiz_${matId}` || String(q.materialId) === String(selectedModuleId));
       }
 
       if (targetQuiz && targetQuiz.questions && targetQuiz.questions.length > 0) {
@@ -141,28 +140,11 @@ window.FIVIAGroupLevelQuestions = (function() {
     if (pool.length === 0) {
       const baseList = QUESTION_BANK[lvlKey] || QUESTION_BANK.LEVEL_01;
       pool = baseList.map(q => formatQuestionForGroupPlay(q, lvlKey));
-      
-      // Merge teacher-generated custom AI questions dynamically into Group Play
-      try {
-        const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
-        customQuizzes.forEach(quiz => {
-          if (quiz && quiz.questions && Array.isArray(quiz.questions)) {
-            quiz.questions.forEach(q => {
-              if (q && q.question) {
-                pool.unshift(formatQuestionForGroupPlay(q, lvlKey));
-              }
-            });
-          }
-        });
-      } catch (e) {
-        console.warn("Group Play custom questions merge warning:", e);
-      }
     }
 
-    // Cache the shuffled pool for consistent turn-by-turn rendering
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    // Cache questions pool
     cachedPoolKey = cacheKey;
-    cachedQuestions = shuffled;
+    cachedQuestions = pool;
 
     return limit ? cachedQuestions.slice(0, limit) : cachedQuestions;
   }

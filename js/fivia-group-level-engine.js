@@ -262,18 +262,24 @@ window.FIVIAGroupLevelEngine = (function() {
   }
 
   function detectType(q) {
+    if (q && q.type) return q.type;
+    if (q && q.pairs && q.pairs.length > 0) return "matching";
+    if (q && q.correctAnswers) {
+      if (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number') return "multiple_select";
+      return "short_answer";
+    }
+    if (q && q.options && q.options.length === 2 && (q.options[0].label === "BENAR" || q.options[0] === "BENAR")) return "true_false";
+
     const state = (window.FIVIAGroupLevels && typeof window.FIVIAGroupLevels.getLevelState === 'function')
       ? window.FIVIAGroupLevels.getLevelState()
       : { activeLevelId: 'LEVEL_01' };
     const lvlId = (state && state.activeLevelId) ? state.activeLevelId : 'LEVEL_01';
 
-    if (lvlId === 'LEVEL_01') return "multiple_choice";
     if (lvlId === 'LEVEL_02') return "true_false";
     if (lvlId === 'LEVEL_03') return "matching";
     if (lvlId === 'LEVEL_04') return "multiple_select";
     if (lvlId === 'LEVEL_05') return "short_answer";
 
-    if (q && q.type) return q.type;
     return "multiple_choice";
   }
 
@@ -319,17 +325,13 @@ window.FIVIAGroupLevelEngine = (function() {
       let optionsUI = "";
       if (qType === "multiple_choice" || qType === "true_false") {
         let optsList = q.options;
-        if (qType === "true_false") {
+        if (qType === "true_false" && (!optsList || optsList.length < 2)) {
           optsList = [{id:'A',label:'BENAR'},{id:'B',label:'SALAH'}];
-        } else {
-          if (!optsList || optsList.length < 2 || optsList[0].label === "BENAR") {
-            optsList = [
-              { id: 'A', label: (q.options && q.options[0]) ? (q.options[0].label || q.options[0]) : 'Pernyataan Tepat & Sesuai FISIKA' },
-              { id: 'B', label: (q.options && q.options[1]) ? (q.options[1].label || q.options[1]) : 'Pernyataan Miskonsepsi' },
-              { id: 'C', label: 'Hanya berlaku pada ruang hampa udara' },
-              { id: 'D', label: 'Bukan merupakan besaran terukur' }
-            ];
-          }
+        } else if (!optsList || optsList.length === 0) {
+          optsList = [
+            { id: 'A', label: 'Pilihan A' },
+            { id: 'B', label: 'Pilihan B' }
+          ];
         }
         optionsUI = `
           <div id="fq-gl-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
