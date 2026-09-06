@@ -130,7 +130,19 @@ window.FIVIAGroupLevelEngine = (function() {
           <!-- 1. PENGATURAN KELOMPOK & DATABASE SISWA -->
           <div style="background: rgba(30,41,59,0.85); border: 1.5px solid var(--fq-border-cyan); border-radius: 16px; padding: 14px 18px; margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-              <h3 style="color: var(--fq-cyan); font-size: 1rem; font-weight: 900; margin: 0;"><i class="fas fa-chalkboard"></i> KELAS &amp; KELOMPOK (${groups.length} Kelompok):</h3>
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <h3 style="color: var(--fq-cyan); font-size: 1rem; font-weight: 900; margin: 0;"><i class="fas fa-chalkboard"></i> KELAS &amp; KELOMPOK (${groups.length} Kelompok):</h3>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="color: var(--fq-amber); font-weight: 800; font-size: 0.82rem;"><i class="fas fa-users-cog"></i> Jumlah Kelompok:</span>
+                  <select class="fq-select" style="min-width: 120px; min-height: 32px; padding: 0 8px; font-size: 0.82rem; font-weight: 800; background: #0f172a; color: #fff; border: 1.5px solid var(--fq-cyan); border-radius: 8px;" onchange="window.FIVIAGroupLevelEngine.setNumberOfGroups(this.value)">
+                    <option value="2" ${groups.length === 2 ? 'selected' : ''}>2 Kelompok</option>
+                    <option value="3" ${groups.length === 3 ? 'selected' : ''}>3 Kelompok</option>
+                    <option value="4" ${groups.length === 4 ? 'selected' : ''}>4 Kelompok</option>
+                    <option value="5" ${groups.length === 5 ? 'selected' : ''}>5 Kelompok</option>
+                    <option value="6" ${groups.length === 6 ? 'selected' : ''}>6 Kelompok</option>
+                  </select>
+                </div>
+              </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 ${classes.map(cls => `
                   <button class="fq-btn ${cls.id === activeCls.id ? 'fq-btn-cyan' : 'fq-btn-outline'}" style="padding: 4px 12px; font-weight: 800; font-size: 0.82rem; min-height: 32px;" onclick="window.FIVIAGroupLevelEngine.selectClass('${cls.id}')">
@@ -230,17 +242,26 @@ window.FIVIAGroupLevelEngine = (function() {
     }
   }
 
+  let currentGroupCount = 4;
+
+  function setNumberOfGroups(num) {
+    currentGroupCount = parseInt(num, 10) || 4;
+    autoGroup();
+    if (window.showToast) window.showToast(`Siswa kelas berhasil dibagi menjadi ${currentGroupCount} kelompok.`, "success");
+  }
+
   function selectClass(classId) {
     if (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.autoGroupStudents === 'function') {
-      window.FIVIAGroupPlay.autoGroupStudents(classId, 4);
+      window.FIVIAGroupPlay.autoGroupStudents(classId, currentGroupCount);
     }
     renderLevelMapUI();
   }
 
-  function autoGroup() {
+  function autoGroup(numOverride) {
+    const count = parseInt(numOverride, 10) || currentGroupCount || 4;
     if (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.autoGroupStudents === 'function') {
       const state = window.FIVIAGroupPlay.getSessionState ? window.FIVIAGroupPlay.getSessionState() : {};
-      window.FIVIAGroupPlay.autoGroupStudents(state.classroomId || 'cls_xf1', 4);
+      window.FIVIAGroupPlay.autoGroupStudents(state.classroomId || 'cls_x1', count);
     }
     renderLevelMapUI();
   }
@@ -1694,6 +1715,7 @@ window.FIVIAGroupLevelEngine = (function() {
     renderLevelMapUI: renderLevelMapUI,
     selectClass: selectClass,
     autoGroup: autoGroup,
+    setNumberOfGroups: setNumberOfGroups,
     startLevel: startLevel,
     renderActiveLevelBoardUI: renderActiveLevelBoardUI,
     submitAnswer: submitAnswer,
