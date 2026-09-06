@@ -719,10 +719,11 @@ window.FIVIAGroupLevelEngine = (function() {
   }
 
   function submitMatching() {
-    const selects = document.querySelectorAll('.fq-matching-select');
+    const container = document.getElementById('fq-gl-options');
+    const selects = container ? container.querySelectorAll('.fq-matching-select') : document.querySelectorAll('.fq-matching-select');
     const matchesObj = {};
-    selects.forEach(s => {
-      const idx = s.getAttribute('data-pair-idx');
+    selects.forEach((s, i) => {
+      const idx = s.getAttribute('data-pair-idx') || i;
       matchesObj[idx] = s.value;
     });
     submitAnswer(matchesObj);

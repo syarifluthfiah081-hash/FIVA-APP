@@ -415,7 +415,7 @@ function evaluateQuestionAnswer(q, studentAns) {
     if (!pairs || !Array.isArray(pairs) || pairs.length === 0) {
       pairs = extractPairsFromQuestion(q);
     }
-    if (!pairs || pairs.length === 0) return false;
+    if (!pairs || !Array.isArray(pairs) || pairs.length === 0) return false;
 
     let ansObj = studentAns;
     if (typeof ansObj === 'string') {
@@ -448,14 +448,30 @@ function evaluateQuestionAnswer(q, studentAns) {
         .toLowerCase();
     };
 
+    const cleanAlphaNum = (str) => {
+      return normalizeStr(str).replace(/[^a-z0-9]/g, '');
+    };
+
     const rightOptions = pairs.map(p => p.right);
 
     return pairs.every((p, pIdx) => {
       let rawUserVal = ansObj[pIdx];
       if (rawUserVal === undefined) rawUserVal = ansObj[String(pIdx)];
-      if (rawUserVal === undefined && p.left) rawUserVal = ansObj[p.left];
-      if (rawUserVal === undefined && p.left) rawUserVal = ansObj[p.left.trim()];
-      
+      if (rawUserVal === undefined && p.left) {
+        rawUserVal = ansObj[p.left];
+        if (rawUserVal === undefined) rawUserVal = ansObj[p.left.trim()];
+        if (rawUserVal === undefined) rawUserVal = ansObj[p.left.toLowerCase().trim()];
+        if (rawUserVal === undefined) {
+          const pLeftClean = cleanAlphaNum(p.left);
+          for (let k in ansObj) {
+            if (cleanAlphaNum(k) === pLeftClean) {
+              rawUserVal = ansObj[k];
+              break;
+            }
+          }
+        }
+      }
+
       if (rawUserVal === undefined || rawUserVal === null || rawUserVal === '') return false;
 
       const userStr = String(rawUserVal).trim();
@@ -464,26 +480,36 @@ function evaluateQuestionAnswer(q, studentAns) {
       const userNorm = normalizeStr(userStr);
       const targetNorm = normalizeStr(targetStr);
 
-      // Direct normalized text match
+      // 1. Direct string match
+      if (userStr === targetStr && userStr !== '') return true;
+
+      // 2. Normalized text match
       if (userNorm === targetNorm && userNorm !== '') return true;
 
-      // Index match (if studentAns passed 0, 1, 2 or "0", "1", "2")
+      // 3. Alphanumeric-only match (ignores symbols like · vs ., brackets, punctuation)
+      const userAlpha = cleanAlphaNum(userStr);
+      const targetAlpha = cleanAlphaNum(targetStr);
+      if (userAlpha === targetAlpha && userAlpha !== '') return true;
+
+      // 4. Index match (if studentAns passed index 0, 1, 2 or "0", "1", "2")
       if (!isNaN(userStr) && userStr !== '') {
         const optIdx = Number(userStr);
         if (optIdx >= 0 && optIdx < rightOptions.length) {
-          if (normalizeStr(rightOptions[optIdx]) === targetNorm) return true;
+          const optRight = rightOptions[optIdx];
+          if (cleanAlphaNum(optRight) === targetAlpha) return true;
         }
       }
 
-      // Letter match ('A' -> 0, 'B' -> 1)
+      // 5. Letter match ('A' -> 0, 'B' -> 1, 'C' -> 2)
       if (/^[A-Z]$/i.test(userStr)) {
         const optIdx = userStr.toUpperCase().charCodeAt(0) - 65;
         if (optIdx >= 0 && optIdx < rightOptions.length) {
-          if (normalizeStr(rightOptions[optIdx]) === targetNorm) return true;
+          const optRight = rightOptions[optIdx];
+          if (cleanAlphaNum(optRight) === targetAlpha) return true;
         }
       }
 
-      // Substring match for long texts
+      // 6. Substring match for longer strings
       if (userNorm.length > 3 && targetNorm.length > 3) {
         if (userNorm.includes(targetNorm) || targetNorm.includes(userNorm)) return true;
       }
