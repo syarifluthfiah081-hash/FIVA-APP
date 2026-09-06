@@ -1544,26 +1544,42 @@ function renderClassManagement() {
 
   const studentMap = new Map();
   excelRoster.forEach(s => {
-    studentMap.set(s.studentId || s.id, {
-      id: s.studentId || s.id,
-      nis: s.nis || '001',
-      studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis||'001')),
-      name: s.name,
-      className: s.className || s.classId || 'Kelas X-1',
-      classId: s.classId || 'cls_x1',
-      xp: s.xp || 0
-    });
+    const sId = s.studentId || s.id;
+    const sName = s.name || s.studentName || s.displayName || 'Siswa';
+    const sNis = s.nis || s.studentCode || '001';
+    const sCode = s.studentCode || ('FIVIA-X1-' + sNis);
+    const sClassName = s.className || s.classId || 'Kelas X-1';
+    const sClassId = s.classId || 'cls_x1';
+
+    if (sId) {
+      studentMap.set(sId, {
+        id: sId,
+        nis: sNis,
+        studentCode: sCode,
+        name: sName,
+        className: sClassName,
+        classId: sClassId,
+        xp: s.xp || 0
+      });
+    }
   });
 
   legacyStudents.forEach(s => {
-    if (!studentMap.has(s.id)) {
-      studentMap.set(s.id, {
-        id: s.id,
-        nis: s.nis || '001',
-        studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis||'001')),
-        name: s.name,
-        className: s.className || s.classId || 'Kelas X-1',
-        classId: s.classId || 'cls_x1',
+    const sId = s.id || s.studentId;
+    const sName = s.name || s.studentName || s.displayName || 'Siswa';
+    const sNis = s.nis || s.studentCode || '001';
+    const sCode = s.studentCode || ('FIVIA-X1-' + sNis);
+    const sClassName = s.className || s.classId || 'Kelas X-1';
+    const sClassId = s.classId || 'cls_x1';
+
+    if (sId && !studentMap.has(sId)) {
+      studentMap.set(sId, {
+        id: sId,
+        nis: sNis,
+        studentCode: sCode,
+        name: sName,
+        className: sClassName,
+        classId: sClassId,
         xp: s.xp || 0
       });
     }
@@ -1574,6 +1590,7 @@ function renderClassManagement() {
   // Apply search/filters
   const searchEl = document.getElementById("search-student");
   const filterEl = document.getElementById("filter-class");
+  const classVal = filterEl ? filterEl.value : '';
   
   // Clear browser-autofilled email (e.g. admin@sekolah.sch.id) from search input
   if (searchEl && searchEl.value) {
