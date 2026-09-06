@@ -247,10 +247,124 @@ window.FIVIAGroupLevelEngine = (function() {
       window.FIVIAGroupPlay.autoGroupStudents(state.classroomId || 'cls_xf1', 4);
     }
     renderLevelMapUI();
-    alert('🎉 KELOMPOK BERHASIL DIBAGI OTOMATIS DARI DATABASE SISWA!');
+  }
+
+  let turnTimerInterval = null;
+  let remainingSeconds = 120; // 2 minutes (120 seconds) timer per question
+  let activeReboundGroup = null; // Group appointed for rebound turn
+  let questionsAnsweredInLevel = 0; // Number of questions answered in current level round
+
+  function startTurnTimer() {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+    remainingSeconds = 120; // 2 minutes
+    updateTimerClockUI();
+    turnTimerInterval = setInterval(() => {
+      remainingSeconds--;
+      updateTimerClockUI();
+      if (remainingSeconds <= 0) {
+        clearInterval(turnTimerInterval);
+        handleTurnTimeout();
+      }
+    }, 1000);
+  }
+
+  function updateTimerClockUI() {
+    const clockEl = document.getElementById('fq-timer-clock');
+    if (!clockEl) return;
+    const mins = Math.floor(remainingSeconds / 60);
+    const secs = remainingSeconds % 60;
+    clockEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    if (remainingSeconds > 30) {
+      clockEl.style.color = 'var(--fq-cyan)';
+    } else if (remainingSeconds > 10) {
+      clockEl.style.color = 'var(--fq-amber)';
+    } else {
+      clockEl.style.color = 'var(--fq-rose)';
+    }
+  }
+
+  function handleTurnTimeout() {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+    const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
+      ? window.FIVIAGroupPlay.getSessionState()
+      : {};
+    const currentGrp = activeReboundGroup || sessionState.activeGroup || { groupName: 'Kelompok' };
+    
+    showReboundSelectionUI(`⏱️ WAKTU 2 MENIT HABIS! ${currentGrp.groupName} kehabisan waktu pengerjaan.`);
+  }
+
+  function showReboundSelectionUI(reasonText) {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+
+    const fb = document.getElementById('fq-gl-feedback');
+    const opts = document.getElementById('fq-gl-options');
+    if (!fb) return;
+
+    const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
+      ? window.FIVIAGroupPlay.getSessionState()
+      : {};
+    const groups = sessionState.groups || [];
+    const currentGrpName = (activeReboundGroup ? activeReboundGroup.groupName : (sessionState.activeGroup ? sessionState.activeGroup.groupName : ''));
+
+    const availableGroups = groups.filter(g => (g.groupName || g.groupId) !== currentGrpName);
+
+    if (opts) opts.style.display = 'none';
+    fb.style.display = 'block';
+    fb.style.background = 'rgba(244,63,94,0.18)';
+    fb.style.border = '2.5px solid var(--fq-rose)';
+
+    let groupButtonsHtml = '';
+    if (availableGroups.length === 0) {
+      groupButtonsHtml = `<div style="color: #cbd5e1; font-weight: 700;">Tidak ada kelompok lain terdaftar.</div>`;
+    } else {
+      groupButtonsHtml = availableGroups.map((grp) => `
+        <button class="fq-btn fq-btn-amber fq-btn-lg" style="min-height: 56px; font-size: 1.15rem; font-weight: 900; padding: 12px 20px; flex: 1; min-width: 220px;" onclick="window.FIVIAGroupLevelEngine.appointReboundGroup('${grp.groupId || grp.groupName}')">
+          👉 TUNJUK ${grp.groupName} (POIN: ${grp.score || 0})
+        </button>
+      `).join('');
+    }
+
+    fb.innerHTML = `
+      <div style="font-weight: 900; font-size: 1.35rem; color: var(--fq-rose); margin-bottom: 10px;">
+        ❌ ${reasonText}
+      </div>
+      <div style="background: rgba(15,23,42,0.85); border: 2px solid var(--fq-amber); border-radius: 18px; padding: 18px; margin-bottom: 18px; text-align: left;">
+        <h4 style="color: var(--fq-amber); margin: 0 0 8px 0; font-weight: 900; font-size: 1.15rem;"><i class="fas fa-hand-point-right"></i> TUNJUK KELOMPOK LAIN UNTUK MENJAWAB REBOUND:</h4>
+        <p style="color: #e2e8f0; margin: 0 0 14px 0; font-size: 0.95rem; line-height: 1.4;">
+          Kelompok saat ini berhak menunjuk kelompok lain untuk mencoba menjawab. <strong>⚠️ Perhatian: Jika kelompok yang ditunjuk MENJAWAB SALAH, Poin Kelompok tersebut akan BERKURANG 10 POIN (-10 POIN)!</strong>
+        </p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          ${groupButtonsHtml}
+        </div>
+      </div>
+
+      <button class="fq-btn fq-btn-outline" style="width: 100%; min-height: 48px; font-size: 1rem; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.nextTurn()">
+        ⏭ LEWATI TANPA REBOUND &rarr;
+      </button>
+    `;
+  }
+
+  function appointReboundGroup(groupId) {
+    const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
+      ? window.FIVIAGroupPlay.getSessionState()
+      : {};
+    const groups = sessionState.groups || [];
+    const targetGroup = groups.find(g => (g.groupId === groupId || g.groupName === groupId));
+    if (!targetGroup) {
+      alert('Kelompok tidak ditemukan.');
+      return;
+    }
+
+    activeReboundGroup = targetGroup;
+    renderActiveLevelBoardUI();
   }
 
   function startLevel(levelId) {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+    activeReboundGroup = null;
+    questionsAnsweredInLevel = 0;
+
     // 1. Ensure Group Play session is active with valid groups & active player
     if (window.FIVIAGroupPlay) {
       const gpState = typeof window.FIVIAGroupPlay.getSessionState === 'function' ? window.FIVIAGroupPlay.getSessionState() : {};
@@ -307,8 +421,9 @@ window.FIVIAGroupLevelEngine = (function() {
         ? window.FIVIAGroupPlay.getSessionState()
         : {};
       
-      const activeGroup = sessionState.activeGroup || (sessionState.groups ? sessionState.groups[0] : null) || { groupName: 'KELOMPOK 1 (NEWTON)', score: 850 };
-      const activePlayer = sessionState.activePlayer || (activeGroup.members ? activeGroup.members[0] : null) || { studentName: 'Ahmad Fauzan', studentCode: 'STD-001' };
+      const mainGroup = sessionState.activeGroup || (sessionState.groups ? sessionState.groups[0] : null) || { groupName: 'KELOMPOK 1 (NEWTON)', score: 0 };
+      const displayGroup = activeReboundGroup || mainGroup;
+      const activePlayer = sessionState.activePlayer || (displayGroup.members ? displayGroup.members[0] : null) || { studentName: 'Siswa', studentCode: 'STD-001' };
 
       const questions = (window.FIVIAGroupLevelQuestions && typeof window.FIVIAGroupLevelQuestions.getQuestionsForLevel === 'function')
         ? window.FIVIAGroupLevelQuestions.getQuestionsForLevel(state.activeLevelId, 10, selectedModuleId)
@@ -400,18 +515,26 @@ window.FIVIAGroupLevelEngine = (function() {
         `;
       }
 
+      const groups = sessionState.groups || [];
+
       const html = `
         <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid ${meta.color || '#06b6d4'}; border-radius: 32px; padding: 32px; text-align: left; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
           <!-- Smartboard Level Top Header Bar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
             <div>
               <span class="fq-badge-pill" style="border-color: ${meta.color || '#06b6d4'}; color: ${meta.color || '#06b6d4'}; font-size: 1rem; padding: 6px 18px;">
                 ${meta.badge || '🟢'} ${meta.code} &bull; ${meta.title}
               </span>
-              <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 6px 0 0 0;">👥 KELOMPOK: <strong style="color: var(--fq-amber);">${activeGroup.groupName || 'KELOMPOK 1'}</strong></h2>
+              <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 6px 0 0 0;">👥 GILIRAN: <strong style="color: var(--fq-amber);">${displayGroup.groupName || 'KELOMPOK 1'}</strong></h2>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+              <!-- 2-MINUTE COUNTDOWN TIMER BADGE -->
+              <div style="background: rgba(15,23,42,0.9); border: 2.5px solid var(--fq-cyan); border-radius: 20px; padding: 8px 22px; text-align: center; box-shadow: 0 0 20px rgba(6,182,212,0.3);">
+                <div style="font-size: 0.72rem; color: var(--fq-cyan); font-weight: 800; letter-spacing: 1px;">⏱️ SISA WAKTU (2 MENIT)</div>
+                <div id="fq-timer-clock" style="font-size: 1.7rem; font-weight: 900; color: var(--fq-cyan); font-family: monospace; line-height: 1.1;">02:00</div>
+              </div>
+
               <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-rose); border-radius: 20px; padding: 10px 20px; text-align: center;">
                 <div style="font-size: 0.75rem; color: var(--fq-text-muted); font-weight: 800;">TEAM LIVES</div>
                 <div style="font-size: 1.5rem;">${livesHtml}</div>
@@ -428,6 +551,30 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
           </div>
 
+          <!-- GROUP SCORES REAL-TIME LEADERBOARD BAR -->
+          <div style="background: rgba(30,41,59,0.85); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="font-weight: 900; color: var(--fq-amber); font-size: 0.95rem;"><i class="fas fa-trophy"></i> POIN KELOMPOK:</div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              ${groups.map(g => `
+                <div style="background: ${displayGroup.groupName === g.groupName ? 'rgba(6,182,212,0.3)' : 'rgba(15,23,42,0.7)'}; border: 1.5px solid ${displayGroup.groupName === g.groupName ? 'var(--fq-cyan)' : 'var(--fq-border-cyan)'}; border-radius: 12px; padding: 6px 14px; font-size: 0.9rem; font-weight: 800; color: #fff;">
+                  ${g.groupName}: <span style="color: ${(g.score || 0) < 0 ? 'var(--fq-rose)' : 'var(--fq-amber)'};">${g.score || 0} pts</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- REBOUND TURN WARNING BANNER -->
+          ${activeReboundGroup ? `
+            <div style="background: rgba(245,158,11,0.2); border: 2.5px solid var(--fq-amber); border-radius: 20px; padding: 16px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 30px rgba(245,158,11,0.3);">
+              <div style="font-size: 1.3rem; font-weight: 900; color: var(--fq-amber); margin-bottom: 4px;">
+                👉 DITUNJUK UNTUK MENJAWAB REBOUND: <span style="color: #fff;">${activeReboundGroup.groupName}</span>
+              </div>
+              <div style="font-size: 0.95rem; color: #e2e8f0; font-weight: 700;">
+                ⚠️ Perhatian: Jika jawaban kelompokmu SALAH, Poin Kelompok berkurang 10 Poin (-10 POIN).
+              </div>
+            </div>
+          ` : ''}
+
           <!-- LEVEL 05 PHYSICS BOSS HP BAR OVERLAY -->
           ${state.activeLevelId === 'LEVEL_05' ? `
             <div style="background: rgba(225,29,72,0.2); border: 2.5px solid var(--fq-rose); border-radius: 20px; padding: 18px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 30px rgba(225,29,72,0.4);">
@@ -441,16 +588,16 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
           ` : ''}
 
-          <!-- PLAYER TURN BANNER (SANGAT BESAR & HIGH CONTRAST) -->
+          <!-- PLAYER TURN BANNER -->
           <div style="background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25)); border: 3px solid var(--fq-cyan); border-radius: 24px; padding: 22px; text-align: center; margin-bottom: 28px;">
             <div style="font-size: 1.1rem; font-weight: 900; color: var(--fq-amber); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">
-              🎯 GILIRANMU! MAJU KE PAPAN INTERAKTIF
+              🎯 ${activeReboundGroup ? 'REBOUND TURN! MENJAWAB SOAL' : 'GILIRANMU! MAJU KE PAPAN INTERAKTIF'}
             </div>
             <h1 style="font-size: 3rem; font-weight: 900; color: #fff; margin: 2px 0;">
               👨‍🎓 ${activePlayer.studentName || 'Siswa'}
             </h1>
             <div style="font-size: 1rem; color: var(--fq-cyan); font-weight: 800;">
-              👥 ${activeGroup.groupName || 'Kelompok 1'} &bull; TANTANGAN ${qIdx + 1} / ${safeQuestions.length} &bull; TYPE: <span style="color:var(--fq-amber);">${typeBadgeLabel}</span>
+              👥 ${displayGroup.groupName || 'Kelompok 1'} &bull; TANTANGAN SOAL &bull; TYPE: <span style="color:var(--fq-amber);">${typeBadgeLabel}</span>
             </div>
           </div>
 
@@ -465,10 +612,10 @@ window.FIVIAGroupLevelEngine = (function() {
             ${optionsUI}
           </div>
 
-            <!-- Teacher Controller Floating Overlay Bar -->
+          <!-- Teacher Controller Floating Overlay Bar -->
           <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="font-weight: 800; color: #fff; font-size: 1rem;">
-              🎮 CONTROLLER GURU: <span style="color: var(--fq-cyan);">${activePlayer.studentName || 'Siswa'} (${activeGroup.groupName || 'Kelompok 1'})</span>
+              🎮 CONTROLLER GURU: <span style="color: var(--fq-cyan);">${activePlayer.studentName || 'Siswa'} (${displayGroup.groupName || 'Kelompok 1'})</span>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button class="fq-btn fq-btn-emerald" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
@@ -482,6 +629,7 @@ window.FIVIAGroupLevelEngine = (function() {
       `;
 
       renderToContainers(html);
+      startTurnTimer();
     } catch(err) {
       console.error("Error in renderActiveLevelBoardUI:", err);
       renderLevelMapUI();
@@ -511,6 +659,8 @@ window.FIVIAGroupLevelEngine = (function() {
   }
 
   function submitAnswer(userAns) {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+
     const state = window.FIVIAGroupLevels.getLevelState();
     const questions = window.FIVIAGroupLevelQuestions.getQuestionsForLevel(state.activeLevelId, 10, selectedModuleId);
     const qIdx = state.currentQuestionIndex % Math.max(1, questions.length);
@@ -532,41 +682,172 @@ window.FIVIAGroupLevelEngine = (function() {
       }
     }
 
+    const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
+      ? window.FIVIAGroupPlay.getSessionState()
+      : {};
+
+    const isRebound = !!activeReboundGroup;
+    const currentGrp = activeReboundGroup || sessionState.activeGroup || (sessionState.groups ? sessionState.groups[0] : null) || { groupName: 'Kelompok 1' };
+
+    if (isRebound) {
+      opts.style.display = 'none';
+      fb.style.display = 'block';
+
+      if (isCorrect) {
+        currentGrp.score = (currentGrp.score || 0) + 50;
+        currentGrp.totalXP = (currentGrp.totalXP || 0) + 50;
+        localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
+
+        fb.style.background = 'rgba(16,185,129,0.18)';
+        fb.style.border = '2.5px solid var(--fq-emerald)';
+        fb.innerHTML = `
+          <div style="font-weight: 900; font-size: 1.4rem; color: var(--fq-emerald); margin-bottom: 8px;">
+            🎉 REBOUND BENAR! ${currentGrp.groupName} MENDAPATKAN +50 POIN KELOMPOK!
+          </div>
+          <p style="color: #fff; margin: 0 0 16px 0; font-size: 1.05rem; line-height: 1.4;">${q.explanation}</p>
+          <div style="font-size: 1.1rem; color: var(--fq-cyan); font-weight: 800; margin-bottom: 16px;">
+            🏆 TOTAL POIN ${currentGrp.groupName}: ${currentGrp.score} POIN
+          </div>
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 56px; font-size: 1.15rem;" onclick="window.FIVIAGroupLevelEngine.nextTurn()">
+            ▶ LANJUTKAN KE KELOMPOK SELANJUTNYA &rarr;
+          </button>
+        `;
+      } else {
+        // -10 Point Penalty for wrong rebound answer
+        currentGrp.score = (currentGrp.score || 0) - 10;
+        localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
+
+        fb.style.background = 'rgba(244,63,94,0.18)';
+        fb.style.border = '2.5px solid var(--fq-rose)';
+        fb.innerHTML = `
+          <div style="font-weight: 900; font-size: 1.4rem; color: var(--fq-rose); margin-bottom: 8px;">
+            ❌ JAWABAN REBOUND SALAH! POIN ${currentGrp.groupName} BERKURANG 10 POIN (-10 POIN)!
+          </div>
+          <p style="color: #fff; margin: 0 0 16px 0; font-size: 1.05rem; line-height: 1.4;">${q.explanation}</p>
+          <div style="font-size: 1.1rem; color: var(--fq-rose); font-weight: 800; margin-bottom: 16px;">
+            ⚠️ TOTAL POIN ${currentGrp.groupName} SEKARANG: ${currentGrp.score} POIN (-10)
+          </div>
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 56px; font-size: 1.15rem;" onclick="window.FIVIAGroupLevelEngine.nextTurn()">
+            ▶ LANJUTKAN KE KELOMPOK SELANJUTNYA &rarr;
+          </button>
+        `;
+      }
+
+      activeReboundGroup = null;
+      return;
+    }
+
+    // MAIN TURN EVALUATION
     const result = window.FIVIAGroupLevels.registerAnswerResult(isCorrect);
 
     if (isCorrect) {
+      currentGrp.score = (currentGrp.score || 0) + 100;
+      currentGrp.totalXP = (currentGrp.totalXP || 0) + 100;
+      localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
+
       if (window.FIVIAStudent && typeof window.FIVIAStudent.addXP === 'function') {
         window.FIVIAStudent.addXP(25);
       }
-    }
 
-    fb.style.display = 'block';
-    fb.style.background = isCorrect ? 'rgba(16,185,129,0.18)' : 'rgba(244,63,94,0.18)';
-    fb.style.border = `2.5px solid ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}`;
-    fb.innerHTML = `
-      <div style="font-weight: 900; font-size: 1.4rem; color: ${isCorrect ? 'var(--fq-emerald)' : 'var(--fq-rose)'}; margin-bottom: 8px;">
-        ${isCorrect ? `🎉 BENAR! +25 INDIVIDUAL XP &amp; +100 GROUP XP! ${result.comboStreak > 1 ? '(🔥 COMBO x' + result.comboStreak + '!)' : ''}` : `❌ BELUM TEPAT, MARI KITA ANALISIS KEMBALI (-1 TEAM LIFE)`}
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(16,185,129,0.18)';
+      fb.style.border = '2.5px solid var(--fq-emerald)';
+      fb.innerHTML = `
+        <div style="font-weight: 900; font-size: 1.4rem; color: var(--fq-emerald); margin-bottom: 8px;">
+          🎉 JAWABAN BENAR! +100 POIN UNTUK ${currentGrp.groupName}! ${result.comboStreak > 1 ? '(🔥 COMBO x' + result.comboStreak + '!)' : ''}
+        </div>
+        <p style="color: #fff; margin: 0 0 16px 0; font-size: 1.05rem; line-height: 1.4;">${q.explanation}</p>
+        <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 56px; font-size: 1.15rem;" onclick="window.FIVIAGroupLevelEngine.nextTurn()">
+          ▶ LANJUTKAN KE KELOMPOK SELANJUTNYA &rarr;
+        </button>
+      `;
+      opts.style.display = 'none';
+    } else {
+      showReboundSelectionUI("JAWABAN KELOMPOK BELUM TEPAT!");
+    }
+  }
+
+  function renderLevelCompletionUI() {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+
+    const state = window.FIVIAGroupLevels.getLevelState();
+    const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
+      ? window.FIVIAGroupPlay.getSessionState()
+      : {};
+    const groups = sessionState.groups || [];
+    const sortedGroups = [...groups].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    const html = `
+      <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: center; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
+        <div style="font-size: 3rem; margin-bottom: 8px;">🏆</div>
+        <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 0 0 10px 0;">BABAK LEVEL SELESAI!</h1>
+        <p style="font-size: 1.1rem; color: var(--fq-cyan); font-weight: 800; margin-bottom: 28px;">
+          Setiap kelompok telah menyelesaikan 1 soal pada level ini! Berikut hasil skor klasemen akhir:
+        </p>
+
+        <!-- KLASEMEN SKOR KELOMPOK -->
+        <div style="background: rgba(30,41,59,0.9); border: 2.5px solid var(--fq-border-cyan); border-radius: 24px; padding: 24px; margin-bottom: 32px; text-align: left;">
+          <h3 style="color: var(--fq-amber); font-weight: 900; font-size: 1.3rem; margin: 0 0 16px 0;"><i class="fas fa-award"></i> KLASEMEN SKOR PERMAINAN KELOMPOK:</h3>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            ${sortedGroups.map((grp, rank) => `
+              <div style="background: rgba(15,23,42,0.7); border: 2px solid ${rank === 0 ? 'var(--fq-amber)' : 'var(--fq-border-cyan)'}; border-radius: 16px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.5rem; font-weight: 900; color: ${rank === 0 ? 'var(--fq-amber)' : rank === 1 ? '#cbd5e1' : rank === 2 ? '#cd7f32' : '#94a3b8'};">
+                    ${rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : '#' + (rank + 1)}
+                  </span>
+                  <div>
+                    <h4 style="color: #fff; margin: 0; font-size: 1.2rem; font-weight: 900;">${grp.groupName}</h4>
+                    <div style="font-size: 0.85rem; color: var(--fq-cyan);">${(grp.members || []).length} Siswa Terdaftar</div>
+                  </div>
+                </div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: ${(grp.score || 0) < 0 ? 'var(--fq-rose)' : 'var(--fq-emerald)'};">
+                  ${grp.score || 0} POIN
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 56px; padding: 0 32px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.startLevel('${state.activeLevelId}')">
+            🔄 MAINKAN ULANG LEVEL INI
+          </button>
+          <button class="fq-btn fq-btn-emerald fq-btn-lg" style="min-height: 56px; padding: 0 32px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()">
+            🗺️ KEMBALI KE PETA LEVEL
+          </button>
+        </div>
       </div>
-      <p style="color: #fff; margin: 0 0 16px 0; font-size: 1.05rem; line-height: 1.4;">${q.explanation}</p>
-      <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 56px; font-size: 1.15rem;" onclick="window.FIVIAGroupLevelEngine.nextTurn()">
-        ▶ LANJUTKAN KE PEMAIN SELANJUTNYA &rarr;
-      </button>
     `;
-    opts.style.display = 'none';
+
+    renderToContainers(html);
   }
 
   function nextTurn() {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+    activeReboundGroup = null;
+
     const state = window.FIVIAGroupLevels.getLevelState();
+    const sessionState = (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.getSessionState === 'function')
+      ? window.FIVIAGroupPlay.getSessionState()
+      : {};
+    const totalGroups = (sessionState.groups && sessionState.groups.length > 0) ? sessionState.groups.length : 4;
+
+    questionsAnsweredInLevel++;
     state.currentQuestionIndex++;
 
     if (window.FIVIAGroupPlay && typeof window.FIVIAGroupPlay.nextPlayerTurn === 'function') {
       window.FIVIAGroupPlay.nextPlayerTurn();
     }
 
-    renderActiveLevelBoardUI();
+    if (questionsAnsweredInLevel >= totalGroups) {
+      renderLevelCompletionUI();
+    } else {
+      renderActiveLevelBoardUI();
+    }
   }
 
   function skipTurn() {
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
     alert('⏭ Giliran dilewati oleh guru.');
     nextTurn();
   }
@@ -1379,7 +1660,10 @@ window.FIVIAGroupLevelEngine = (function() {
     downloadWordTemplate: downloadWordTemplate,
     openWordImportModal: openWordImportModal,
     closeWordImportModal: closeWordImportModal,
-    processWordImportFile: processWordImportFile
+    processWordImportFile: processWordImportFile,
+    appointReboundGroup: appointReboundGroup,
+    showReboundSelectionUI: showReboundSelectionUI,
+    startTurnTimer: startTurnTimer
   };
 })();
 
