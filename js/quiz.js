@@ -250,10 +250,33 @@ function nextQuestion() {
 
 function evaluateQuestionAnswer(q, studentAns) {
   if (studentAns === null || studentAns === undefined) return false;
-  const type = detectQuestionType(q);
+  const type = q.type || (q.pairs ? "matching" : q.correctAnswers ? (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number' ? "multiple_select" : "short_answer") : "multiple_choice");
 
   if (type === "multiple_choice" || type === "true_false") {
-    return Number(studentAns) === Number(q.correct);
+    const sStr = String(studentAns).trim().toUpperCase();
+    const cStr = String(q.correctAnswer || q.correct || '').trim().toUpperCase();
+    
+    // Check direct string match (e.g. 'A' === 'A' or 'BENAR' === 'BENAR')
+    if (sStr === cStr && sStr !== '') return true;
+
+    // Check numeric index match
+    if (!isNaN(studentAns) && !isNaN(q.correct)) {
+      if (Number(studentAns) === Number(q.correct)) return true;
+    }
+
+    // Check index to letter match (0 -> 'A', 1 -> 'B')
+    if (!isNaN(studentAns)) {
+      const letter = String.fromCharCode(65 + Number(studentAns));
+      if (letter === cStr) return true;
+    }
+
+    // Check letter to index match ('A' -> 0)
+    if (typeof studentAns === 'string' && studentAns.length === 1 && !isNaN(q.correct)) {
+      const idx = studentAns.charCodeAt(0) - 65;
+      if (idx === Number(q.correct)) return true;
+    }
+
+    return false;
   }
 
   if (type === "short_answer") {
@@ -267,8 +290,8 @@ function evaluateQuestionAnswer(q, studentAns) {
     if (!Array.isArray(studentAns)) return false;
     const targetCorrect = q.correctAnswers || (q.correct !== undefined ? [q.correct] : []);
     if (studentAns.length !== targetCorrect.length) return false;
-    const sortedStd = [...studentAns].sort((a,b)=>a-b);
-    const sortedTarget = [...targetCorrect].sort((a,b)=>a-b);
+    const sortedStd = [...studentAns].map(x => String(x).trim().toUpperCase()).sort();
+    const sortedTarget = [...targetCorrect].map(x => String(x).trim().toUpperCase()).sort();
     return sortedStd.every((val, index) => val === sortedTarget[index]);
   }
 

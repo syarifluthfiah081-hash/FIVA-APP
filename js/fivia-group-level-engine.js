@@ -88,6 +88,7 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="fq-btn fq-btn-cyan" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.openWordImportModal()"><i class="fas fa-file-word"></i> 📝 UPLOAD SOAL WORD (.docx)</button>
               <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
               <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="if(window.FIVIAClassroomEngine) window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
               <button class="fq-btn fq-btn-amber" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.autoGroup()"><i class="fas fa-random"></i> 🔀 BAGI KELOMPOK</button>
@@ -677,6 +678,353 @@ window.FIVIAGroupLevelEngine = (function() {
     if (existingModal) existingModal.remove();
   }
 
+  function downloadWordTemplate() {
+    const templateContent = `==================================================
+TEMPLATE BANK SOAL FISIKA GURU - FIVIA APP
+==================================================
+Petunjuk Guru:
+- Tulis/Simpan soal dalam dokumen Word (.docx) atau Notepad (.txt).
+- Gunakan penanda [JENIS: ...] untuk setiap soal agar aplikasi dapat mengenali format soal.
+- 5 Jenis Soal yang didukung:
+  1. PILIHAN GANDA
+  2. BENAR SALAH
+  3. MENCOCOKKAN
+  4. PILIHAN GANDA KOMPLEKS
+  5. ISIAN SINGKAT
+
+--------------------------------------------------
+CONTOH FORMAT SOAL:
+--------------------------------------------------
+
+[JENIS: PILIHAN GANDA]
+SOAL: Seorang siswa beranggapan bahwa Kalor dan Suhu adalah hal yang sama. Bagaimanakah penjelasan ilmiah yang tepat?
+OPSI A: Kalor dan Suhu adalah besaran yang sama.
+OPSI B: Suhu mengukur derajat panas, sedangkan Kalor adalah energi panas yang berpindah dari suhu tinggi ke suhu rendah.
+OPSI C: Kalor mengalir dari benda dingin ke benda hangat.
+OPSI D: Suhu tidak memiliki satuan SI.
+KUNCI: B
+PENJELASAN: Suhu adalah ukuran derajat panas (K/°C), sedangkan kalor adalah energi panas yang berpindah secara alami dari temperatur tinggi ke temperatur lebih rendah.
+
+[JENIS: BENAR SALAH]
+SOAL: Rasa dingin dapat mengalir masuk ke dalam benda hangat saat tangan menyentuh es batu.
+OPSI A: BENAR
+OPSI B: SALAH
+KUNCI: B
+PENJELASAN: Rasa dingin bukan energi yang mengalir, melainkan kalor dari tubuh yang mengalir keluar ke es batu.
+
+[JENIS: MENCOCOKKAN]
+SOAL: Pasangkan besaran fisika di sebelah kiri dengan satuan SI di sebelah kanan:
+PASANGAN 1: Massa = kg
+PASANGAN 2: Panjang = meter
+PASANGAN 3: Waktu = detik
+PENJELASAN: Satuan SI massa adalah kg, panjang adalah meter, dan waktu adalah detik.
+
+[JENIS: PILIHAN GANDA KOMPLEKS]
+SOAL: Manakah yang termasuk besaran pokok SI? (Pilih semua yang benar)
+OPSI A: Massa
+OPSI B: Gaya
+OPSI C: Waktu
+OPSI D: Energi
+KUNCI: A, C
+PENJELASAN: Massa dan Waktu adalah besaran pokok. Gaya dan Energi adalah besaran turunan.
+
+[JENIS: ISIAN SINGKAT]
+SOAL: Apakah nama satuan standar internasional (SI) untuk suhu mutlak?
+KUNCI: Kelvin
+PENJELASAN: Kelvin (K) adalah satuan standar internasional untuk suhu mutlak.
+`;
+
+    const blob = new Blob([templateContent], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'Template_Soal_Guru_FIVIA.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function openWordImportModal() {
+    let existingModal = document.getElementById('fq-word-import-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'fq-word-import-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.96); z-index: 99999; overflow-y: auto; padding: 30px; box-sizing: border-box; backdrop-filter: blur(10px);';
+
+    modal.innerHTML = `
+      <div style="max-width: 850px; margin: 0 auto; background: rgba(30,41,59,0.95); border: 3px solid var(--fq-cyan); border-radius: 28px; padding: 32px; box-shadow: 0 0 50px rgba(6,182,212,0.3); text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid var(--fq-border-cyan); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="font-size: 2rem; font-weight: 900; color: #fff; margin: 0;">📝 UPLOAD SOAL WORD GURU (.docx)</h1>
+            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 0.95rem;">Buat bank soal fisika di Word, unduh template, dan unggah langsung ke aplikasi!</div>
+          </div>
+          <button class="fq-btn fq-btn-danger" style="min-height: 44px; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.closeWordImportModal()">✖ TUTUP</button>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+          <button class="fq-btn fq-btn-emerald" style="padding: 12px 20px; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.downloadWordTemplate()">
+            <i class="fas fa-download"></i> 📥 DOWNLOAD TEMPLATE WORD / TXT
+          </button>
+          <button class="fq-btn fq-btn-outline" style="padding: 12px 20px; font-weight: 800;" onclick="const guide = document.getElementById('fq-word-format-guide'); guide.style.display = guide.style.display === 'none' ? 'block' : 'none';">
+            <i class="fas fa-info-circle"></i> 📋 LIHAT PANDUAN FORMAT WORD
+          </button>
+        </div>
+
+        <!-- Sample Format Preview Box -->
+        <div id="fq-word-format-guide" style="display: none; background: rgba(15,23,42,0.8); border: 2px dashed var(--fq-amber); border-radius: 16px; padding: 20px; margin-bottom: 24px; font-family: monospace; font-size: 0.88rem; color: #e2e8f0; max-height: 250px; overflow-y: auto; white-space: pre-wrap;">
+[JENIS: PILIHAN GANDA]
+SOAL: Kalor dan Suhu adalah...
+OPSI A: Besaran yang sama
+OPSI B: Suhu adalah derajat panas, Kalor adalah energi panas
+KUNCI: B
+PENJELASAN: Suhu mengukur derajat panas, kalor adalah energi berpindah.
+
+[JENIS: BENAR SALAH]
+SOAL: Rasa dingin mengalir masuk ke benda hangat.
+KUNCI: SALAH
+PENJELASAN: Kalor mengalir keluar dari benda hangat.
+
+[JENIS: MENCOCOKKAN]
+SOAL: Pasangkan besaran dan satuan SI:
+PASANGAN 1: Massa = kg
+PASANGAN 2: Waktu = detik
+PENJELASAN: Satuan SI massa kg, waktu detik.
+
+[JENIS: PILIHAN GANDA KOMPLEKS]
+SOAL: Manakah besaran pokok SI?
+OPSI A: Massa
+OPSI B: Gaya
+OPSI C: Waktu
+KUNCI: A, C
+PENJELASAN: Massa dan Waktu adalah besaran pokok.
+
+[JENIS: ISIAN SINGKAT]
+SOAL: Satuan SI suhu mutlak adalah...
+KUNCI: Kelvin
+PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
+        </div>
+
+        <!-- Target Module Input -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; color: #fff; font-weight: 800; font-size: 1rem; margin-bottom: 8px;">
+            📚 NAMA MODUL FISIKA / TOPIK SOAL GURU:
+          </label>
+          <input type="text" id="fq-word-module-name" class="fq-select" style="width: 100%; min-height: 52px; font-size: 1.05rem; padding: 0 16px; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 12px;" placeholder="Contoh: Modul 1 - Kalor & Suhu Bebas Miskonsepsi" value="Modul Buatan Guru (Word)" />
+        </div>
+
+        <!-- File Select Input -->
+        <div style="background: rgba(15,23,42,0.7); border: 2.5px dashed var(--fq-cyan); border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 24px;">
+          <i class="fas fa-file-word" style="font-size: 3.5rem; color: var(--fq-cyan); margin-bottom: 12px;"></i>
+          <h3 style="color: #fff; font-size: 1.2rem; font-weight: 900; margin: 0 0 8px 0;">PILIH DOKUMEN WORD (.docx) ATAU TXT</h3>
+          <p style="color: var(--fq-text-muted); font-size: 0.9rem; margin-bottom: 16px;">Unggah file .docx buatan Anda di Microsoft Word</p>
+          <input type="file" id="fq-word-file-input" accept=".docx,.txt,.json" style="display: block; margin: 0 auto; color: #fff; font-weight: 800;" />
+        </div>
+
+        <!-- Submit Button -->
+        <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 60px; font-size: 1.25rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.processWordImportFile()">
+          🚀 PROSES DOKUMEN WORD &amp; SIMPAN BANK SOAL
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+  }
+
+  function closeWordImportModal() {
+    const modal = document.getElementById('fq-word-import-modal');
+    if (modal) modal.remove();
+  }
+
+  function processWordImportFile() {
+    const fileInput = document.getElementById('fq-word-file-input');
+    const moduleNameInput = document.getElementById('fq-word-module-name');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      alert('⚠️ Silakan pilih file Word (.docx) atau Text (.txt) terlebih dahulu!');
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const moduleTitle = (moduleNameInput && moduleNameInput.value.trim()) ? moduleNameInput.value.trim() : "Modul Word Guru";
+
+    if (file.name.endsWith('.docx')) {
+      if (typeof window.mammoth === 'undefined') {
+        alert('⚠️ Pustaka pembaca Word belum dimuat. Mohon pastikan koneksi internet aktif untuk memuat Mammoth.js!');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const arrayBuffer = e.target.result;
+        window.mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+          .then(function(result) {
+            const rawText = result.value;
+            parseAndSaveWordQuestions(rawText, moduleTitle);
+          })
+          .catch(function(err) {
+            console.error('Error extracting Word text:', err);
+            alert('❌ Gagal membaca dokumen Word (.docx): ' + err.message);
+          });
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const rawText = e.target.result;
+        parseAndSaveWordQuestions(rawText, moduleTitle);
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  function parseAndSaveWordQuestions(text, moduleTitle) {
+    if (!text || text.trim().length === 0) {
+      alert('⚠️ Dokumen Word kosong atau tidak berisi teks!');
+      return;
+    }
+
+    const blocks = text.split(/(?=\[JENIS:|\nSOAL:)/i).filter(b => b && b.trim().length > 0);
+    const parsedQuestions = [];
+
+    blocks.forEach((block, idx) => {
+      const bText = block.trim();
+      if (!bText.includes('SOAL:')) return;
+
+      let type = 'multiple_choice';
+      if (/JENIS:\s*BENAR\s*SALAH/i.test(bText)) type = 'true_false';
+      else if (/JENIS:\s*MENCOCOKKAN/i.test(bText)) type = 'matching';
+      else if (/JENIS:\s*PILIHAN\s*GANDA\s*KOMPLEKS/i.test(bText)) type = 'multiple_select';
+      else if (/JENIS:\s*ISIAN\s*SINGKAT/i.test(bText)) type = 'short_answer';
+      else if (/JENIS:\s*PILIHAN\s*GANDA/i.test(bText)) type = 'multiple_choice';
+
+      // Extract Question Text
+      const qMatch = bText.match(/SOAL:\s*([\s\S]*?)(?=\nOPSI|\nPASANGAN|\nKUNCI|\nPENJELASAN|$)/i);
+      const questionText = qMatch ? qMatch[1].trim() : `Soal ${idx + 1}`;
+
+      // Extract Explanation
+      const expMatch = bText.match(/PENJELASAN:\s*([\s\S]*?)(?=\n\[JENIS:|\nSOAL:|$)/i);
+      const explanationText = expMatch ? expMatch[1].trim() : 'Pembahasan disiapkan oleh Guru.';
+
+      if (type === 'multiple_choice' || type === 'true_false') {
+        const options = [];
+        const optMatches = bText.matchAll(/OPSI\s*([A-D]):\s*(.*?)(?=\nOPSI|\nKUNCI|\nPENJELASAN|$)/gi);
+        for (const m of optMatches) {
+          options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
+        }
+        if (options.length === 0) {
+          options.push({ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' });
+        }
+
+        const kMatch = bText.match(/KUNCI:\s*([A-D]|BENAR|SALAH)/i);
+        let key = kMatch ? kMatch[1].trim().toUpperCase() : 'A';
+        if (type === 'true_false') {
+          if (key === 'SALAH' || key === 'B') key = 'B';
+          else key = 'A';
+        }
+
+        parsedQuestions.push({
+          id: `w_q_${Date.now()}_${idx}`,
+          type: type,
+          question: questionText,
+          options: options,
+          correctAnswer: key,
+          correct: key,
+          explanation: explanationText
+        });
+      } else if (type === 'short_answer') {
+        const kMatch = bText.match(/KUNCI:\s*(.*?)(?=\nPENJELASAN|$)/i);
+        const keyVal = kMatch ? kMatch[1].trim() : 'Jawaban';
+        const keyArr = keyVal.split(/[,|\/]/).map(k => k.trim());
+
+        parsedQuestions.push({
+          id: `w_q_${Date.now()}_${idx}`,
+          type: type,
+          question: questionText,
+          correctAnswers: keyArr,
+          correctAnswer: keyArr[0],
+          explanation: explanationText
+        });
+      } else if (type === 'multiple_select') {
+        const options = [];
+        const optMatches = bText.matchAll(/OPSI\s*([A-D]):\s*(.*?)(?=\nOPSI|\nKUNCI|\nPENJELASAN|$)/gi);
+        for (const m of optMatches) {
+          options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
+        }
+
+        const kMatch = bText.match(/KUNCI:\s*(.*?)(?=\nPENJELASAN|$)/i);
+        const keyStr = kMatch ? kMatch[1].trim().toUpperCase() : 'A';
+        const correctIndices = [];
+        options.forEach((opt, oIdx) => {
+          if (keyStr.includes(opt.id)) correctIndices.push(oIdx);
+        });
+
+        parsedQuestions.push({
+          id: `w_q_${Date.now()}_${idx}`,
+          type: type,
+          question: questionText,
+          options: options,
+          correctAnswers: correctIndices.length > 0 ? correctIndices : [0],
+          explanation: explanationText
+        });
+      } else if (type === 'matching') {
+        const pairs = [];
+        const pairMatches = bText.matchAll(/PASANGAN\s*\d*:\s*(.*?)\s*=\s*(.*?)(?=\nPASANGAN|\nPENJELASAN|$)/gi);
+        for (const m of pairMatches) {
+          pairs.push({ left: m[1].trim(), right: m[2].trim() });
+        }
+        if (pairs.length === 0) {
+          pairs.push({ left: 'Besaran A', right: 'Satuan A' });
+        }
+
+        parsedQuestions.push({
+          id: `w_q_${Date.now()}_${idx}`,
+          type: type,
+          question: questionText,
+          pairs: pairs,
+          explanation: explanationText
+        });
+      }
+    });
+
+    if (parsedQuestions.length === 0) {
+      alert('⚠️ Tidak dapat mendeteksi format soal pada dokumen Word. Pastikan mengikuti penanda [JENIS: ...] dan SOAL:!');
+      return;
+    }
+
+    // Save to custom materials & custom quizzes in localStorage
+    const newModId = Date.now();
+    const newMaterial = {
+      id: newModId,
+      name: moduleTitle,
+      topic: 'Fisika Word Importer',
+      description: `Modul buatan Guru di-import dari Word (.docx) berisi ${parsedQuestions.length} soal.`,
+      content: `Daftar soal fisika interaktif yang dibuat langsung oleh guru via Microsoft Word.`
+    };
+
+    const newQuiz = {
+      id: `quiz_${newModId}`,
+      materialId: newModId,
+      questions: parsedQuestions
+    };
+
+    let customMats = [];
+    try { customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]"); } catch(e){}
+    customMats.unshift(newMaterial);
+    localStorage.setItem("fivia_custom_materials", JSON.stringify(customMats));
+
+    let customQuizzes = [];
+    try { customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]"); } catch(e){}
+    customQuizzes.unshift(newQuiz);
+    localStorage.setItem("fivia_custom_quizzes", JSON.stringify(customQuizzes));
+
+    if (window.FIVIAGroupLevelQuestions && typeof window.FIVIAGroupLevelQuestions.resetQuestionCache === 'function') {
+      window.FIVIAGroupLevelQuestions.resetQuestionCache();
+    }
+
+    setSelectedModule(String(newModId));
+    closeWordImportModal();
+    alert(`🎉 BERHASIL MENG-IMPORT ${parsedQuestions.length} SOAL DARI WORD DOKUMEN!\n\nModul "${moduleTitle}" telah dibuat dan otomatis dipilih.`);
+    renderLevelMapUI();
+  }
+
   return {
     setSelectedModule: setSelectedModule,
     renderLevelMapUI: renderLevelMapUI,
@@ -691,7 +1039,11 @@ window.FIVIAGroupLevelEngine = (function() {
     nextTurn: nextTurn,
     skipTurn: skipTurn,
     openTeacherQuestionBankModal: openTeacherQuestionBankModal,
-    closeTeacherQuestionBankModal: closeTeacherQuestionBankModal
+    closeTeacherQuestionBankModal: closeTeacherQuestionBankModal,
+    downloadWordTemplate: downloadWordTemplate,
+    openWordImportModal: openWordImportModal,
+    closeWordImportModal: closeWordImportModal,
+    processWordImportFile: processWordImportFile
   };
 })();
 
