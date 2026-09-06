@@ -103,6 +103,7 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
 
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="fq-btn fq-fullscreen-toggle-btn" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem; background: rgba(6,182,212,0.2); border: 1.5px solid var(--fq-cyan); color: #6ee7b7; font-weight: 900;" onclick="window.toggleFullScreen()"><i class="fas fa-expand"></i> ⛶ FULL SCREEN</button>
               <button class="fq-btn fq-bgm-toggle-btn" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem; background: rgba(16,185,129,0.2); border: 1.5px solid var(--fq-emerald); color: #6ee7b7; font-weight: 900;" onclick="window.toggleBGM()"><i class="fas fa-music"></i> 🎵 BGM: ON</button>
               <button class="fq-btn fq-btn-cyan" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.openWordImportModal()"><i class="fas fa-file-word"></i> 📝 UPLOAD WORD (.docx)</button>
               <button class="fq-btn fq-btn-emerald" style="min-height: 40px; padding: 6px 14px; font-size: 0.85rem;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
@@ -596,6 +597,7 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
 
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button class="fq-btn fq-fullscreen-toggle-btn" style="min-height: 38px; padding: 4px 12px; font-size: 0.8rem; background: rgba(6,182,212,0.2); border: 1.5px solid var(--fq-cyan); color: #6ee7b7; font-weight: 900;" onclick="window.toggleFullScreen()"><i class="fas fa-expand"></i> ⛶ FULL SCREEN</button>
               <button class="fq-btn fq-bgm-toggle-btn" style="min-height: 38px; padding: 4px 12px; font-size: 0.8rem; background: rgba(16,185,129,0.2); border: 1.5px solid var(--fq-emerald); color: #6ee7b7; font-weight: 900;" onclick="window.toggleBGM()"><i class="fas fa-music"></i> 🎵 BGM: ON</button>
               <!-- 2-MINUTE COUNTDOWN TIMER BADGE -->
               <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 4px 16px; text-align: center; box-shadow: 0 0 15px rgba(6,182,212,0.25);">
@@ -1088,6 +1090,45 @@ window.FIVIAGroupLevelEngine = (function() {
   window.toggleBGM = toggleBGM;
   window.startBGM = startBGM;
   window.stopBGM = stopBGM;
+
+  // FULLSCREEN TOGGLE & NO-SCROLL HANDLER
+  function toggleFullScreen() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+      const docEl = document.documentElement;
+      if (docEl.requestFullscreen) docEl.requestFullscreen();
+      else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+      else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+      else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+      else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
+  }
+
+  function updateFullscreenUI() {
+    const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    if (isFS) {
+      document.body.classList.add('fq-fullscreen-active');
+    } else {
+      document.body.classList.remove('fq-fullscreen-active');
+    }
+    const btns = document.querySelectorAll('.fq-fullscreen-toggle-btn');
+    btns.forEach(btn => {
+      btn.innerHTML = isFS ? '<i class="fas fa-compress"></i> <span>⛶ KELUAR FULLSCREEN</span>' : '<i class="fas fa-expand"></i> <span>⛶ FULL SCREEN</span>';
+      btn.style.background = isFS ? 'rgba(245,158,11,0.25)' : 'rgba(6,182,212,0.2)';
+      btn.style.borderColor = isFS ? 'var(--fq-amber)' : 'var(--fq-cyan)';
+      btn.style.color = isFS ? '#fef08a' : '#6ee7b7';
+    });
+  }
+
+  document.addEventListener('fullscreenchange', updateFullscreenUI);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+  document.addEventListener('mozfullscreenchange', updateFullscreenUI);
+  document.addEventListener('MSFullscreenChange', updateFullscreenUI);
+
+  window.toggleFullScreen = toggleFullScreen;
 
   function playFestiveFanfare() {
     try {
