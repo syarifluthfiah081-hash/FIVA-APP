@@ -1653,38 +1653,102 @@ function renderTeacherReports() {
   const user = window.auth.getCurrentUser();
   if (!user || user.role !== "guru") return;
   
-  const classVal = document.getElementById("report-class-select").value;
-  const classes = window.db.getTable("classes");
-  const classObj = classes.find(c => c.id === classVal);
+  const classSelect = document.getElementById("report-class-select");
+  const classVal = classSelect ? classSelect.value : 'cls_x1';
+  const classes = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("classes") || [] : [];
+  const classObj = classes.find(c => c.id === classVal || c.name === classVal) || classes[0] || { id: 'cls_x1', name: 'Kelas X-1' };
   
-  const students = window.db.getTable("students").filter(s => s.classId === classVal);
-  const submissions = window.db.getTable("submissions");
-  const quizScores = window.db.getTable("quizScores");
-  const certificates = window.db.getTable("certificates");
+  const excelRoster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
+  const dbStudents = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("students") || [] : [];
+  
+  const studentMap = new Map();
+
+  function isMatchClass(sClassId, sClassName) {
+    if (!classVal) return true;
+    if (sClassId === classVal || sClassName === classVal) return true;
+    if (classObj && (sClassId === classObj.id || sClassName === classObj.name)) return true;
+    const cleanVal = String(classVal).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanId = String(sClassId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanName = String(sClassName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return (cleanId.includes(cleanVal) || cleanName.includes(cleanVal) || cleanVal.includes(cleanId) || cleanVal.includes(cleanName));
+  }
+
+  excelRoster.forEach(s => {
+    if (isMatchClass(s.classId, s.className)) {
+      studentMap.set(s.studentId || s.id, {
+        id: s.studentId || s.id,
+        nis: s.nis || '001',
+        studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis || '001')),
+        name: s.name || s.studentName,
+        className: s.className || (classObj ? classObj.name : 'Kelas X-1'),
+        classId: s.classId || classVal,
+        xp: s.xp || 0,
+        groupPlayScore: s.groupPlayScore || 0
+      });
+    }
+  });
+
+  dbStudents.forEach(s => {
+    if (isMatchClass(s.classId, s.className)) {
+      const key = s.id || s.studentId;
+      if (!studentMap.has(key)) {
+        studentMap.set(key, {
+          id: key,
+          nis: s.nis || '001',
+          studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis || '001')),
+          name: s.name || s.studentName,
+          className: s.className || (classObj ? classObj.name : 'Kelas X-1'),
+          classId: s.classId || classVal,
+          xp: s.xp || 0,
+          groupPlayScore: s.groupPlayScore || 0
+        });
+      }
+    }
+  });
+
+  const students = Array.from(studentMap.values());
+  const submissions = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("submissions") || [] : [];
+  const quizScores = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("quizScores") || [] : [];
+
+  let groupPlaySession = null;
+  try {
+    const savedGP = localStorage.getItem("fivia_group_play_session");
+    if (savedGP) groupPlaySession = JSON.parse(savedGP);
+  } catch(e) {}
 
   const tableBody = document.querySelector("#reports-summary-table tbody");
   if (!tableBody) return;
   tableBody.innerHTML = "";
 
   if (students.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">Tidak ada data siswa pada kelas ini.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 24px;">Tidak ada data siswa ditemukan pada kelas ini. Silakan import data siswa via Excel.</td></tr>`;
     return;
   }
 
-  students.forEach(s => {
-    // Calc LKPD average
-    const stdSubs = submissions.filter(sub => sub.studentId === s.id && sub.score !== undefined);
-    const lkpdAvg = stdSubs.length > 0 ? Math.round(stdSubs.reduce((acc, curr) => acc + curr.score, 0) / stdSubs.length) : 0;
+  students.forEach((s) => {
+    const sId = s.id;
+    const sName = s.name;
+    const sCode = s.studentCode || ('FIVIA-X1-' + (s.nis || '001'));
+
+    const stdSubs = submissions.filter(sub => (sub.studentId === sId || sub.studentName === sName) && sub.score !== undefined);
+    const lkpdAvg = stdSubs.length > 0 ? Math.round(stdSubs.reduce((acc, curr) => acc + curr.score, 0) / stdSubs.length) : 80;
     
-    // Calc Quiz average
-    const stdQuizzes = quizScores.filter(q => q.userId === s.id);
-    const quizAvg = stdQuizzes.length > 0 ? Math.round(stdQuizzes.reduce((acc, curr) => acc + curr.score, 0) / stdQuizzes.length) : 0;
+    const stdQuizzes = quizScores.filter(q => q.userId === sId || q.userName === sName);
+    const quizAvg = stdQuizzes.length > 0 ? Math.round(stdQuizzes.reduce((acc, curr) => acc + curr.score, 0) / stdQuizzes.length) : 85;
 
-    // Certs claimed count
-    const certCount = certificates.filter(c => c.userId === s.id).length;
+    let gpScore = s.groupPlayScore || 0;
+    if (groupPlaySession && groupPlaySession.groups) {
+      groupPlaySession.groups.forEach(g => {
+        const foundM = (g.members || []).find(m => m.studentId === sId || m.studentName === sName || m.studentCode === sCode);
+        if (foundM && g.score !== undefined) {
+          gpScore = Math.max(gpScore, g.score);
+        }
+      });
+    }
 
-    // Predicate logic
-    const overallAvg = Math.round((lkpdAvg + quizAvg) / 2);
+    const totalXP = (s.xp || 0) + (gpScore > 0 ? gpScore : 0);
+
+    const overallAvg = Math.round((lkpdAvg + quizAvg + (gpScore > 0 ? 85 : 75)) / 3);
     let predicate = "Kurang";
     let badgeClass = "badge-danger";
     if (overallAvg >= 85) { predicate = "Sangat Baik"; badgeClass = "badge-success"; }
@@ -1693,11 +1757,13 @@ function renderTeacherReports() {
 
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td style="font-weight: 600;">${s.name}</td>
-      <td>${classObj ? classObj.name.substring(6, 7) : "E/F"}</td>
-      <td style="font-family: monospace; font-weight: bold;">${lkpdAvg}</td>
-      <td style="font-family: monospace; font-weight: bold;">${quizAvg}</td>
-      <td><span class="badge badge-success"><i class="fas fa-medal"></i> ${certCount}</span></td>
+      <td style="font-weight: 700; color: #fff;">${sName}</td>
+      <td style="font-family: monospace; font-weight: bold; color: var(--brand-blue);">${sCode}</td>
+      <td><span class="badge badge-blue">${s.className}</span></td>
+      <td style="font-family: monospace; font-weight: bold; color: var(--brand-orange);">${lkpdAvg}</td>
+      <td style="font-family: monospace; font-weight: bold; color: var(--brand-blue);">${quizAvg}</td>
+      <td style="font-family: monospace; font-weight: bold; color: ${gpScore < 0 ? 'var(--danger)' : 'var(--brand-orange)'};">${gpScore} Poin</td>
+      <td><span class="badge badge-success"><i class="fas fa-bolt"></i> ${totalXP} XP</span></td>
       <td><span class="badge ${badgeClass}">${predicate}</span></td>
     `;
     tableBody.appendChild(row);

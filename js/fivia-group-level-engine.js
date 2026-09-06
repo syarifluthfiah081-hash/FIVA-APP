@@ -254,6 +254,48 @@ window.FIVIAGroupLevelEngine = (function() {
   let activeReboundGroup = null; // Group appointed for rebound turn
   let questionsAnsweredInLevel = 0; // Number of questions answered in current level round
 
+  function syncGroupPlayScoreToRoster(group, scoreDelta, xpDelta) {
+    if (!group || !group.members || !Array.isArray(group.members)) return;
+    try {
+      const rawRoster = localStorage.getItem('fivia_student_roster');
+      let rosterList = rawRoster ? JSON.parse(rawRoster) : [];
+      let dbStudents = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable('students') || [] : [];
+
+      group.members.forEach(m => {
+        const mName = (m.studentName || m.name || '').trim().toLowerCase();
+        const mCode = (m.studentCode || '').trim().toLowerCase();
+        const mId = m.studentId || m.id;
+
+        rosterList.forEach(s => {
+          const sName = (s.name || '').trim().toLowerCase();
+          const sCode = (s.studentCode || '').trim().toLowerCase();
+          if ((mId && s.studentId === mId) || (mCode && sCode === mCode) || (mName && sName === mName)) {
+            s.xp = Math.max(0, (s.xp || 0) + xpDelta);
+            s.groupPlayScore = Math.max(0, (s.groupPlayScore || 0) + scoreDelta);
+          }
+        });
+
+        dbStudents.forEach(s => {
+          const sName = (s.name || '').trim().toLowerCase();
+          const sCode = (s.studentCode || '').trim().toLowerCase();
+          if ((mId && s.id === mId) || (mCode && sCode === mCode) || (mName && sName === mName)) {
+            s.xp = Math.max(0, (s.xp || 0) + xpDelta);
+            s.groupPlayScore = Math.max(0, (s.groupPlayScore || 0) + scoreDelta);
+          }
+        });
+      });
+
+      if (rosterList.length > 0) {
+        localStorage.setItem('fivia_student_roster', JSON.stringify(rosterList));
+      }
+      if (dbStudents.length > 0 && window.db && typeof window.db.saveTable === 'function') {
+        window.db.saveTable('students', dbStudents);
+      }
+    } catch (e) {
+      console.warn("Sync Group Play score failed:", e);
+    }
+  }
+
   function startTurnTimer() {
     if (turnTimerInterval) clearInterval(turnTimerInterval);
     remainingSeconds = 120; // 2 minutes
@@ -697,6 +739,7 @@ window.FIVIAGroupLevelEngine = (function() {
         currentGrp.score = (currentGrp.score || 0) + 50;
         currentGrp.totalXP = (currentGrp.totalXP || 0) + 50;
         localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
+        syncGroupPlayScoreToRoster(currentGrp, 50, 15);
 
         fb.style.background = 'rgba(16,185,129,0.18)';
         fb.style.border = '2.5px solid var(--fq-emerald)';
@@ -716,6 +759,7 @@ window.FIVIAGroupLevelEngine = (function() {
         // -10 Point Penalty for wrong rebound answer
         currentGrp.score = (currentGrp.score || 0) - 10;
         localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
+        syncGroupPlayScoreToRoster(currentGrp, -10, 0);
 
         fb.style.background = 'rgba(244,63,94,0.18)';
         fb.style.border = '2.5px solid var(--fq-rose)';
@@ -744,6 +788,7 @@ window.FIVIAGroupLevelEngine = (function() {
       currentGrp.score = (currentGrp.score || 0) + 100;
       currentGrp.totalXP = (currentGrp.totalXP || 0) + 100;
       localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
+      syncGroupPlayScoreToRoster(currentGrp, 100, 25);
 
       if (window.FIVIAStudent && typeof window.FIVIAStudent.addXP === 'function') {
         window.FIVIAStudent.addXP(25);

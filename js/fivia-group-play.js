@@ -14,8 +14,8 @@ window.FIVIAGroupPlay = (function() {
 
   let sessionState = {
     sessionId: null,
-    classroomId: 'cls_xf1',
-    className: 'XI FASE F',
+    classroomId: 'cls_x1',
+    className: 'Kelas X-1',
     status: 'READY', // 'READY', 'RUNNING', 'PAUSED', 'COMPLETED'
     turnOrderMode: 'ROUND_ROBIN', // 'ROUND_ROBIN', 'RANDOM_ONCE', 'RANDOM_EVERY_ROUND', 'MANUAL'
     timerDuration: 30,
@@ -159,16 +159,17 @@ window.FIVIAGroupPlay = (function() {
   }
 
   function autoGroupStudents(classId, numGroups) {
-    const roster = getRosterForClass(classId);
+    const targetClassId = classId || 'cls_x1';
+    const roster = getRosterForClass(targetClassId);
     numGroups = parseInt(numGroups) || 4;
 
-    const defaultNames = ['GROUP NEWTON', 'GROUP EINSTEIN', 'GROUP GALILEO', 'GROUP FARADAY', 'GROUP MAXWELL', 'GROUP TESLA', 'GROUP BOHR', 'GROUP CURIE'];
+    const defaultNames = ['Kelompok 1 (Newton)', 'Kelompok 2 (Einstein)', 'Kelompok 3 (Galileo)', 'Kelompok 4 (Tesla)', 'Kelompok 5 (Faraday)', 'Kelompok 6 (Maxwell)'];
     const groups = [];
 
     for (let g = 0; g < numGroups; g++) {
       groups.push({
         groupId: `grp_${Date.now().toString(36)}_${g + 1}`,
-        groupName: defaultNames[g] || `GROUP ${g + 1}`,
+        groupName: defaultNames[g] || `Kelompok ${g + 1}`,
         score: 0,
         totalXP: 0,
         members: []
@@ -182,7 +183,7 @@ window.FIVIAGroupPlay = (function() {
         groups[groupIdx].members.push({
           studentId: student.studentId || student.id || ('std_' + (idx + 1)),
           studentName: studentName,
-          studentCode: student.studentCode || student.nis || ('FIVIA-STD-' + (idx + 1)),
+          studentCode: student.studentCode || student.nis || ('FIVIA-X1-' + (idx + 1)),
           turnsPlayed: 0,
           xpContributed: 0,
           status: 'READY'
@@ -190,15 +191,19 @@ window.FIVIAGroupPlay = (function() {
       });
     }
 
+    const classes = getClassrooms();
+    const clsObj = classes.find(c => c.id === targetClassId || c.name === targetClassId) || classes[0] || { id: 'cls_x1', name: 'Kelas X-1' };
+
     sessionState.groups = groups;
-    sessionState.classroomId = classId;
+    sessionState.classroomId = clsObj.id || targetClassId;
+    sessionState.className = clsObj.name || 'Kelas X-1';
     saveSession();
     return groups;
   }
 
   function startSession(classId, groupId) {
     if (!sessionState.groups || sessionState.groups.length === 0) {
-      autoGroupStudents(classId || 'cls_xf1', 4);
+      autoGroupStudents(classId || 'cls_x1', 4);
     }
 
     sessionState.sessionId = 'GPS-' + Date.now().toString(36);

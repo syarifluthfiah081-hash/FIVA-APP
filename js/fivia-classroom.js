@@ -12,20 +12,23 @@ window.FIVIAClassroom = (function() {
   };
 
   const DEFAULT_CLASSROOMS = [
-    {
-      id: 'cls_2045_x1',
-      name: 'XI Fase F — Fisika 1',
-      school: 'SMA Negeri FIVIA 2045',
-      subject: 'Fisika SMA',
-      academicYear: '2025/2026',
-      grade: 'XI',
-      code: 'FIVIA-XIF-2045',
-      createdAt: new Date().toISOString()
-    }
+    { id: "cls_x1", name: "Kelas X-1", school: "SMA Negeri FIVIA", subject: "Fisika SMA", grade: "X", code: "FIVIA-X1-1001", createdAt: new Date().toISOString() },
+    { id: "cls_x2", name: "Kelas X-2", school: "SMA Negeri FIVIA", subject: "Fisika SMA", grade: "X", code: "FIVIA-X2-1002", createdAt: new Date().toISOString() },
+    { id: "cls_xi1", name: "Kelas XI IPA-1", school: "SMA Negeri FIVIA", subject: "Fisika SMA", grade: "XI", code: "FIVIA-XI1-1003", createdAt: new Date().toISOString() },
+    { id: "cls_xi2", name: "Kelas XI IPA-2", school: "SMA Negeri FIVIA", subject: "Fisika SMA", grade: "XI", code: "FIVIA-XI2-1004", createdAt: new Date().toISOString() }
   ];
 
   function getClassrooms() {
-    return window.FIVIAStudent.safeStorageGet(STORAGE_KEYS.CLASSROOMS, DEFAULT_CLASSROOMS);
+    let classes = window.FIVIAStudent ? window.FIVIAStudent.safeStorageGet(STORAGE_KEYS.CLASSROOMS, []) : [];
+    if (!classes || classes.length === 0) {
+      if (window.db && typeof window.db.getTable === 'function') {
+        classes = window.db.getTable("classes") || [];
+      }
+    }
+    if (!classes || classes.length === 0) {
+      classes = DEFAULT_CLASSROOMS;
+    }
+    return classes;
   }
 
   function saveClassrooms(classes) {
