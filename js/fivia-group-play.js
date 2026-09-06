@@ -87,60 +87,72 @@ window.FIVIAGroupPlay = (function() {
   }
 
   function getRosterForClass(classId) {
-    let roster = [];
+    const studentMap = new Map();
+
+    const addStudent = (s) => {
+      if (!s) return;
+      const name = s.name || s.studentName || s.nama;
+      if (!name || s.status === 'ARCHIVED') return;
+
+      const key = (s.studentId || s.id || s.studentCode || s.nis || name).toString().trim().toLowerCase();
+      if (!studentMap.has(key)) {
+        studentMap.set(key, {
+          studentId: s.studentId || s.id || ('std_' + Math.random().toString(36).substr(2, 9)),
+          name: name,
+          studentName: name,
+          classId: s.classId || s.kelasId || 'cls_x1',
+          className: s.className || s.kelas || 'Kelas X-1',
+          studentCode: s.studentCode || s.nis || ('STD-' + (s.id || Math.floor(Math.random() * 1000)))
+        });
+      }
+    };
 
     // 1. Try FIVIAExcelImport
     if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === 'function') {
-      roster = window.FIVIAExcelImport.getExistingRoster();
+      const imp = window.FIVIAExcelImport.getExistingRoster() || [];
+      imp.forEach(addStudent);
     }
 
     // 2. Try window.db.getTable('students')
-    if ((!roster || roster.length === 0) && window.db && typeof window.db.getTable === 'function') {
+    if (window.db && typeof window.db.getTable === 'function') {
       const dbStudents = window.db.getTable('students') || [];
-      if (dbStudents.length > 0) {
-        roster = dbStudents.map(s => ({
-          studentId: s.id || s.studentId,
-          name: s.name || s.studentName,
-          studentName: s.name || s.studentName,
-          classId: s.classId || 'cls_x1',
-          className: s.className || 'Kelas X-1',
-          studentCode: s.studentCode || s.nis || ('STD-' + s.id)
-        }));
-      }
+      dbStudents.forEach(addStudent);
     }
 
     // 3. Try window.db.getTable('users') for role === 'siswa'
-    if ((!roster || roster.length === 0) && window.db && typeof window.db.getTable === 'function') {
+    if (window.db && typeof window.db.getTable === 'function') {
       const dbUsers = (window.db.getTable('users') || []).filter(u => u.role === 'siswa');
-      if (dbUsers.length > 0) {
-        roster = dbUsers.map(s => ({
-          studentId: s.id || s.studentId,
-          name: s.name || s.studentName,
-          studentName: s.name || s.studentName,
-          classId: s.classId || 'cls_x1',
-          className: s.className || 'Kelas X-1',
-          studentCode: s.studentCode || ('STD-' + s.id)
-        }));
-      }
+      dbUsers.forEach(addStudent);
     }
 
     // 4. Try localStorage 'fivia_student_roster'
-    if (!roster || roster.length === 0) {
-      try {
-        const saved = localStorage.getItem('fivia_student_roster');
-        if (saved) roster = JSON.parse(saved);
-      } catch (e) {}
-    }
+    try {
+      const saved = localStorage.getItem('fivia_student_roster');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) parsed.forEach(addStudent);
+      }
+    } catch (e) {}
 
-    // 5. Try localStorage 'vlab_fisika_students'
-    if (!roster || roster.length === 0) {
-      try {
-        const saved = localStorage.getItem('vlab_fisika_students');
-        if (saved) roster = JSON.parse(saved);
-      } catch (e) {}
-    }
+    // 5. Try localStorage 'fivia_classroom_students'
+    try {
+      const saved = localStorage.getItem('fivia_classroom_students');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) parsed.forEach(addStudent);
+      }
+    } catch (e) {}
 
-    roster = (roster || []).filter(s => s && (s.name || s.studentName) && s.status !== 'ARCHIVED');
+    // 6. Try localStorage 'vlab_fisika_students'
+    try {
+      const saved = localStorage.getItem('vlab_fisika_students');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) parsed.forEach(addStudent);
+      }
+    } catch (e) {}
+
+    let roster = Array.from(studentMap.values());
 
     // Filter by class ONLY if matching records exist
     if (classId && classId !== 'ALL') {
