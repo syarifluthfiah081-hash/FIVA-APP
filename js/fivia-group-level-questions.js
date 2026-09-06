@@ -118,6 +118,14 @@ window.FIVIAGroupLevelQuestions = (function() {
     ]
   };
 
+  let cachedPoolKey = null;
+  let cachedQuestions = null;
+
+  function resetQuestionCache() {
+    cachedPoolKey = null;
+    cachedQuestions = null;
+  }
+
   function formatQuestionForGroupPlay(q) {
     const type = q.type || (q.pairs ? "matching" : q.correctAnswers ? (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number' ? "multiple_select" : "short_answer") : "multiple_choice");
     
@@ -138,6 +146,12 @@ window.FIVIAGroupLevelQuestions = (function() {
   }
 
   function getQuestionsForLevel(levelId, limit, selectedModuleId) {
+    const cacheKey = `${levelId || 'LEVEL_01'}_${selectedModuleId || 'ALL'}`;
+    
+    if (cachedPoolKey === cacheKey && cachedQuestions && cachedQuestions.length > 0) {
+      return limit ? cachedQuestions.slice(0, limit) : cachedQuestions;
+    }
+
     let pool = [];
 
     if (selectedModuleId && selectedModuleId !== 'ALL') {
@@ -177,8 +191,12 @@ window.FIVIAGroupLevelQuestions = (function() {
       }
     }
 
+    // Cache the shuffled pool for consistent turn-by-turn rendering
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    return limit ? shuffled.slice(0, limit) : shuffled;
+    cachedPoolKey = cacheKey;
+    cachedQuestions = shuffled;
+
+    return limit ? cachedQuestions.slice(0, limit) : cachedQuestions;
   }
 
   function getQuestionById(levelId, questionId, selectedModuleId) {
@@ -189,7 +207,9 @@ window.FIVIAGroupLevelQuestions = (function() {
   return {
     QUESTION_BANK: QUESTION_BANK,
     getQuestionsForLevel: getQuestionsForLevel,
-    getQuestionById: getQuestionById
+    getQuestionById: getQuestionById,
+    resetQuestionCache: resetQuestionCache
   };
 })();
+
 

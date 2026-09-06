@@ -10,6 +10,9 @@ window.FIVIAGroupLevelEngine = (function() {
 
   function setSelectedModule(modId) {
     selectedModuleId = modId;
+    if (window.FIVIAGroupLevelQuestions && typeof window.FIVIAGroupLevelQuestions.resetQuestionCache === 'function') {
+      window.FIVIAGroupLevelQuestions.resetQuestionCache();
+    }
   }
 
   function getFallbackLevels() {
@@ -85,6 +88,7 @@ window.FIVIAGroupLevelEngine = (function() {
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
               <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="if(window.FIVIAClassroomEngine) window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
               <button class="fq-btn fq-btn-amber" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.autoGroup()"><i class="fas fa-random"></i> 🔀 BAGI KELOMPOK</button>
               <button class="fq-btn fq-btn-cyan" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.startLevel('LEVEL_01')"><i class="fas fa-play"></i> ▶ MULAI LEVEL 01</button>
@@ -433,12 +437,13 @@ window.FIVIAGroupLevelEngine = (function() {
             ${optionsUI}
           </div>
 
-          <!-- Teacher Controller Floating Overlay Bar -->
+            <!-- Teacher Controller Floating Overlay Bar -->
           <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="font-weight: 800; color: #fff; font-size: 1rem;">
               🎮 CONTROLLER GURU: <span style="color: var(--fq-cyan);">${activePlayer.studentName || 'Siswa'} (${activeGroup.groupName || 'Kelompok 1'})</span>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="fq-btn fq-btn-emerald" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal()"><i class="fas fa-key"></i> 🔑 KUNCI JAWABAN GURU</button>
               <button class="fq-btn fq-btn-emerald" style="min-height: 48px;" onclick="if(window.FIVIAGroupLevels) window.FIVIAGroupLevels.addTeamLife(); window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI();"><i class="fas fa-heart"></i> ❤️ +1 LIFE</button>
               <button class="fq-btn fq-btn-amber" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.skipTurn()"><i class="fas fa-step-forward"></i> ⏭ LEWATI GILIRAN</button>
               <button class="fq-btn fq-btn-outline" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI()"><i class="fas fa-redo"></i> 🔄 ULANGI GILIRAN</button>
@@ -453,133 +458,6 @@ window.FIVIAGroupLevelEngine = (function() {
       console.error("Error in renderActiveLevelBoardUI:", err);
       renderLevelMapUI();
     }
-  }
-          ${(q.options || []).map((opt, i) => `
-            <label style="background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 16px; padding: 18px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; font-size: 1.15rem; color: #fff; font-weight: 700;">
-              <input type="checkbox" class="fq-ms-check" value="${i}" style="width: 24px; height: 24px; accent-color: var(--fq-cyan);" />
-              <span><strong style="color: var(--fq-amber);">${opt.id || String.fromCharCode(65 + i)}.</strong> ${opt.label || opt.text || opt}</span>
-            </label>
-          `).join('')}
-          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 64px; font-size: 1.2rem; font-weight: 900; margin-top: 10px;" onclick="window.FIVIAGroupLevelEngine.submitMultipleSelect()">
-            🚀 KIRIM JAWABAN KOMPLEKS
-          </button>
-        </div>
-      `;
-    } else if (qType === "short_answer") {
-      optionsUI = `
-        <div id="fq-gl-options" style="background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 24px;">
-          <label style="display: block; color: var(--fq-cyan); font-weight: 900; font-size: 1.1rem; margin-bottom: 12px;"><i class="fas fa-keyboard"></i> KETIKKAN JAWABAN ISIAN SINGKAT:</label>
-          <input type="text" id="fq-short-input" class="fq-select" style="width: 100%; min-height: 60px; font-size: 1.2rem; padding: 0 20px; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; margin-bottom: 18px;" placeholder="Ketikkan teks, simbol, atau angka jawaban..." />
-          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 64px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.submitShortAnswer()">
-            🚀 KIRIM JAWABAN ISIAN
-          </button>
-        </div>
-      `;
-    } else if (qType === "matching") {
-      const pairs = q.pairs || [];
-      const rightOptions = pairs.map(p => p.right);
-      optionsUI = `
-        <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="color: var(--fq-amber); font-weight: 800; font-size: 1.05rem;"><i class="fas fa-project-diagram"></i> Pasangkan elemen di sebelah kiri dengan jawaban di sebelah kanan:</div>
-          ${pairs.map((p, i) => `
-            <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; align-items: center; background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 16px; padding: 18px;">
-              <div style="font-weight: 800; color: #fff; font-size: 1.05rem;">${i + 1}. ${p.left}</div>
-              <div>
-                <select class="fq-matching-select fq-select" data-pair-idx="${i}" style="width: 100%; min-height: 48px; font-size: 1rem; background: #0f172a; color: #fff; border: 1.5px solid var(--fq-cyan); border-radius: 10px; padding: 0 12px; font-weight: 700;">
-                  <option value="">-- Pilih Pasangan --</option>
-                  ${rightOptions.map(rOpt => `<option value="${rOpt.replace(/"/g, '&quot;')}">${rOpt}</option>`).join('')}
-                </select>
-              </div>
-            </div>
-          `).join('')}
-          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 64px; font-size: 1.2rem; font-weight: 900; margin-top: 10px;" onclick="window.FIVIAGroupLevelEngine.submitMatching()">
-            🚀 KIRIM JAWABAN PENCOCOKAN
-          </button>
-        </div>
-      `;
-    }
-
-    const html = `
-      <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid ${meta.color}; border-radius: 32px; padding: 32px; text-align: left; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
-        <!-- Smartboard Level Top Header Bar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--fq-border-cyan); padding-bottom: 18px; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <span class="fq-badge-pill" style="border-color: ${meta.color}; color: ${meta.color}; font-size: 1rem; padding: 6px 18px;">
-              ${meta.badge} ${meta.code} &bull; ${meta.title}
-            </span>
-            <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 6px 0 0 0;">👥 KELOMPOK: <strong style="color: var(--fq-amber);">${activeGroup.groupName}</strong></h2>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-rose); border-radius: 20px; padding: 10px 20px; text-align: center;">
-              <div style="font-size: 0.75rem; color: var(--fq-text-muted); font-weight: 800;">TEAM LIVES</div>
-              <div style="font-size: 1.5rem;">${livesHtml}</div>
-            </div>
-
-            ${state.comboStreak > 1 ? `
-              <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-amber); border-radius: 20px; padding: 10px 20px; text-align: center;">
-                <div style="font-size: 0.75rem; color: var(--fq-amber); font-weight: 800;">COMBO STREAK</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--fq-amber);">🔥 COMBO x${state.comboStreak}</div>
-              </div>
-            ` : ''}
-
-            <button class="fq-btn fq-btn-outline" style="min-height: 56px; font-weight: 800;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-map"></i> PETA KELOMPOK</button>
-          </div>
-        </div>
-
-        <!-- LEVEL 05 PHYSICS BOSS HP BAR OVERLAY -->
-        ${state.activeLevelId === 'LEVEL_05' ? `
-          <div style="background: rgba(225,29,72,0.2); border: 2.5px solid var(--fq-rose); border-radius: 20px; padding: 18px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 30px rgba(225,29,72,0.4);">
-            <div style="display: flex; justify-content: space-between; font-weight: 900; color: var(--fq-rose); font-size: 1.1rem; margin-bottom: 6px;">
-              <span>👾 MECHA PHYSICS BOSS</span>
-              <span>${bossHP} / 100 HP</span>
-            </div>
-            <div style="width: 100%; background: rgba(15,23,42,0.8); height: 20px; border-radius: 10px; overflow: hidden; border: 1px solid var(--fq-rose);">
-              <div style="width: ${bossHP}%; background: linear-gradient(90deg, #f43f5e, #fb7185); height: 100%; transition: width 0.5s ease;"></div>
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- PLAYER TURN BANNER (SANGAT BESAR & HIGH CONTRAST) -->
-        <div style="background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25)); border: 3px solid var(--fq-cyan); border-radius: 24px; padding: 22px; text-align: center; margin-bottom: 28px;">
-          <div style="font-size: 1.1rem; font-weight: 900; color: var(--fq-amber); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">
-            🎯 GILIRANMU! MAJU KE PAPAN INTERAKTIF
-          </div>
-          <h1 style="font-size: 3rem; font-weight: 900; color: #fff; margin: 2px 0;">
-            👨‍🎓 ${activePlayer.studentName}
-          </h1>
-          <div style="font-size: 1rem; color: var(--fq-cyan); font-weight: 800;">
-            👥 ${activeGroup.groupName} &bull; TANTANGAN ${qIdx + 1} / ${questions.length} &bull; TYPE: <span style="color:var(--fq-amber);">${typeBadgeLabel}</span>
-          </div>
-        </div>
-
-        <!-- Minigame Interactive Challenge Card Display -->
-        <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-border-cyan); border-radius: 24px; padding: 28px; margin-bottom: 28px;">
-          <div style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.4; margin-bottom: 20px; whitespace: pre-line;">
-            ${q.question}
-          </div>
-
-          <div id="fq-gl-feedback" style="display: none; margin-bottom: 24px; padding: 22px; border-radius: 20px; font-size: 1.1rem;"></div>
-
-          ${optionsUI}
-        </div>
-
-        <!-- Teacher Controller Floating Overlay Bar -->
-        <div style="background: rgba(15,23,42,0.9); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <div style="font-weight: 800; color: #fff; font-size: 1rem;">
-            🎮 CONTROLLER GURU: <span style="color: var(--fq-cyan);">${activePlayer.studentName} (${activeGroup.groupName})</span>
-          </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="fq-btn fq-btn-emerald" style="min-height: 48px;" onclick="window.FIVIAGroupLevels.addTeamLife(); window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI();"><i class="fas fa-heart"></i> ❤️ +1 LIFE</button>
-            <button class="fq-btn fq-btn-amber" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.skipTurn()"><i class="fas fa-step-forward"></i> ⏭ LEWATI GILIRAN</button>
-            <button class="fq-btn fq-btn-outline" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.renderActiveLevelBoardUI()"><i class="fas fa-redo"></i> 🔄 ULANGI GILIRAN</button>
-            <button class="fq-btn fq-btn-danger" style="min-height: 48px;" onclick="window.FIVIAGroupLevelEngine.renderLevelMapUI()"><i class="fas fa-stop-circle"></i> 🏁 KELUAR LEVEL</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    renderToContainers(html);
   }
 
   function submitMultipleSelect() {
@@ -665,6 +543,140 @@ window.FIVIAGroupLevelEngine = (function() {
     nextTurn();
   }
 
+  function openTeacherQuestionBankModal(filterLevel) {
+    let existingModal = document.getElementById('fq-teacher-qbank-modal');
+    if (existingModal) existingModal.remove();
+
+    const selectedLevel = filterLevel || 'ALL';
+    const levelKeys = selectedLevel === 'ALL' 
+      ? ['LEVEL_01', 'LEVEL_02', 'LEVEL_03', 'LEVEL_04', 'LEVEL_05']
+      : [selectedLevel];
+
+    let allQuestions = [];
+    levelKeys.forEach(lvlId => {
+      if (window.FIVIAGroupLevelQuestions && typeof window.FIVIAGroupLevelQuestions.getQuestionsForLevel === 'function') {
+        const qList = window.FIVIAGroupLevelQuestions.getQuestionsForLevel(lvlId, 50, selectedModuleId);
+        qList.forEach(q => {
+          allQuestions.push({ ...q, levelId: lvlId });
+        });
+      }
+    });
+
+    const modal = document.createElement('div');
+    modal.id = 'fq-teacher-qbank-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.96); z-index: 99999; overflow-y: auto; padding: 30px; box-sizing: border-box; backdrop-filter: blur(10px);';
+
+    let questionsHtml = '';
+    if (allQuestions.length === 0) {
+      questionsHtml = '<div style="color: #cbd5e1; font-size: 1.1rem; text-align: center; padding: 40px;">Tidak ada soal ditemukan untuk modul ini.</div>';
+    } else {
+      questionsHtml = allQuestions.map((q, idx) => {
+        const qType = detectType(q);
+        let typeBadge = '<span class="fq-badge-pill" style="border-color: #06b6d4; color: #06b6d4;">Pilihan Ganda</span>';
+        if (qType === 'true_false') typeBadge = '<span class="fq-badge-pill" style="border-color: #8b5cf6; color: #8b5cf6;">Benar / Salah</span>';
+        else if (qType === 'matching') typeBadge = '<span class="fq-badge-pill" style="border-color: #f59e0b; color: #f59e0b;">Mencocokkan</span>';
+        else if (qType === 'multiple_select') typeBadge = '<span class="fq-badge-pill" style="border-color: #ec4899; color: #ec4899;">Pilihan Ganda Kompleks</span>';
+        else if (qType === 'short_answer') typeBadge = '<span class="fq-badge-pill" style="border-color: #10b981; color: #10b981;">Isian Singkat</span>';
+
+        let formattedKey = '';
+        if (qType === 'multiple_choice' || qType === 'true_false') {
+          const correctOpt = (q.options || []).find(o => (o.id || String.fromCharCode(65 + (q.options || []).indexOf(o))) === q.correctAnswer) || q.correctAnswer;
+          formattedKey = typeof correctOpt === 'object' ? `${correctOpt.id}: ${correctOpt.label || correctOpt.text}` : correctOpt;
+        } else if (qType === 'multiple_select') {
+          const correctArr = q.correctAnswers || [];
+          const labels = correctArr.map(i => {
+            const opt = (q.options || [])[i];
+            return opt ? (opt.label || opt.text || opt) : `Opsi ${i+1}`;
+          });
+          formattedKey = labels.join(' + ');
+        } else if (qType === 'matching') {
+          const pairs = q.pairs || [];
+          formattedKey = pairs.map(p => `<strong>${p.left}</strong> &rarr; <span style="color:#10b981;">${p.right}</span>`).join('<br/>');
+        } else if (qType === 'short_answer') {
+          formattedKey = (q.correctAnswers || [q.correctAnswer]).join(' ATAU ');
+        }
+
+        return `
+          <div style="background: rgba(30,41,59,0.9); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 24px; margin-bottom: 20px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--fq-border-cyan); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <strong style="color: var(--fq-cyan); font-size: 1.1rem;">SOAL #${idx + 1} &bull; [${q.levelId || 'GENERAL'}]</strong>
+              </div>
+              <div>${typeBadge}</div>
+            </div>
+
+            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; line-height: 1.5; margin-bottom: 16px; white-space: pre-line;">
+              ${q.question}
+            </div>
+
+            <!-- OPTIONS PREVIEW -->
+            ${q.options && q.options.length > 0 ? `
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                ${q.options.map((opt, i) => `
+                  <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--fq-border-cyan); border-radius: 12px; padding: 10px 14px; font-size: 0.95rem; color: #e2e8f0;">
+                    <strong style="color: var(--fq-amber);">${opt.id || String.fromCharCode(65 + i)}.</strong> ${opt.label || opt.text || opt}
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <!-- VERIFIED ANSWER KEY BOX -->
+            <div style="background: rgba(16,185,129,0.15); border: 2px solid #10b981; border-radius: 14px; padding: 14px 18px; margin-bottom: 12px;">
+              <div style="color: #10b981; font-weight: 900; font-size: 1.05rem; margin-bottom: 4px;">
+                🔑 KUNCI JAWABAN VERIFIKASI:
+              </div>
+              <div style="color: #fff; font-size: 1.1rem; font-weight: 800;">
+                ${formattedKey}
+              </div>
+            </div>
+
+            <!-- EXPLANATION BOX -->
+            <div style="background: rgba(6,182,212,0.12); border: 1.5px solid var(--fq-cyan); border-radius: 14px; padding: 14px 18px;">
+              <div style="color: var(--fq-cyan); font-weight: 800; font-size: 0.95rem; margin-bottom: 4px;">
+                💡 PENJELASAN ILMIAH FISIKA:
+              </div>
+              <div style="color: #cbd5e1; font-size: 0.98rem; line-height: 1.4;">
+                ${q.explanation || 'Tidak ada penjelasan tambahan.'}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    modal.innerHTML = `
+      <div style="max-width: 900px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--fq-cyan); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin: 0;">🔑 BANK SOAL &amp; KUNCI JAWABAN GURU</h1>
+            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1rem;">Inspeksi seluruh soal fisika &amp; verifikasi kunci jawaban tanpa perlu memainkan gim</div>
+          </div>
+          <button class="fq-btn fq-btn-danger" style="min-height: 48px; font-weight: 900; font-size: 1.1rem; padding: 0 24px;" onclick="window.FIVIAGroupLevelEngine.closeTeacherQuestionBankModal()">
+            ✖ TUTUP
+          </button>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button class="fq-btn ${selectedLevel === 'ALL' ? 'fq-btn-cyan' : 'fq-btn-outline'}" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal('ALL')">🌟 SEMUA LEVEL</button>
+          <button class="fq-btn ${selectedLevel === 'LEVEL_01' ? 'fq-btn-cyan' : 'fq-btn-outline'}" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal('LEVEL_01')">🟢 LEVEL 01</button>
+          <button class="fq-btn ${selectedLevel === 'LEVEL_02' ? 'fq-btn-cyan' : 'fq-btn-outline'}" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal('LEVEL_02')">🔵 LEVEL 02</button>
+          <button class="fq-btn ${selectedLevel === 'LEVEL_03' ? 'fq-btn-cyan' : 'fq-btn-outline'}" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal('LEVEL_03')">🟣 LEVEL 03</button>
+          <button class="fq-btn ${selectedLevel === 'LEVEL_04' ? 'fq-btn-cyan' : 'fq-btn-outline'}" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal('LEVEL_04')">🟠 LEVEL 04</button>
+          <button class="fq-btn ${selectedLevel === 'LEVEL_05' ? 'fq-btn-cyan' : 'fq-btn-outline'}" onclick="window.FIVIAGroupLevelEngine.openTeacherQuestionBankModal('LEVEL_05')">🔴 LEVEL 05</button>
+        </div>
+
+        ${questionsHtml}
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+  }
+
+  function closeTeacherQuestionBankModal() {
+    const existingModal = document.getElementById('fq-teacher-qbank-modal');
+    if (existingModal) existingModal.remove();
+  }
+
   return {
     setSelectedModule: setSelectedModule,
     renderLevelMapUI: renderLevelMapUI,
@@ -677,7 +689,10 @@ window.FIVIAGroupLevelEngine = (function() {
     submitShortAnswer: submitShortAnswer,
     submitMatching: submitMatching,
     nextTurn: nextTurn,
-    skipTurn: skipTurn
+    skipTurn: skipTurn,
+    openTeacherQuestionBankModal: openTeacherQuestionBankModal,
+    closeTeacherQuestionBankModal: closeTeacherQuestionBankModal
   };
 })();
+
 
