@@ -118,42 +118,71 @@ window.FIVIAGroupLevelQuestions = (function() {
     ]
   };
 
-  function getQuestionsForLevel(levelId, limit) {
-    let pool = [...(QUESTION_BANK[levelId] || QUESTION_BANK.LEVEL_01)];
+  function formatQuestionForGroupPlay(q) {
+    const type = q.type || (q.pairs ? "matching" : q.correctAnswers ? (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number' ? "multiple_select" : "short_answer") : "multiple_choice");
     
-    // Merge teacher-generated custom AI questions dynamically into Group Play!
-    try {
-      const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
-      customQuizzes.forEach(quiz => {
-        if (quiz && quiz.questions && Array.isArray(quiz.questions)) {
-          quiz.questions.forEach(q => {
-            if (q && q.question) {
-              const formatted = {
-                id: q.id || `custom_${Math.random().toString(36).substr(2, 5)}`,
-                question: q.question,
-                options: (q.options || []).map((opt, i) => ({
-                  id: String.fromCharCode(65 + i),
-                  label: typeof opt === 'string' ? opt : (opt.label || opt.text || '')
-                })),
-                correctAnswer: String.fromCharCode(65 + (typeof q.correct === 'number' ? q.correct : 0)),
-                explanation: q.explanation || "Pembahasan presisi bebas miskonsepsi disusun oleh Guru AI."
-              };
-              // Add custom teacher questions to pool
-              pool.unshift(formatted);
-            }
-          });
-        }
-      });
-    } catch (e) {
-      console.warn("Group Play custom questions merge warning:", e);
+    return {
+      id: q.id || `gp_${Math.random().toString(36).substr(2, 5)}`,
+      type: type,
+      question: q.question,
+      options: (q.options || []).map((opt, i) => ({
+        id: String.fromCharCode(65 + i),
+        label: typeof opt === 'string' ? opt : (opt.label || opt.text || '')
+      })),
+      correct: q.correct,
+      correctAnswers: q.correctAnswers,
+      correctAnswer: q.correctAnswer || (typeof q.correct === 'number' ? String.fromCharCode(65 + q.correct) : 'A'),
+      pairs: q.pairs,
+      explanation: q.explanation || "Pembahasan presisi bebas miskonsepsi disusun oleh Guru AI."
+    };
+  }
+
+  function getQuestionsForLevel(levelId, limit, selectedModuleId) {
+    let pool = [];
+
+    if (selectedModuleId && selectedModuleId !== 'ALL') {
+      const matId = parseInt(selectedModuleId);
+      // Load quiz for this module from DB or custom quizzes
+      let targetQuiz = null;
+      if (window.db && typeof window.db.getQuizForMaterial === 'function') {
+        targetQuiz = window.db.getQuizForMaterial(matId);
+      }
+      if (!targetQuiz) {
+        const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
+        targetQuiz = customQuizzes.find(q => q.materialId === matId || q.id === `quiz_${matId}`);
+      }
+
+      if (targetQuiz && targetQuiz.questions && targetQuiz.questions.length > 0) {
+        pool = targetQuiz.questions.map(q => formatQuestionForGroupPlay(q));
+      }
+    }
+
+    if (pool.length === 0) {
+      pool = [...(QUESTION_BANK[levelId] || QUESTION_BANK.LEVEL_01)].map(q => formatQuestionForGroupPlay(q));
+      
+      // Merge teacher-generated custom AI questions dynamically into Group Play!
+      try {
+        const customQuizzes = JSON.parse(localStorage.getItem("fivia_custom_quizzes") || "[]");
+        customQuizzes.forEach(quiz => {
+          if (quiz && quiz.questions && Array.isArray(quiz.questions)) {
+            quiz.questions.forEach(q => {
+              if (q && q.question) {
+                pool.unshift(formatQuestionForGroupPlay(q));
+              }
+            });
+          }
+        });
+      } catch (e) {
+        console.warn("Group Play custom questions merge warning:", e);
+      }
     }
 
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     return limit ? shuffled.slice(0, limit) : shuffled;
   }
 
-  function getQuestionById(levelId, questionId) {
-    const pool = getQuestionsForLevel(levelId);
+  function getQuestionById(levelId, questionId, selectedModuleId) {
+    const pool = getQuestionsForLevel(levelId, null, selectedModuleId);
     return pool.find(q => q.id === questionId) || pool[0];
   }
 
@@ -163,3 +192,4 @@ window.FIVIAGroupLevelQuestions = (function() {
     getQuestionById: getQuestionById
   };
 })();
+

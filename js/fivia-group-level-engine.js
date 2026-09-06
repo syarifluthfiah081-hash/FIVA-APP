@@ -6,6 +6,12 @@
 window.FIVIAGroupLevelEngine = (function() {
   'use strict';
 
+  let selectedModuleId = 'ALL';
+
+  function setSelectedModule(modId) {
+    selectedModuleId = modId;
+  }
+
   function renderToContainers(html) {
     const c1 = document.getElementById('fq-group-levels-container');
     const c2 = document.getElementById('fq-group-play-container');
@@ -30,6 +36,13 @@ window.FIVIAGroupLevelEngine = (function() {
     const activeCls = classes.find(c => c.id === sessionState.classroomId) || classes[0] || { id: 'cls_xf1', name: 'XI FASE F' };
     const groups = sessionState.groups || [];
 
+    // Collect base & custom materials for module selector
+    const baseMats = window.db ? window.db.getMaterials() : [];
+    let customMats = [];
+    try {
+      customMats = JSON.parse(localStorage.getItem("fivia_custom_materials") || "[]");
+    } catch(e) {}
+
     const html = `
       <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid var(--fq-cyan); border-radius: 32px; padding: 36px; text-align: left; box-shadow: 0 0 50px var(--fq-cyan-glow);">
         <!-- Top Title Header -->
@@ -37,13 +50,35 @@ window.FIVIAGroupLevelEngine = (function() {
           <div>
             <span class="fq-badge-pill" style="font-size: 0.9rem; padding: 6px 16px;"><i class="fas fa-users-cog"></i> FIVIA GROUP PLAY &bull; PETA PERMAINAN KELOMPOK</span>
             <h1 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin: 6px 0 2px 0;">🎮 PETA LEVEL PERMAINAN KELOMPOK</h1>
-            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem;">Atur kelompok, pilih level, dan mainkan tantangan fisika interaktif secara bergiliran!</div>
+            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 1.05rem;">Atur kelompok, pilih modul materi, dan mainkan tantangan fisika interaktif secara bergiliran!</div>
           </div>
 
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="fq-btn fq-btn-emerald" style="min-height: 50px;" onclick="window.FIVIAClassroomEngine.triggerExcelImport()"><i class="fas fa-file-import"></i> 📥 IMPORT EXCEL</button>
             <button class="fq-btn fq-btn-amber" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.autoGroup()"><i class="fas fa-random"></i> 🔀 BAGI KELOMPOK</button>
             <button class="fq-btn fq-btn-cyan" style="min-height: 50px;" onclick="window.FIVIAGroupLevelEngine.startLevel('LEVEL_01')"><i class="fas fa-play"></i> ▶ MULAI LEVEL 01</button>
+          </div>
+        </div>
+
+        <!-- MODULE SELECTOR BAR (GIM BERDASARKAN MODUL MATERI) -->
+        <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-cyan); border-radius: 24px; padding: 22px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 0 25px rgba(6,182,212,0.2);">
+          <div>
+            <span class="fq-badge-pill" style="border-color: var(--fq-amber); color: var(--fq-amber); font-weight: 900;"><i class="fas fa-book-open"></i> PILIH MODUL PERMAINAN</span>
+            <h3 style="color: #fff; font-size: 1.3rem; font-weight: 900; margin: 6px 0 2px 0;">📚 MATERI &amp; BANK SOAL MODUL GIM:</h3>
+            <div style="color: var(--fq-cyan); font-size: 0.88rem; font-weight: 700;">Gim akan memainkan tantangan fisika yang dibuat secara khusus berdasarkan modul berikut.</div>
+          </div>
+          <div>
+            <select class="fq-select" style="min-width: 320px; min-height: 52px; font-weight: 800; font-size: 1.05rem; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; padding: 0 16px;" onchange="window.FIVIAGroupLevelEngine.setSelectedModule(this.value)">
+              <option value="ALL" ${selectedModuleId === 'ALL' ? 'selected' : ''}>🌟 SEMUA MODUL MATERI (ACAK GABUNGAN)</option>
+              <optgroup label="📖 Modul Kurikulum Utama (SMA Phase E/F)">
+                ${baseMats.map(m => `<option value="${m.id}" ${String(selectedModuleId) === String(m.id) ? 'selected' : ''}>${m.name} (${m.topic || 'Fisika'})</option>`).join('')}
+              </optgroup>
+              ${customMats.length > 0 ? `
+                <optgroup label="🤖 Modul Hasil Generate AI Guru">
+                  ${customMats.map(cm => `<option value="${cm.id}" ${String(selectedModuleId) === String(cm.id) ? 'selected' : ''}>✨ ${cm.name || cm.title} (Custom Guru)</option>`).join('')}
+                </optgroup>
+              ` : ''}
+            </select>
           </div>
         </div>
 
@@ -173,6 +208,17 @@ window.FIVIAGroupLevelEngine = (function() {
     renderActiveLevelBoardUI();
   }
 
+  function detectType(q) {
+    if (q.type) return q.type;
+    if (q.pairs && q.pairs.length > 0) return "matching";
+    if (q.correctAnswers) {
+      if (Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number') return "multiple_select";
+      return "short_answer";
+    }
+    if (q.options && q.options.length === 2 && (q.options[0].label === "BENAR" || q.options[0] === "BENAR")) return "true_false";
+    return "multiple_choice";
+  }
+
   function renderActiveLevelBoardUI() {
     const state = window.FIVIAGroupLevels.getLevelState();
     const meta = window.FIVIAGroupLevels.getLevelMetadata(state.activeLevelId);
@@ -180,7 +226,7 @@ window.FIVIAGroupLevelEngine = (function() {
     const activeGroup = sessionState.activeGroup || (sessionState.groups ? sessionState.groups[0] : null) || { groupName: 'GROUP NEWTON', score: 850 };
     const activePlayer = sessionState.activePlayer || (activeGroup.members ? activeGroup.members[0] : null) || { studentName: 'Ahmad Fauzan', studentCode: 'STD-001' };
 
-    const questions = window.FIVIAGroupLevelQuestions.getQuestionsForLevel(state.activeLevelId, 10);
+    const questions = window.FIVIAGroupLevelQuestions.getQuestionsForLevel(state.activeLevelId, 10, selectedModuleId);
     const qIdx = state.currentQuestionIndex % Math.max(1, questions.length);
     const q = questions[qIdx];
 
@@ -188,6 +234,74 @@ window.FIVIAGroupLevelEngine = (function() {
 
     // Calculate Boss HP for Level 05
     const bossHP = state.activeLevelId === 'LEVEL_05' ? Math.max(0, 100 - (state.correctAnswersCount * 20)) : 100;
+
+    const qType = detectType(q);
+    let typeBadgeLabel = "Pilihan Ganda";
+    if (qType === "true_false") typeBadgeLabel = "Benar / Salah";
+    else if (qType === "matching") typeBadgeLabel = "Mencocokkan";
+    else if (qType === "multiple_select") typeBadgeLabel = "Pilihan Ganda Kompleks";
+    else if (qType === "short_answer") typeBadgeLabel = "Isian Singkat";
+
+    let optionsUI = "";
+    if (qType === "multiple_choice" || qType === "true_false") {
+      const optsList = q.options || (qType === "true_false" ? [{id:'A',label:'BENAR'},{id:'B',label:'SALAH'}] : []);
+      optionsUI = `
+        <div id="fq-gl-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          ${optsList.map((opt, i) => `
+            <button class="fq-btn fq-btn-outline fq-btn-lg" style="min-height: 76px; padding: 20px; font-size: 1.25rem; font-weight: 800; text-align: left; border-width: 2.5px;" onclick="window.FIVIAGroupLevelEngine.submitAnswer('${opt.id || String.fromCharCode(65 + i)}')">
+              <strong style="color: var(--fq-amber); font-size: 1.4rem;">${opt.id || String.fromCharCode(65 + i)}.</strong> ${opt.label || opt.text || opt}
+            </button>
+          `).join('')}
+        </div>
+      `;
+    } else if (qType === "multiple_select") {
+      optionsUI = `
+        <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="color: var(--fq-amber); font-weight: 800; font-size: 1.05rem;"><i class="fas fa-check-square"></i> Pilih SEMUA opsi jawaban yang BENAR (Lebih dari 1):</div>
+          ${(q.options || []).map((opt, i) => `
+            <label style="background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 16px; padding: 18px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; font-size: 1.15rem; color: #fff; font-weight: 700;">
+              <input type="checkbox" class="fq-ms-check" value="${i}" style="width: 24px; height: 24px; accent-color: var(--fq-cyan);" />
+              <span><strong style="color: var(--fq-amber);">${opt.id || String.fromCharCode(65 + i)}.</strong> ${opt.label || opt.text || opt}</span>
+            </label>
+          `).join('')}
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 64px; font-size: 1.2rem; font-weight: 900; margin-top: 10px;" onclick="window.FIVIAGroupLevelEngine.submitMultipleSelect()">
+            🚀 KIRIM JAWABAN KOMPLEKS
+          </button>
+        </div>
+      `;
+    } else if (qType === "short_answer") {
+      optionsUI = `
+        <div id="fq-gl-options" style="background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 20px; padding: 24px;">
+          <label style="display: block; color: var(--fq-cyan); font-weight: 900; font-size: 1.1rem; margin-bottom: 12px;"><i class="fas fa-keyboard"></i> KETIKKAN JAWABAN ISIAN SINGKAT:</label>
+          <input type="text" id="fq-short-input" class="fq-select" style="width: 100%; min-height: 60px; font-size: 1.2rem; padding: 0 20px; background: #0f172a; color: #fff; border: 2px solid var(--fq-cyan); border-radius: 14px; margin-bottom: 18px;" placeholder="Ketikkan teks, simbol, atau angka jawaban..." />
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 64px; font-size: 1.2rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.submitShortAnswer()">
+            🚀 KIRIM JAWABAN ISIAN
+          </button>
+        </div>
+      `;
+    } else if (qType === "matching") {
+      const pairs = q.pairs || [];
+      const rightOptions = pairs.map(p => p.right);
+      optionsUI = `
+        <div id="fq-gl-options" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="color: var(--fq-amber); font-weight: 800; font-size: 1.05rem;"><i class="fas fa-project-diagram"></i> Pasangkan elemen di sebelah kiri dengan jawaban di sebelah kanan:</div>
+          ${pairs.map((p, i) => `
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; align-items: center; background: rgba(15,23,42,0.8); border: 2px solid var(--fq-border-cyan); border-radius: 16px; padding: 18px;">
+              <div style="font-weight: 800; color: #fff; font-size: 1.05rem;">${i + 1}. ${p.left}</div>
+              <div>
+                <select class="fq-matching-select fq-select" data-pair-idx="${i}" style="width: 100%; min-height: 48px; font-size: 1rem; background: #0f172a; color: #fff; border: 1.5px solid var(--fq-cyan); border-radius: 10px; padding: 0 12px; font-weight: 700;">
+                  <option value="">-- Pilih Pasangan --</option>
+                  ${rightOptions.map(rOpt => `<option value="${rOpt.replace(/"/g, '&quot;')}">${rOpt}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          `).join('')}
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="min-height: 64px; font-size: 1.2rem; font-weight: 900; margin-top: 10px;" onclick="window.FIVIAGroupLevelEngine.submitMatching()">
+            🚀 KIRIM JAWABAN PENCOCOKAN
+          </button>
+        </div>
+      `;
+    }
 
     const html = `
       <div style="background: rgba(15, 23, 42, 0.98); border: 3.5px solid ${meta.color}; border-radius: 32px; padding: 32px; text-align: left; box-shadow: 0 0 60px rgba(6,182,212,0.3);">
@@ -239,26 +353,19 @@ window.FIVIAGroupLevelEngine = (function() {
             👨‍🎓 ${activePlayer.studentName}
           </h1>
           <div style="font-size: 1rem; color: var(--fq-cyan); font-weight: 800;">
-            👥 ${activeGroup.groupName} &bull; TANTANGAN ${qIdx + 1} / ${questions.length} &bull; KODE: ${activePlayer.studentCode || ''}
+            👥 ${activeGroup.groupName} &bull; TANTANGAN ${qIdx + 1} / ${questions.length} &bull; TYPE: <span style="color:var(--fq-amber);">${typeBadgeLabel}</span>
           </div>
         </div>
 
         <!-- Minigame Interactive Challenge Card Display -->
         <div style="background: rgba(30,41,59,0.85); border: 2.5px solid var(--fq-border-cyan); border-radius: 24px; padding: 28px; margin-bottom: 28px;">
-          <div style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.4; margin-bottom: 20px;">
+          <div style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.4; margin-bottom: 20px; whitespace: pre-line;">
             ${q.question}
           </div>
 
           <div id="fq-gl-feedback" style="display: none; margin-bottom: 24px; padding: 22px; border-radius: 20px; font-size: 1.1rem;"></div>
 
-          <!-- Interactive Minigame Buttons (Touch Target >= 72px) -->
-          <div id="fq-gl-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            ${(q.options || []).map(opt => `
-              <button class="fq-btn fq-btn-outline fq-btn-lg" style="min-height: 76px; padding: 20px; font-size: 1.25rem; font-weight: 800; text-align: left; border-width: 2.5px;" onclick="window.FIVIAGroupLevelEngine.submitAnswer('${opt.id}')">
-                <strong style="color: var(--fq-amber); font-size: 1.4rem;">${opt.id}.</strong> ${opt.label || opt.text || opt.id}
-              </button>
-            `).join('')}
-          </div>
+          ${optionsUI}
         </div>
 
         <!-- Teacher Controller Floating Overlay Bar -->
@@ -279,9 +386,31 @@ window.FIVIAGroupLevelEngine = (function() {
     renderToContainers(html);
   }
 
-  function submitAnswer(optId) {
+  function submitMultipleSelect() {
+    const checks = document.querySelectorAll('.fq-ms-check:checked');
+    const selectedVals = Array.from(checks).map(c => parseInt(c.value));
+    submitAnswer(selectedVals);
+  }
+
+  function submitShortAnswer() {
+    const input = document.getElementById('fq-short-input');
+    const val = input ? input.value : '';
+    submitAnswer(val);
+  }
+
+  function submitMatching() {
+    const selects = document.querySelectorAll('.fq-matching-select');
+    const matchesObj = {};
+    selects.forEach(s => {
+      const idx = s.getAttribute('data-pair-idx');
+      matchesObj[idx] = s.value;
+    });
+    submitAnswer(matchesObj);
+  }
+
+  function submitAnswer(userAns) {
     const state = window.FIVIAGroupLevels.getLevelState();
-    const questions = window.FIVIAGroupLevelQuestions.getQuestionsForLevel(state.activeLevelId, 10);
+    const questions = window.FIVIAGroupLevelQuestions.getQuestionsForLevel(state.activeLevelId, 10, selectedModuleId);
     const qIdx = state.currentQuestionIndex % Math.max(1, questions.length);
     const q = questions[qIdx];
     if (!q) return;
@@ -290,7 +419,17 @@ window.FIVIAGroupLevelEngine = (function() {
     const opts = document.getElementById('fq-gl-options');
     if (!fb || !opts) return;
 
-    const isCorrect = String(optId) === String(q.correctAnswer);
+    let isCorrect = false;
+    if (window.evaluateQuestionAnswer && typeof window.evaluateQuestionAnswer === 'function') {
+      isCorrect = window.evaluateQuestionAnswer(q, userAns);
+    } else {
+      if (typeof userAns === 'string' && q.correctAnswer) {
+        isCorrect = String(userAns).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase();
+      } else {
+        isCorrect = userAns === q.correct;
+      }
+    }
+
     const result = window.FIVIAGroupLevels.registerAnswerResult(isCorrect);
 
     if (isCorrect) {
@@ -331,13 +470,18 @@ window.FIVIAGroupLevelEngine = (function() {
   }
 
   return {
+    setSelectedModule: setSelectedModule,
     renderLevelMapUI: renderLevelMapUI,
     selectClass: selectClass,
     autoGroup: autoGroup,
     startLevel: startLevel,
     renderActiveLevelBoardUI: renderActiveLevelBoardUI,
     submitAnswer: submitAnswer,
+    submitMultipleSelect: submitMultipleSelect,
+    submitShortAnswer: submitShortAnswer,
+    submitMatching: submitMatching,
     nextTurn: nextTurn,
     skipTurn: skipTurn
   };
 })();
+

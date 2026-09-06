@@ -416,8 +416,10 @@ window.FIVIAContentGenerator = (function() {
     const questions = [];
 
     misconceptions.forEach((item, idx) => {
+      // 1. Multiple Choice (Pilihan Ganda)
       questions.push({
-        id: `q_custom_${idx + 1}`,
+        id: `q_custom_${questions.length + 1}`,
+        type: "multiple_choice",
         question: `Seorang siswa beranggapan bahwa "${item.misconception}". Berdasarkan konsep fisika yang benar, bagaimanakah penjelasan ilmiah yang tepat?`,
         options: [
           `Pernyataan siswa salah. ${item.fact}`,
@@ -428,33 +430,56 @@ window.FIVIAContentGenerator = (function() {
         correct: 0,
         explanation: `Sains Fisika menegaskan: ${item.fact} Rumus terkait: $$${item.formula}$$. ${item.example}`
       });
-    });
 
-    // Additional conceptual question
-    questions.push({
-      id: `q_custom_${questions.length + 1}`,
-      question: `Dalam topik "${title}", mengapa penting untuk membedakan antara besaran pokok dan besaran turunan?`,
-      options: [
-        `Agar dapat mengukur dan menganalisis fenomena alam secara presisi tanpa kerancuan definisi dan satuan.`,
-        `Agar semua alat ukur fisika memiliki harga yang lebih murah.`,
-        `Karena besaran pokok tidak memiliki satuan SI.`,
-        `Karena besaran turunan hanya ada di Indonesia.`
-      ],
-      correct: 0,
-      explanation: `Pemahaman hirarki besaran pokok dan turunan mencegah miskonsepsi pengukuran serta memastikan analisis dimensi dalam SI valid.`
-    });
+      // 2. True / False (Benar Salah)
+      questions.push({
+        id: `q_custom_${questions.length + 1}`,
+        type: "true_false",
+        question: `PERNYATAAN: "${item.misconception}"\nApakah pernyataan konsep fisika di atas BENAR atau SALAH?`,
+        options: ["BENAR", "SALAH"],
+        correct: 1, // 1 = SALAH
+        explanation: `Pernyataan tersebut SALAH (merupakan miskonsepsi). Fakta ilmiah presisi: ${item.fact}`
+      });
 
-    questions.push({
-      id: `q_custom_${questions.length + 1}`,
-      question: `Manakah dari situasi berikut yang menunjukkan penerapan Hukum Fisika yang BEBAS dari miskonsepsi?`,
-      options: [
-        misconceptions[0]?.example ? `Memahami bahwa ${misconceptions[0].example}` : `Memahami bahwa usaha bernilai nol jika s = 0`,
-        `Menganggap bahwa gaya selalu diperlukan agar benda bergerak terus`,
-        `Menyebut berat benda dalam satuan kilogram pada laporan laboratorium`,
-        `Menganggap bahwa energi selalu musnah setelah digunakan`
-      ],
-      correct: 0,
-      explanation: `Memahami konsep fisis secara presisi mencegah kesalahan analisis pada percobaan praktikum.`
+      // 3. Short Answer (Isian Singkat)
+      if (item.formula) {
+        const cleanFormula = item.formula.replace(/\\times|\\cdot|\\text|\$|\{|\}/g, '').trim();
+        questions.push({
+          id: `q_custom_${questions.length + 1}`,
+          type: "short_answer",
+          question: `Dalam topik ${title}, tuliskan simbol atau rumus matematika fisika untuk persamaan ${item.fact.substring(0, 40)}...`,
+          correctAnswers: [item.formula, cleanFormula, cleanFormula.toLowerCase()],
+          explanation: `Persamaan ilmiah presisi adalah $$${item.formula}$$.`
+        });
+      }
+
+      // 4. Multiple Select (Pilihan Ganda Kompleks)
+      questions.push({
+        id: `q_custom_${questions.length + 1}`,
+        type: "multiple_select",
+        question: `Pilihlah SEMUA pernyataan ilmiah yang BENAR untuk mengklarifikasi topik "${title}"! (Pilihan jawaban benar lebih dari satu)`,
+        options: [
+          item.fact,
+          item.example ? `Fenomena nyata: ${item.example}` : `Konsep ini telah teruji secara eksperimental dalam SI.`,
+          `Setiap benda yang bergerak pasti memiliki gaya netual konstan yang mendorongnya terus menerus.`,
+          `Massa dan berat merupakan besaran fisika yang persis sama dan memiliki dimensi setara.`
+        ],
+        correctAnswers: [0, 1],
+        explanation: `Pernyataan 1 dan 2 adalah Fakta Ilmiah Presisi. Pernyataan 3 dan 4 merupakan miskonsepsi klasik.`
+      });
+
+      // 5. Matching (Mencocokkan)
+      questions.push({
+        id: `q_custom_${questions.length + 1}`,
+        type: "matching",
+        question: `Jodohkanlah Istilah / Elemen Fisika berikut di sebelah kiri dengan Pasangan Ilmiah yang tepat di sebelah kanan:`,
+        pairs: [
+          { left: "Miskonsepsi Umum", right: item.misconception.substring(0, 45) + "..." },
+          { left: "Fakta Ilmiah Presisi", right: item.fact.substring(0, 45) + "..." },
+          { left: "Contoh Penerapan", right: (item.example || title).substring(0, 45) + "..." }
+        ],
+        explanation: `Setiap konsep memiliki pasangan ilmiah yang saling berkesesuaian.`
+      });
     });
 
     return questions;
@@ -511,7 +536,7 @@ window.FIVIAContentGenerator = (function() {
    */
   async function generateWithGeminiAPI(text, topicTitle, classLevel, misconceptionFocus, apiKey, targetModuleId = "NEW") {
     const prompt = `Anda adalah Pakar Edukasi Fisika SMA Kurikulum Merdeka dan AI Master Teacher.
-Tugas Anda: Analisis teks sumber belajar berikut, lalu hasilkan materi pembelajaran fisika yang BEBAS MISKONSEPSI, soal kuis HOTS, dan kartu gim interaktif.
+Tugas Anda: Analisis teks sumber belajar berikut, lalu hasilkan materi pembelajaran fisika yang BEBAS MISKONSEPSI, soal kuis HOTS dengan 5 variasi tipe soal (Pilihan Ganda, Benar/Salah, Mencocokkan, Pilihan Ganda Kompleks, dan Isian Singkat), serta kartu gim interaktif.
 
 SUMBER DOKUMEN:
 """
@@ -544,10 +569,44 @@ OUTPUT HARUS DALAM FORMAT JSON VALID DENGAN STRUKTUR BERIKUT:
     "questions": [
       {
         "id": "q1",
-        "question": "Pertanyaan HOTS pilihan ganda",
+        "type": "multiple_choice",
+        "question": "Pertanyaan HOTS pilihan ganda (1 jawaban benar)",
         "options": ["Pilihan A (Benar)", "Pilihan B (Salah)", "Pilihan C (Salah)", "Pilihan D (Salah)"],
         "correct": 0,
         "explanation": "Pembahasan ilmiah mendalam anti-miskonsepsi"
+      },
+      {
+        "id": "q2",
+        "type": "true_false",
+        "question": "Pernyataan fisika untuk dianalisis BENAR atau SALAH",
+        "options": ["BENAR", "SALAH"],
+        "correct": 1,
+        "explanation": "Pembahasan alasan ilmiah mengapa pernyataan tersebut salah"
+      },
+      {
+        "id": "q3",
+        "type": "matching",
+        "question": "Jodohkanlah konsep/besaran fisika di sebelah kiri dengan satuan/definisi di sebelah kanan",
+        "pairs": [
+          { "left": "Gaya", "right": "Newton (N)" },
+          { "left": "Usaha", "right": "Joule (J)" }
+        ],
+        "explanation": "Pembahasan pasangan konsep yang tepat"
+      },
+      {
+        "id": "q4",
+        "type": "multiple_select",
+        "question": "Pernyataan Pilihan Ganda Kompleks (pilihlah SEMUA opsi jawaban yang BENAR)",
+        "options": ["Fakta Benar 1", "Fakta Benar 2", "Miskonsepsi Salah 1", "Miskonsepsi Salah 2"],
+        "correctAnswers": [0, 1],
+        "explanation": "Pembahasan opsi 1 & 2 benar sedangkan opsi 3 & 4 salah"
+      },
+      {
+        "id": "q5",
+        "type": "short_answer",
+        "question": "Pertanyaan Isian Singkat (ketikkan istilah, rumus, atau nilai besaran fisika)",
+        "correctAnswers": ["Joule", "joule", "J"],
+        "explanation": "Pembahasan jawaban isian singkat yang valid"
       }
     ]
   },
