@@ -12,20 +12,25 @@ window.FIVIAExcelImport = (function() {
   const CLASSROOMS_STORAGE_KEY = 'fivia_classrooms';
 
   /**
-   * Helper to normalize class string to standard class code ID (e.g. "X.F.1" -> "XF1", "X-1" -> "X1")
+   * Helper to normalize class string to standard class code ID (e.g. "X.F.1" -> "cls_x1", "XI IPA 1" -> "cls_xi1")
    */
   function normalizeClassCode(className) {
-    if (!className) return 'X1';
-    return String(className).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!className) return 'cls_x1';
+    const clean = String(className).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (clean.includes('X1') || clean.includes('XF1') || clean === 'X1' || clean === '1') return 'cls_x1';
+    if (clean.includes('X2') || clean.includes('XF2') || clean === 'X2' || clean === '2') return 'cls_x2';
+    if (clean.includes('XI1') || clean.includes('XIIPA1') || clean.includes('IPA1')) return 'cls_xi1';
+    if (clean.includes('XI2') || clean.includes('XIIPA2') || clean.includes('IPA2')) return 'cls_xi2';
+    return 'cls_' + clean.toLowerCase();
   }
 
   /**
    * Generates a unique, stable Student Code: FIVIA-[CLASS_CODE]-[NIS]
-   * Example: NIS "001", Class "X.F.1" -> "FIVIA-XF1-001"
+   * Example: NIS "001", Class "X.F.1" -> "FIVIA-X1-001"
    */
   function generateStudentCode(nis, className) {
     const cleanNis = String(nis || '').trim();
-    const classCode = normalizeClassCode(className);
+    const classCode = normalizeClassCode(className).replace('cls_', '').toUpperCase();
     return `FIVIA-${classCode}-${cleanNis}`;
   }
 
@@ -394,9 +399,62 @@ window.FIVIAExcelImport = (function() {
 
     const updatedRosterList = Array.from(rosterMap.values());
     saveRoster(updatedRosterList);
+    localStorage.setItem('fivia_classroom_students', JSON.stringify(updatedRosterList));
+
+    // Also sync directly to window.db tables for real-time dashboard display
+    if (window.db && typeof window.db.saveTable === 'function') {
+      let dbStudents = window.db.getTable("students") || [];
+      const studentMap = new Map(dbStudents.map(s => [s.id || s.studentId, s]));
+      
+      updatedRosterList.forEach(s => {
+        const sId = s.studentId || s.id;
+        studentMap.set(sId, {
+          id: sId,
+          studentId: sId,
+          nis: s.nis || '001',
+          studentCode: s.studentCode,
+          name: s.name,
+          className: s.className,
+          classId: s.classId,
+          xp: s.xp || 0,
+          groupPlayScore: s.groupPlayScore || 0
+        });
+      });
+
+      window.db.saveTable("students", Array.from(studentMap.values()));
+
+      let dbUsers = window.db.getTable("users") || [];
+      const userMap = new Map(dbUsers.map(u => [u.id || u.studentId, u]));
+
+      updatedRosterList.forEach(s => {
+        const sId = s.studentId || s.id;
+        userMap.set(sId, {
+          id: sId,
+          email: (s.studentCode || sId).toLowerCase() + '@fivia.edu',
+          password: 'password123',
+          name: s.name,
+          role: 'siswa',
+          nis: s.nis,
+          classId: s.classId,
+          className: s.className
+        });
+      });
+
+      window.db.saveTable("users", Array.from(userMap.values()));
+    }
 
     // Auto-associate students with active classroom matching their className
     autoAssignToClassrooms(updatedRosterList);
+
+    // Trigger immediate UI refresh
+    setTimeout(() => {
+      if (typeof window.updateAllClassDropdowns === 'function') window.updateAllClassDropdowns();
+      if (typeof window.renderClassManagement === 'function') window.renderClassManagement();
+      if (typeof window.renderTeacherReports === 'function') window.renderTeacherReports();
+      if (window.FIVIAGroupLevelEngine && typeof window.FIVIAGroupLevelEngine.renderLevelMapUI === 'function') {
+        window.FIVIAGroupLevelEngine.renderLevelMapUI();
+      }
+    }, 100);
 
     return {
       success: true,
@@ -422,7 +480,7 @@ window.FIVIAExcelImport = (function() {
       // Group students by classId
       const grouped = {};
       rosterList.forEach(s => {
-        const cId = s.classId || 'X1';
+        const cId = s.classId || 'cls_x1';
         if (!grouped[cId]) grouped[cId] = [];
         grouped[cId].push(s);
       });
@@ -446,7 +504,12 @@ window.FIVIAExcelImport = (function() {
         }
       });
 
-      localStorage.setItem(CLASSROOMS_STORAGE_KEY, JSON.stringify(Array.from(classMap.values())));
+      const updatedClasses = Array.from(classMap.values());
+      localStorage.setItem(CLASSROOMS_STORAGE_KEY, JSON.stringify(updatedClasses));
+
+      if (window.db && typeof window.db.saveTable === 'function') {
+        window.db.saveTable("classes", updatedClasses);
+      }
     } catch (e) {
       console.error('Auto-assign classrooms failed:', e);
     }

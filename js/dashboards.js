@@ -1586,7 +1586,13 @@ function renderClassManagement() {
   }
   
   if (classVal) {
-    students = students.filter(s => s.classId === classVal || s.className.toLowerCase().includes(classVal.toLowerCase()));
+    students = students.filter(s => {
+      if (s.classId === classVal || s.className === classVal) return true;
+      const cleanVal = String(classVal).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanId = String(s.classId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanName = String(s.className || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (cleanId.includes(cleanVal) || cleanVal.includes(cleanId) || cleanName.includes(cleanVal) || cleanVal.includes(cleanName));
+    });
   }
 
   const tableBody = document.querySelector("#class-students-table tbody");
