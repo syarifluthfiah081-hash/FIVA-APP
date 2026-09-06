@@ -254,26 +254,35 @@ function evaluateQuestionAnswer(q, studentAns) {
 
   if (type === "multiple_choice" || type === "true_false") {
     const sStr = String(studentAns).trim().toUpperCase();
-    const cStr = String(q.correctAnswer || q.correct || '').trim().toUpperCase();
+    const rawTarget = String(q.correctAnswer || q.correct || '').trim().toUpperCase();
     
-    // Check direct string match (e.g. 'A' === 'A' or 'BENAR' === 'BENAR')
-    if (sStr === cStr && sStr !== '') return true;
+    // Extract letter A-D from target if present (e.g. "B. PANJANG", "OPTION B", "KUNCI: B" -> "B")
+    const letterMatch = rawTarget.match(/(?:KUNCI|OPSI|OPTION|JAWABAN)?\s*[\:\.\-\(]*\s*([A-D])(?:\b|[\)\.\:\-]|$)/i);
+    const targetLetter = letterMatch ? letterMatch[1].toUpperCase() : rawTarget;
 
-    // Check numeric index match
-    if (!isNaN(studentAns) && !isNaN(q.correct)) {
-      if (Number(studentAns) === Number(q.correct)) return true;
-    }
+    // Direct letter or exact string comparison
+    if (sStr === targetLetter && sStr !== '') return true;
+    if (sStr === rawTarget && sStr !== '') return true;
 
-    // Check index to letter match (0 -> 'A', 1 -> 'B')
+    // Numeric index match (0 -> 'A', 1 -> 'B')
     if (!isNaN(studentAns)) {
       const letter = String.fromCharCode(65 + Number(studentAns));
-      if (letter === cStr) return true;
+      if (letter === targetLetter || letter === rawTarget) return true;
     }
 
-    // Check letter to index match ('A' -> 0)
+    // Letter to index match ('A' -> 0)
     if (typeof studentAns === 'string' && studentAns.length === 1 && !isNaN(q.correct)) {
       const idx = studentAns.charCodeAt(0) - 65;
       if (idx === Number(q.correct)) return true;
+    }
+
+    // Option label matching
+    if (q.options && Array.isArray(q.options)) {
+      const selectedOpt = q.options.find((o, i) => (o.id || String.fromCharCode(65 + i)).toUpperCase() === sStr);
+      if (selectedOpt) {
+        const labelUpper = (selectedOpt.label || selectedOpt.text || '').trim().toUpperCase();
+        if (labelUpper && (rawTarget === labelUpper || rawTarget.includes(labelUpper) || labelUpper.includes(rawTarget))) return true;
+      }
     }
 
     return false;
@@ -283,16 +292,38 @@ function evaluateQuestionAnswer(q, studentAns) {
     if (typeof studentAns !== 'string') return false;
     const cleanStd = studentAns.trim().toLowerCase();
     const correctAnswers = q.correctAnswers || (q.correctAnswer ? [q.correctAnswer] : []);
-    return correctAnswers.some(c => String(c).trim().toLowerCase() === cleanStd);
+    return correctAnswers.some(c => {
+      const cleanC = String(c).replace(/^(KUNCI|JAWABAN|KEY|KUNCI JAWABAN)\s*[\:\=]?\s*/i, '').trim().toLowerCase();
+      if (!cleanC) return false;
+      return cleanC === cleanStd || (cleanStd.length >= 3 && cleanC.length >= 3 && (cleanStd.includes(cleanC) || cleanC.includes(cleanStd)));
+    });
   }
 
   if (type === "multiple_select") {
     if (!Array.isArray(studentAns)) return false;
     const targetCorrect = q.correctAnswers || (q.correct !== undefined ? [q.correct] : []);
     if (studentAns.length !== targetCorrect.length) return false;
-    const sortedStd = [...studentAns].map(x => String(x).trim().toUpperCase()).sort();
-    const sortedTarget = [...targetCorrect].map(x => String(x).trim().toUpperCase()).sort();
-    return sortedStd.every((val, index) => val === sortedTarget[index]);
+
+    // Normalize student selections and target values to indices (0, 1, 2, 3)
+    const stdSet = new Set(studentAns.map(x => {
+      if (typeof x === 'number') return x;
+      const str = String(x).trim().toUpperCase();
+      if (/^[A-D]$/.test(str)) return str.charCodeAt(0) - 65;
+      return isNaN(str) ? str : Number(str);
+    }));
+
+    const targetSet = new Set(targetCorrect.map(x => {
+      if (typeof x === 'number') return x;
+      const str = String(x).trim().toUpperCase();
+      if (/^[A-D]$/.test(str)) return str.charCodeAt(0) - 65;
+      return isNaN(str) ? str : Number(str);
+    }));
+
+    if (stdSet.size !== targetSet.size) return false;
+    for (let val of stdSet) {
+      if (!targetSet.has(val)) return false;
+    }
+    return true;
   }
 
   if (type === "matching") {
@@ -300,8 +331,8 @@ function evaluateQuestionAnswer(q, studentAns) {
     const pairs = q.pairs || [];
     if (pairs.length === 0) return false;
     return pairs.every((p, pIdx) => {
-      const userVal = studentAns[pIdx];
-      return userVal && String(userVal).trim() === String(p.right).trim();
+      const userVal = studentAns[pIdx] !== undefined ? studentAns[pIdx] : studentAns[p.left];
+      return userVal && String(userVal).trim().toLowerCase() === String(p.right).trim().toLowerCase();
     });
   }
 

@@ -995,10 +995,20 @@ window.FIVIAGroupLevelEngine = (function() {
     const pairs = [];
     const lines = text.split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
     lines.forEach(line => {
-      if (line.includes('=')) {
-        const parts = line.split('=');
-        if (parts.length >= 2) {
-          pairs.push({ left: parts[0].trim(), right: parts.slice(1).join('=').trim() });
+      let parts = null;
+      let sep = '=';
+      if (line.includes('=')) { parts = line.split('='); sep = '='; }
+      else if (line.includes('->')) { parts = line.split('->'); sep = '->'; }
+      else if (line.includes('=>')) { parts = line.split('=>'); sep = '=>'; }
+      else if (line.includes('–')) { parts = line.split('–'); sep = '–'; }
+      else if (line.includes(':')) { parts = line.split(':'); sep = ':'; }
+      else if (line.includes('-')) { parts = line.split('-'); sep = '-'; }
+
+      if (parts && parts.length >= 2) {
+        const left = parts[0].trim();
+        const right = parts.slice(1).join(sep).trim();
+        if (left && right) {
+          pairs.push({ left, right });
         }
       }
     });
@@ -1041,7 +1051,14 @@ window.FIVIAGroupLevelEngine = (function() {
         let keyText = '';
         let explanationText = '';
 
-        if (cellTexts.length >= 6) {
+        const col0IsNo = /^\d+$/.test(cellTexts[0]) || /^(NO|NO\.|NUMBER)$/i.test(cellTexts[0]);
+        if (col0IsNo && cellTexts.length >= 5) {
+          jenisText = cellTexts[1];
+          questionText = cellTexts[2];
+          optionsRaw = cellHtmls[3] || cellTexts[3];
+          keyText = cellTexts[4];
+          explanationText = cellTexts[5] || '';
+        } else if (cellTexts.length >= 6) {
           jenisText = cellTexts[1];
           questionText = cellTexts[2];
           optionsRaw = cellHtmls[3] || cellTexts[3];
@@ -1091,24 +1108,70 @@ window.FIVIAGroupLevelEngine = (function() {
           options.push({ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' });
         }
 
-        const pairs = extractPairsFromText(optionsRaw);
+        let pairs = extractPairsFromText(optionsRaw);
+        if (type === 'matching' && pairs.length === 0) {
+          pairs = extractPairsFromText(keyText);
+        }
 
-        let keyVal = keyText.trim();
-        let keyArr = [keyVal];
+        let keyVal = (keyText || '').trim();
+        let cleanKeyRaw = keyVal.replace(/^(KUNCI|JAWABAN|KEY|KUNCI JAWABAN)\s*[\:\=]?\s*/i, '').trim();
+
+        let keyArr = [cleanKeyRaw];
         let correctIndices = [];
 
-        if (type === 'true_false') {
-          if (/SALAH|B/i.test(keyVal)) keyVal = 'B';
-          else keyVal = 'A';
+        if (type === 'multiple_choice') {
+          let letterFound = null;
+          const mLetter = cleanKeyRaw.match(/(?:OPSI|OPTION)?\s*[\(\:\.\-]*\s*([A-D])(?:\b|[\)\.\:\-]|$)/i);
+          if (mLetter) {
+            letterFound = mLetter[1].toUpperCase();
+          } else if (options && options.length > 0) {
+            const lowerKey = cleanKeyRaw.toLowerCase();
+            const matchedOpt = options.find(o => {
+              const lbl = (o.label || '').toLowerCase().trim();
+              return lbl && (lbl === lowerKey || lowerKey.includes(lbl) || lbl.includes(lowerKey));
+            });
+            if (matchedOpt) letterFound = matchedOpt.id;
+          }
+          if (!letterFound) {
+            const num = parseInt(cleanKeyRaw);
+            if (!isNaN(num) && num >= 1 && num <= 4) {
+              letterFound = String.fromCharCode(64 + num);
+            }
+          }
+          keyVal = letterFound || 'A';
+        } else if (type === 'true_false') {
+          const upperKey = cleanKeyRaw.toUpperCase();
+          if (upperKey.includes('SALAH') || upperKey.includes('FALSE') || upperKey === 'S' || upperKey === 'F' || upperKey.startsWith('B.') || upperKey === 'B') {
+            keyVal = 'B';
+          } else {
+            keyVal = 'A';
+          }
         } else if (type === 'multiple_select') {
-          const uppercaseKey = keyVal.toUpperCase();
+          const upperKey = cleanKeyRaw.toUpperCase();
+          const matchedLetters = upperKey.match(/\b[A-D]\b/g) || upperKey.match(/[A-D]/g) || [];
+          const letterSet = new Set(matchedLetters);
           options.forEach((opt, oIdx) => {
-            if (uppercaseKey.includes(opt.id)) correctIndices.push(oIdx);
+            if (letterSet.has(opt.id)) {
+              correctIndices.push(oIdx);
+            }
           });
-          if (correctIndices.length === 0) correctIndices = [0];
+          if (correctIndices.length === 0) {
+            const digits = upperKey.match(/[1-4]/g);
+            if (digits) {
+              digits.forEach(d => {
+                const idx = parseInt(d) - 1;
+                if (idx >= 0 && idx < (options.length || 4) && !correctIndices.includes(idx)) {
+                  correctIndices.push(idx);
+                }
+              });
+            }
+          }
+          if (correctIndices.length === 0) correctIndices = [0, 2];
+          keyVal = correctIndices.map(i => String.fromCharCode(65 + i)).join(', ');
         } else if (type === 'short_answer') {
-          keyArr = keyVal.split(/[,|\/]/).map(k => k.trim()).filter(k => k.length > 0);
-          if (keyArr.length === 0) keyArr = ['Jawaban'];
+          keyArr = cleanKeyRaw.split(/[,|\/]|(?:\bATAU\b)|(?:\bOR\b)/i).map(k => k.trim()).filter(k => k.length > 0);
+          if (keyArr.length === 0) keyArr = [cleanKeyRaw || 'Jawaban'];
+          keyVal = keyArr[0];
         }
 
         parsedQuestions.push({

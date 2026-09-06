@@ -245,10 +245,24 @@ window.FIVIAGroupLevelQuestions = (function() {
     }
 
     // 3. Format correctAnswer / correctAnswers / pairs safely
-    let corrAns = q.correctAnswer;
-    if (!corrAns) {
+    let corrAns = q.correctAnswer !== undefined ? q.correctAnswer : q.correct;
+    if (corrAns !== undefined && corrAns !== null) {
+      corrAns = String(corrAns).trim();
+      if (type === 'multiple_choice' || type === 'true_false') {
+        const letterMatch = corrAns.match(/(?:KUNCI|OPSI|OPTION|JAWABAN)?\s*[\:\.\-\(]*\s*([A-D])(?:\b|[\)\.\:\-]|$)/i);
+        if (letterMatch) {
+          corrAns = letterMatch[1].toUpperCase();
+        } else if (type === 'true_false') {
+          if (/SALAH|FALSE|\bS\b|\bB\b/i.test(corrAns) && !/BENAR|TRUE|\bA\b/i.test(corrAns)) {
+            corrAns = 'B';
+          } else {
+            corrAns = 'A';
+          }
+        }
+      }
+    } else {
       if (type === 'true_false') {
-        corrAns = (q.correct === 0 || q.correct === 'A' || q.correctAnswer === 'BENAR' || q.correct === true) ? 'A' : 'B';
+        corrAns = (q.correct === 0 || q.correct === 'A' || q.correct === true) ? 'A' : 'B';
       } else if (typeof q.correct === 'number') {
         corrAns = String.fromCharCode(65 + q.correct);
       } else {
