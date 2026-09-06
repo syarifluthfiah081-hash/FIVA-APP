@@ -706,65 +706,99 @@ window.FIVIAGroupLevelEngine = (function() {
   }
 
   function downloadWordTemplate() {
-    const templateContent = `==================================================
-TEMPLATE BANK SOAL FISIKA GURU - FIVIA APP
-==================================================
-Petunjuk Guru:
-- Tulis/Simpan soal dalam dokumen Word (.docx) atau Notepad (.txt).
-- Gunakan penanda [JENIS: ...] untuk setiap soal agar aplikasi dapat mengenali format soal.
-- 5 Jenis Soal yang didukung:
-  1. PILIHAN GANDA
-  2. BENAR SALAH
-  3. MENCOCOKKAN
-  4. PILIHAN GANDA KOMPLEKS
-  5. ISIAN SINGKAT
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>Template Soal Guru FIVIA</title>
+        <style>
+          body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; color: #1e293b; }
+          h2 { color: #0284c7; border-bottom: 2px solid #0284c7; padding-bottom: 6px; }
+          .info { background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 10pt; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          th { background-color: #0284c7; color: #ffffff; font-weight: bold; text-align: left; padding: 10px; border: 1px solid #0369a1; }
+          td { padding: 10px; border: 1px solid #cbd5e1; vertical-align: top; }
+          tr:nth-child(even) { background-color: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <h2>📝 TEMPLATE BANK SOAL GURU - VIRTUAL LAB FISIKA FIVIA</h2>
+        <div class="info">
+          <strong>📌 PANDUAN PENGISIAN TABEL SOAL UNTUK GURU:</strong><br>
+          1. Silakan isi atau ubah tabel di bawah ini sesuai soal fisika yang ingin Anda ujikan pada permainan kelompok.<br>
+          2. <strong>Jenis Soal</strong> yang didukung:
+             <ul>
+               <li><code>Pilihan Ganda</code> (Opsi A, B, C, D | Kunci contoh: <strong>B</strong>)</li>
+               <li><code>Benar Salah</code> (Pertanyaan berupa pernyataan | Kunci contoh: <strong>BENAR</strong> atau <strong>SALAH</strong>)</li>
+               <li><code>Mencocokkan</code> (Opsi diisi pasangan: <strong>Panjang = meter</strong> | Kunci: Sesuai Pasangan)</li>
+               <li><code>Pilihan Ganda Kompleks</code> (Opsi A, B, C, D | Kunci centang contoh: <strong>A, C</strong>)</li>
+               <li><code>Isian Singkat</code> (Opsi dikosongkan / - | Kunci teks contoh: <strong>Kelvin</strong>)</li>
+             </ul>
+          3. Simpan file ini di Microsoft Word (.docx atau .doc) lalu unggah kembali ke aplikasi FIVIA!
+        </div>
 
---------------------------------------------------
-CONTOH FORMAT SOAL:
---------------------------------------------------
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 5%;">No</th>
+              <th style="width: 18%;">Jenis Soal</th>
+              <th style="width: 32%;">Pertanyaan / Soal Fisika</th>
+              <th style="width: 22%;">Opsi Jawaban / Pasangan</th>
+              <th style="width: 10%;">Kunci Jawaban</th>
+              <th style="width: 13%;">Penjelasan / Pembahasan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><b>Pilihan Ganda</b></td>
+              <td>Manakah di bawah ini yang merupakan besaran fisika?</td>
+              <td>A. Keindahan<br>B. Panjang<br>C. Warna<br>D. Kebersihan</td>
+              <td><b>B</b></td>
+              <td>Panjang adalah besaran fisika karena dapat diukur dan dinyatakan dengan angka.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><b>Benar Salah</b></td>
+              <td>PERNYATAAN: Rasa dingin mengalir masuk ke dalam benda hangat saat disentuh.</td>
+              <td>A. BENAR<br>B. SALAH</td>
+              <td><b>SALAH</b></td>
+              <td>Dingin bukan energi. Kalor (panas) yang mengalir keluar dari benda hangat ke lingkungan.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><b>Mencocokkan</b></td>
+              <td>Pasangkan besaran fisika berikut dengan satuan SI yang tepat:</td>
+              <td>Massa = kg<br>Panjang = meter<br>Waktu = detik</td>
+              <td>Sesuai Pasangan</td>
+              <td>Satuan SI massa adalah kg, panjang adalah meter, dan waktu adalah detik.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><b>Pilihan Ganda Kompleks</b></td>
+              <td>Manakah di bawah ini yang SELURUHNYA merupakan besaran pokok SI? (Pilih semua jawaban benar)</td>
+              <td>A. Panjang<br>B. Gaya<br>C. Massa<br>D. Kecepatan</td>
+              <td><b>A, C</b></td>
+              <td>Panjang dan Massa adalah besaran pokok SI. Gaya dan Kecepatan adalah besaran turunan.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><b>Isian Singkat</b></td>
+              <td>Apakah nama satuan standar internasional (SI) untuk suhu mutlak?</td>
+              <td>-</td>
+              <td><b>Kelvin</b></td>
+              <td>Kelvin (K) adalah satuan standar internasional untuk suhu mutlak.</td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
 
-[JENIS: PILIHAN GANDA]
-SOAL: Seorang siswa beranggapan bahwa Kalor dan Suhu adalah hal yang sama. Bagaimanakah penjelasan ilmiah yang tepat?
-OPSI A: Kalor dan Suhu adalah besaran yang sama.
-OPSI B: Suhu mengukur derajat panas, sedangkan Kalor adalah energi panas yang berpindah dari suhu tinggi ke suhu rendah.
-OPSI C: Kalor mengalir dari benda dingin ke benda hangat.
-OPSI D: Suhu tidak memiliki satuan SI.
-KUNCI: B
-PENJELASAN: Suhu adalah ukuran derajat panas (K/°C), sedangkan kalor adalah energi panas yang berpindah secara alami dari temperatur tinggi ke temperatur lebih rendah.
-
-[JENIS: BENAR SALAH]
-SOAL: Rasa dingin dapat mengalir masuk ke dalam benda hangat saat tangan menyentuh es batu.
-OPSI A: BENAR
-OPSI B: SALAH
-KUNCI: B
-PENJELASAN: Rasa dingin bukan energi yang mengalir, melainkan kalor dari tubuh yang mengalir keluar ke es batu.
-
-[JENIS: MENCOCOKKAN]
-SOAL: Pasangkan besaran fisika di sebelah kiri dengan satuan SI di sebelah kanan:
-PASANGAN 1: Massa = kg
-PASANGAN 2: Panjang = meter
-PASANGAN 3: Waktu = detik
-PENJELASAN: Satuan SI massa adalah kg, panjang adalah meter, dan waktu adalah detik.
-
-[JENIS: PILIHAN GANDA KOMPLEKS]
-SOAL: Manakah yang termasuk besaran pokok SI? (Pilih semua yang benar)
-OPSI A: Massa
-OPSI B: Gaya
-OPSI C: Waktu
-OPSI D: Energi
-KUNCI: A, C
-PENJELASAN: Massa dan Waktu adalah besaran pokok. Gaya dan Energi adalah besaran turunan.
-
-[JENIS: ISIAN SINGKAT]
-SOAL: Apakah nama satuan standar internasional (SI) untuk suhu mutlak?
-KUNCI: Kelvin
-PENJELASAN: Kelvin (K) adalah satuan standar internasional untuk suhu mutlak.
-`;
-
-    const blob = new Blob([templateContent], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'Template_Soal_Guru_FIVIA.txt';
+    link.download = 'Template_Soal_Guru_FIVIA.doc';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -782,15 +816,15 @@ PENJELASAN: Kelvin (K) adalah satuan standar internasional untuk suhu mutlak.
       <div style="max-width: 850px; margin: 0 auto; background: rgba(30,41,59,0.95); border: 3px solid var(--fq-cyan); border-radius: 28px; padding: 32px; box-shadow: 0 0 50px rgba(6,182,212,0.3); text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid var(--fq-border-cyan); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
           <div>
-            <h1 style="font-size: 2rem; font-weight: 900; color: #fff; margin: 0;">📝 UPLOAD SOAL WORD GURU (.docx)</h1>
-            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 0.95rem;">Buat bank soal fisika di Word, unduh template, dan unggah langsung ke aplikasi!</div>
+            <h1 style="font-size: 2rem; font-weight: 900; color: #fff; margin: 0;">📝 UPLOAD SOAL WORD GURU (.docx / .doc)</h1>
+            <div style="color: var(--fq-cyan); font-weight: 800; font-size: 0.95rem;">Isi bank soal fisika pada tabel Word, unduh template, dan unggah langsung ke aplikasi!</div>
           </div>
           <button class="fq-btn fq-btn-danger" style="min-height: 44px; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.closeWordImportModal()">✖ TUTUP</button>
         </div>
 
         <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
           <button class="fq-btn fq-btn-emerald" style="padding: 12px 20px; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.downloadWordTemplate()">
-            <i class="fas fa-download"></i> 📥 DOWNLOAD TEMPLATE WORD / TXT
+            <i class="fas fa-download"></i> 📥 DOWNLOAD TEMPLATE WORD TABEL (.doc)
           </button>
           <button class="fq-btn fq-btn-outline" style="padding: 12px 20px; font-weight: 800;" onclick="const guide = document.getElementById('fq-word-format-guide'); guide.style.display = guide.style.display === 'none' ? 'block' : 'none';">
             <i class="fas fa-info-circle"></i> 📋 LIHAT PANDUAN FORMAT WORD
@@ -798,37 +832,15 @@ PENJELASAN: Kelvin (K) adalah satuan standar internasional untuk suhu mutlak.
         </div>
 
         <!-- Sample Format Preview Box -->
-        <div id="fq-word-format-guide" style="display: none; background: rgba(15,23,42,0.8); border: 2px dashed var(--fq-amber); border-radius: 16px; padding: 20px; margin-bottom: 24px; font-family: monospace; font-size: 0.88rem; color: #e2e8f0; max-height: 250px; overflow-y: auto; white-space: pre-wrap;">
-[JENIS: PILIHAN GANDA]
-SOAL: Kalor dan Suhu adalah...
-OPSI A: Besaran yang sama
-OPSI B: Suhu adalah derajat panas, Kalor adalah energi panas
-KUNCI: B
-PENJELASAN: Suhu mengukur derajat panas, kalor adalah energi berpindah.
-
-[JENIS: BENAR SALAH]
-SOAL: Rasa dingin mengalir masuk ke benda hangat.
-KUNCI: SALAH
-PENJELASAN: Kalor mengalir keluar dari benda hangat.
-
-[JENIS: MENCOCOKKAN]
-SOAL: Pasangkan besaran dan satuan SI:
-PASANGAN 1: Massa = kg
-PASANGAN 2: Waktu = detik
-PENJELASAN: Satuan SI massa kg, waktu detik.
-
-[JENIS: PILIHAN GANDA KOMPLEKS]
-SOAL: Manakah besaran pokok SI?
-OPSI A: Massa
-OPSI B: Gaya
-OPSI C: Waktu
-KUNCI: A, C
-PENJELASAN: Massa dan Waktu adalah besaran pokok.
-
-[JENIS: ISIAN SINGKAT]
-SOAL: Satuan SI suhu mutlak adalah...
-KUNCI: Kelvin
-PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
+        <div id="fq-word-format-guide" style="display: none; background: rgba(15,23,42,0.8); border: 2px dashed var(--fq-amber); border-radius: 16px; padding: 20px; margin-bottom: 24px; font-size: 0.9rem; color: #e2e8f0; max-height: 280px; overflow-y: auto;">
+          <strong style="color: var(--fq-amber);">📋 FORMAT TABEL DOKUMEN WORD (.docx / .doc):</strong><br><br>
+          Tabel Word terdiri dari 6 kolom utama:<br>
+          1. <b>No</b> (Angka urut 1, 2, 3...)<br>
+          2. <b>Jenis Soal</b> (Pilihan Ganda / Benar Salah / Mencocokkan / Pilihan Ganda Kompleks / Isian Singkat)<br>
+          3. <b>Pertanyaan / Soal Fisika</b> (Teks lengkap pertanyaan)<br>
+          4. <b>Opsi Jawaban / Pasangan</b> (Format <code>A. ...</code> <code>B. ...</code> atau <code>Panjang = meter</code>)<br>
+          5. <b>Kunci Jawaban</b> (Contoh: <code>B</code>, <code>BENAR</code>, <code>SALAH</code>, <code>A, C</code>, atau <code>Kelvin</code>)<br>
+          6. <b>Penjelasan / Pembahasan</b> (Penjelasan ilmiah fisika)
         </div>
 
         <!-- Target Module Dropdown Selector -->
@@ -855,14 +867,14 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
         <!-- File Select Input -->
         <div style="background: rgba(15,23,42,0.7); border: 2.5px dashed var(--fq-cyan); border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 24px;">
           <i class="fas fa-file-word" style="font-size: 3.5rem; color: var(--fq-cyan); margin-bottom: 12px;"></i>
-          <h3 style="color: #fff; font-size: 1.2rem; font-weight: 900; margin: 0 0 8px 0;">PILIH DOKUMEN WORD (.docx) ATAU TXT</h3>
-          <p style="color: var(--fq-text-muted); font-size: 0.9rem; margin-bottom: 16px;">Unggah file .docx buatan Anda di Microsoft Word</p>
-          <input type="file" id="fq-word-file-input" accept=".docx,.txt,.json" style="display: block; margin: 0 auto; color: #fff; font-weight: 800;" />
+          <h3 style="color: #fff; font-size: 1.2rem; font-weight: 900; margin: 0 0 8px 0;">PILIH DOKUMEN WORD (.docx / .doc / .html)</h3>
+          <p style="color: var(--fq-text-muted); font-size: 0.9rem; margin-bottom: 16px;">Unggah file Word bertabel yang telah Anda buat di Microsoft Word</p>
+          <input type="file" id="fq-word-file-input" accept=".docx,.doc,.html,.txt" style="display: block; margin: 0 auto; color: #fff; font-weight: 800;" />
         </div>
 
         <!-- Submit Button -->
         <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 60px; font-size: 1.25rem; font-weight: 900;" onclick="window.FIVIAGroupLevelEngine.processWordImportFile()">
-          🚀 PROSES DOKUMEN WORD &amp; SIMPAN BANK SOAL
+          🚀 PROSES DOKUMEN WORD TABEL &amp; SIMPAN BANK SOAL
         </button>
       </div>
     `;
@@ -881,7 +893,7 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
     const moduleNameInput = document.getElementById('fq-word-module-name');
 
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-      alert('⚠️ Silakan pilih file Word (.docx) atau Text (.txt) terlebih dahulu!');
+      alert('⚠️ Silakan pilih file Word (.docx / .doc) terlebih dahulu!');
       return;
     }
 
@@ -898,19 +910,25 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
 
     if (file.name.endsWith('.docx')) {
       if (typeof window.mammoth === 'undefined') {
-        alert('⚠️ Pustaka pembaca Word belum dimuat. Mohon pastikan koneksi internet aktif untuk memuat Mammoth.js!');
+        alert('⚠️ Pustaka pembaca Word belum dimuat. Mohon pastikan koneksi internet aktif!');
         return;
       }
       const reader = new FileReader();
       reader.onload = function(e) {
         const arrayBuffer = e.target.result;
-        window.mammoth.extractRawText({ arrayBuffer: arrayBuffer })
-          .then(function(result) {
-            const rawText = result.value;
-            parseAndSaveWordQuestions(rawText, selectedModId, moduleTitle);
+        window.mammoth.convertToHtml({ arrayBuffer: arrayBuffer })
+          .then(function(htmlResult) {
+            const htmlText = htmlResult.value;
+            window.mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+              .then(function(textResult) {
+                parseAndSaveWordQuestions(textResult.value, htmlText, selectedModId, moduleTitle);
+              })
+              .catch(function() {
+                parseAndSaveWordQuestions('', htmlText, selectedModId, moduleTitle);
+              });
           })
           .catch(function(err) {
-            console.error('Error extracting Word text:', err);
+            console.error('Error extracting Word HTML:', err);
             alert('❌ Gagal membaca dokumen Word (.docx): ' + err.message);
           });
       };
@@ -918,124 +936,252 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
     } else {
       const reader = new FileReader();
       reader.onload = function(e) {
-        const rawText = e.target.result;
-        parseAndSaveWordQuestions(rawText, selectedModId, moduleTitle);
+        const rawContent = e.target.result;
+        parseAndSaveWordQuestions(rawContent, rawContent, selectedModId, moduleTitle);
       };
       reader.readAsText(file);
     }
   }
 
-  function parseAndSaveWordQuestions(text, selectedModId, moduleTitle) {
-    if (!text || text.trim().length === 0) {
-      alert('⚠️ Dokumen Word kosong atau tidak berisi teks!');
-      return;
+  function parseWordHtmlTable(htmlText) {
+    if (!htmlText || !htmlText.includes('<tr')) return [];
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const rows = doc.querySelectorAll('tr');
+      const parsedQuestions = [];
+
+      rows.forEach((row, rIdx) => {
+        const cells = row.querySelectorAll('th, td');
+        if (cells.length < 3) return;
+
+        const cellTexts = Array.from(cells).map(c => c.innerText ? c.innerText.trim() : c.textContent.trim());
+        const firstCell = (cellTexts[0] || '').toUpperCase();
+        if (firstCell.includes('NO') || firstCell.includes('JENIS') || firstCell.includes('SOAL') || firstCell.includes('PERTANYAAN')) {
+          if (rIdx === 0 || firstCell.includes('PERTANYAAN')) return;
+        }
+
+        let jenisText = '';
+        let questionText = '';
+        let optionsText = '';
+        let keyText = '';
+        let explanationText = '';
+
+        if (cellTexts.length >= 6) {
+          jenisText = cellTexts[1];
+          questionText = cellTexts[2];
+          optionsText = cellTexts[3];
+          keyText = cellTexts[4];
+          explanationText = cellTexts[5];
+        } else if (cellTexts.length >= 5) {
+          jenisText = cellTexts[0];
+          questionText = cellTexts[1];
+          optionsText = cellTexts[2];
+          keyText = cellTexts[3];
+          explanationText = cellTexts[4];
+        } else if (cellTexts.length >= 4) {
+          jenisText = cellTexts[0];
+          questionText = cellTexts[1];
+          optionsText = cellTexts[2];
+          keyText = cellTexts[3];
+        }
+
+        if (!questionText || questionText.trim().length === 0) return;
+
+        let type = 'multiple_choice';
+        const jUpper = jenisText.toUpperCase();
+        if (jUpper.includes('BENAR') || jUpper.includes('SALAH') || jUpper === 'BS' || jUpper.includes('TRUE')) {
+          type = 'true_false';
+        } else if (jUpper.includes('COCOK') || jUpper.includes('JODOH') || jUpper.includes('MATCH')) {
+          type = 'matching';
+        } else if (jUpper.includes('KOMPLEKS') || jUpper.includes('CENTANG') || jUpper.includes('MULTIPLE')) {
+          type = 'multiple_select';
+        } else if (jUpper.includes('ISIAN') || jUpper.includes('SINGKAT') || jUpper.includes('SHORT')) {
+          type = 'short_answer';
+        } else if (jUpper.includes('GANDA') || jUpper.includes('PG') || jUpper.includes('CHOICE')) {
+          type = 'multiple_choice';
+        }
+
+        const options = [];
+        if (type === 'multiple_choice' || type === 'true_false' || type === 'multiple_select') {
+          const lines = optionsText.split(/\n|<br\s*\/?>/i);
+          lines.forEach(line => {
+            const m = line.trim().match(/^([A-D])[\.\:\)]\s*(.*)/i);
+            if (m) {
+              options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
+            }
+          });
+          if (options.length === 0 && optionsText.length > 0) {
+            const optMatches = optionsText.matchAll(/([A-D])[\.\:\)]\s*([^A-D\.\:\)]+)/gi);
+            for (const om of optMatches) {
+              options.push({ id: om[1].toUpperCase(), label: om[2].trim() });
+            }
+          }
+          if (type === 'true_false' && options.length === 0) {
+            options.push({ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' });
+          }
+        }
+
+        const pairs = [];
+        if (type === 'matching') {
+          const lines = optionsText.split(/\n|<br\s*\/?>/i);
+          lines.forEach(line => {
+            if (line.includes('=')) {
+              const parts = line.split('=');
+              if (parts.length >= 2) {
+                pairs.push({ left: parts[0].trim(), right: parts.slice(1).join('=').trim() });
+              }
+            }
+          });
+          if (pairs.length === 0) {
+            pairs.push({ left: 'Besaran A', right: 'Satuan A' });
+          }
+        }
+
+        let keyVal = keyText.trim();
+        let keyArr = [keyVal];
+        let correctIndices = [];
+
+        if (type === 'true_false') {
+          if (/SALAH|B/i.test(keyVal)) keyVal = 'B';
+          else keyVal = 'A';
+        } else if (type === 'multiple_select') {
+          const uppercaseKey = keyVal.toUpperCase();
+          options.forEach((opt, oIdx) => {
+            if (uppercaseKey.includes(opt.id)) correctIndices.push(oIdx);
+          });
+          if (correctIndices.length === 0) correctIndices = [0];
+        } else if (type === 'short_answer') {
+          keyArr = keyVal.split(/[,|\/]/).map(k => k.trim()).filter(k => k.length > 0);
+          if (keyArr.length === 0) keyArr = ['Jawaban'];
+        }
+
+        parsedQuestions.push({
+          id: `w_q_${Date.now()}_${parsedQuestions.length + 1}`,
+          type: type,
+          question: questionText,
+          options: options.length > 0 ? options : undefined,
+          pairs: pairs.length > 0 ? pairs : undefined,
+          correctAnswer: keyVal,
+          correct: keyVal,
+          correctAnswers: (type === 'multiple_select') ? correctIndices : (type === 'short_answer') ? keyArr : undefined,
+          explanation: (explanationText && explanationText.trim().length > 0) ? explanationText.trim() : 'Pembahasan disiapkan oleh Guru.'
+        });
+      });
+
+      return parsedQuestions;
+    } catch (e) {
+      console.error('Error parsing Word HTML table:', e);
+      return [];
+    }
+  }
+
+  function parseAndSaveWordQuestions(text, htmlText, selectedModId, moduleTitle) {
+    let parsedQuestions = parseWordHtmlTable(htmlText);
+
+    // Fallback to text block regex parsing if no HTML table was detected
+    if (parsedQuestions.length === 0 && text && text.trim().length > 0) {
+      const blocks = text.split(/(?=\[JENIS:|\nSOAL:)/i).filter(b => b && b.trim().length > 0);
+      blocks.forEach((block, idx) => {
+        const bText = block.trim();
+        if (!bText.includes('SOAL:')) return;
+
+        let type = 'multiple_choice';
+        if (/JENIS:\s*BENAR\s*SALAH/i.test(bText)) type = 'true_false';
+        else if (/JENIS:\s*MENCOCOKKAN/i.test(bText)) type = 'matching';
+        else if (/JENIS:\s*PILIHAN\s*GANDA\s*KOMPLEKS/i.test(bText)) type = 'multiple_select';
+        else if (/JENIS:\s*ISIAN\s*SINGKAT/i.test(bText)) type = 'short_answer';
+
+        const qMatch = bText.match(/SOAL:\s*([\s\S]*?)(?=\nOPSI|\nPASANGAN|\nKUNCI|\nPENJELASAN|$)/i);
+        const questionText = qMatch ? qMatch[1].trim() : `Soal ${idx + 1}`;
+
+        const expMatch = bText.match(/PENJELASAN:\s*([\s\S]*?)(?=\n\[JENIS:|\nSOAL:|$)/i);
+        const explanationText = expMatch ? expMatch[1].trim() : 'Pembahasan disiapkan oleh Guru.';
+
+        if (type === 'multiple_choice' || type === 'true_false') {
+          const options = [];
+          const optMatches = bText.matchAll(/OPSI\s*([A-D]):\s*(.*?)(?=\nOPSI|\nKUNCI|\nPENJELASAN|$)/gi);
+          for (const m of optMatches) {
+            options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
+          }
+          if (options.length === 0) {
+            options.push({ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' });
+          }
+
+          const kMatch = bText.match(/KUNCI:\s*([A-D]|BENAR|SALAH)/i);
+          let key = kMatch ? kMatch[1].trim().toUpperCase() : 'A';
+          if (type === 'true_false') {
+            if (key === 'SALAH' || key === 'B') key = 'B';
+            else key = 'A';
+          }
+
+          parsedQuestions.push({
+            id: `w_q_${Date.now()}_${idx}`,
+            type: type,
+            question: questionText,
+            options: options,
+            correctAnswer: key,
+            correct: key,
+            explanation: explanationText
+          });
+        } else if (type === 'short_answer') {
+          const kMatch = bText.match(/KUNCI:\s*(.*?)(?=\nPENJELASAN|$)/i);
+          const keyVal = kMatch ? kMatch[1].trim() : 'Jawaban';
+          const keyArr = keyVal.split(/[,|\/]/).map(k => k.trim());
+
+          parsedQuestions.push({
+            id: `w_q_${Date.now()}_${idx}`,
+            type: type,
+            question: questionText,
+            correctAnswers: keyArr,
+            correctAnswer: keyArr[0],
+            explanation: explanationText
+          });
+        } else if (type === 'multiple_select') {
+          const options = [];
+          const optMatches = bText.matchAll(/OPSI\s*([A-D]):\s*(.*?)(?=\nOPSI|\nKUNCI|\nPENJELASAN|$)/gi);
+          for (const m of optMatches) {
+            options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
+          }
+
+          const kMatch = bText.match(/KUNCI:\s*(.*?)(?=\nPENJELASAN|$)/i);
+          const keyStr = kMatch ? kMatch[1].trim().toUpperCase() : 'A';
+          const correctIndices = [];
+          options.forEach((opt, oIdx) => {
+            if (keyStr.includes(opt.id)) correctIndices.push(oIdx);
+          });
+
+          parsedQuestions.push({
+            id: `w_q_${Date.now()}_${idx}`,
+            type: type,
+            question: questionText,
+            options: options,
+            correctAnswers: correctIndices.length > 0 ? correctIndices : [0],
+            explanation: explanationText
+          });
+        } else if (type === 'matching') {
+          const pairs = [];
+          const pairMatches = bText.matchAll(/PASANGAN\s*\d*:\s*(.*?)\s*=\s*(.*?)(?=\nPASANGAN|\nPENJELASAN|$)/gi);
+          for (const m of pairMatches) {
+            pairs.push({ left: m[1].trim(), right: m[2].trim() });
+          }
+          if (pairs.length === 0) {
+            pairs.push({ left: 'Besaran A', right: 'Satuan A' });
+          }
+
+          parsedQuestions.push({
+            id: `w_q_${Date.now()}_${idx}`,
+            type: type,
+            question: questionText,
+            pairs: pairs,
+            explanation: explanationText
+          });
+        }
+      });
     }
 
-    const blocks = text.split(/(?=\[JENIS:|\nSOAL:)/i).filter(b => b && b.trim().length > 0);
-    const parsedQuestions = [];
-
-    blocks.forEach((block, idx) => {
-      const bText = block.trim();
-      if (!bText.includes('SOAL:')) return;
-
-      let type = 'multiple_choice';
-      if (/JENIS:\s*BENAR\s*SALAH/i.test(bText)) type = 'true_false';
-      else if (/JENIS:\s*MENCOCOKKAN/i.test(bText)) type = 'matching';
-      else if (/JENIS:\s*PILIHAN\s*GANDA\s*KOMPLEKS/i.test(bText)) type = 'multiple_select';
-      else if (/JENIS:\s*ISIAN\s*SINGKAT/i.test(bText)) type = 'short_answer';
-      else if (/JENIS:\s*PILIHAN\s*GANDA/i.test(bText)) type = 'multiple_choice';
-
-      // Extract Question Text
-      const qMatch = bText.match(/SOAL:\s*([\s\S]*?)(?=\nOPSI|\nPASANGAN|\nKUNCI|\nPENJELASAN|$)/i);
-      const questionText = qMatch ? qMatch[1].trim() : `Soal ${idx + 1}`;
-
-      // Extract Explanation
-      const expMatch = bText.match(/PENJELASAN:\s*([\s\S]*?)(?=\n\[JENIS:|\nSOAL:|$)/i);
-      const explanationText = expMatch ? expMatch[1].trim() : 'Pembahasan disiapkan oleh Guru.';
-
-      if (type === 'multiple_choice' || type === 'true_false') {
-        const options = [];
-        const optMatches = bText.matchAll(/OPSI\s*([A-D]):\s*(.*?)(?=\nOPSI|\nKUNCI|\nPENJELASAN|$)/gi);
-        for (const m of optMatches) {
-          options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
-        }
-        if (options.length === 0) {
-          options.push({ id: 'A', label: 'BENAR' }, { id: 'B', label: 'SALAH' });
-        }
-
-        const kMatch = bText.match(/KUNCI:\s*([A-D]|BENAR|SALAH)/i);
-        let key = kMatch ? kMatch[1].trim().toUpperCase() : 'A';
-        if (type === 'true_false') {
-          if (key === 'SALAH' || key === 'B') key = 'B';
-          else key = 'A';
-        }
-
-        parsedQuestions.push({
-          id: `w_q_${Date.now()}_${idx}`,
-          type: type,
-          question: questionText,
-          options: options,
-          correctAnswer: key,
-          correct: key,
-          explanation: explanationText
-        });
-      } else if (type === 'short_answer') {
-        const kMatch = bText.match(/KUNCI:\s*(.*?)(?=\nPENJELASAN|$)/i);
-        const keyVal = kMatch ? kMatch[1].trim() : 'Jawaban';
-        const keyArr = keyVal.split(/[,|\/]/).map(k => k.trim());
-
-        parsedQuestions.push({
-          id: `w_q_${Date.now()}_${idx}`,
-          type: type,
-          question: questionText,
-          correctAnswers: keyArr,
-          correctAnswer: keyArr[0],
-          explanation: explanationText
-        });
-      } else if (type === 'multiple_select') {
-        const options = [];
-        const optMatches = bText.matchAll(/OPSI\s*([A-D]):\s*(.*?)(?=\nOPSI|\nKUNCI|\nPENJELASAN|$)/gi);
-        for (const m of optMatches) {
-          options.push({ id: m[1].toUpperCase(), label: m[2].trim() });
-        }
-
-        const kMatch = bText.match(/KUNCI:\s*(.*?)(?=\nPENJELASAN|$)/i);
-        const keyStr = kMatch ? kMatch[1].trim().toUpperCase() : 'A';
-        const correctIndices = [];
-        options.forEach((opt, oIdx) => {
-          if (keyStr.includes(opt.id)) correctIndices.push(oIdx);
-        });
-
-        parsedQuestions.push({
-          id: `w_q_${Date.now()}_${idx}`,
-          type: type,
-          question: questionText,
-          options: options,
-          correctAnswers: correctIndices.length > 0 ? correctIndices : [0],
-          explanation: explanationText
-        });
-      } else if (type === 'matching') {
-        const pairs = [];
-        const pairMatches = bText.matchAll(/PASANGAN\s*\d*:\s*(.*?)\s*=\s*(.*?)(?=\nPASANGAN|\nPENJELASAN|$)/gi);
-        for (const m of pairMatches) {
-          pairs.push({ left: m[1].trim(), right: m[2].trim() });
-        }
-        if (pairs.length === 0) {
-          pairs.push({ left: 'Besaran A', right: 'Satuan A' });
-        }
-
-        parsedQuestions.push({
-          id: `w_q_${Date.now()}_${idx}`,
-          type: type,
-          question: questionText,
-          pairs: pairs,
-          explanation: explanationText
-        });
-      }
-    });
-
     if (parsedQuestions.length === 0) {
-      alert('⚠️ Tidak dapat mendeteksi format soal pada dokumen Word. Pastikan mengikuti penanda [JENIS: ...] dan SOAL:!');
+      alert('⚠️ Tidak dapat membaca tabel atau format soal pada dokumen Word. Mohon unduh Template Word (.doc) bertabel!');
       return;
     }
 
@@ -1093,7 +1239,7 @@ PENJELASAN: Kelvin (K) adalah satuan SI suhu mutlak.
 
     setSelectedModule(String(targetModId));
     closeWordImportModal();
-    alert(`🎉 BERHASIL MENG-IMPORT ${parsedQuestions.length} SOAL DARI WORD DOKUMEN!\n\nBank soal untuk "${moduleTitle}" telah berhasil disimpan dan otomatis terpilih untuk permainan.`);
+    alert(`🎉 BERHASIL MENG-IMPORT ${parsedQuestions.length} SOAL DARI TABEL DOKUMEN WORD!\n\nBank soal untuk "${moduleTitle}" telah berhasil disimpan dan otomatis terpilih untuk permainan.`);
     renderLevelMapUI();
   }
 

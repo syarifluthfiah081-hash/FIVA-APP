@@ -319,7 +319,28 @@ window.FIVIAGroupLevelQuestions = (function() {
       }
 
       if (customQuiz && customQuiz.questions && customQuiz.questions.length > 0) {
-        pool = customQuiz.questions.map(q => formatQuestionForGroupPlay(q, lvlKey));
+        // Filter questions matching target level format:
+        // LEVEL_01 -> multiple_choice
+        // LEVEL_02 -> true_false
+        // LEVEL_03 -> matching
+        // LEVEL_04 -> multiple_select
+        // LEVEL_05 -> short_answer
+        const targetType = lvlKey === 'LEVEL_02' ? 'true_false' :
+                           lvlKey === 'LEVEL_03' ? 'matching' :
+                           lvlKey === 'LEVEL_04' ? 'multiple_select' :
+                           lvlKey === 'LEVEL_05' ? 'short_answer' : 'multiple_choice';
+
+        const matchingQuestions = customQuiz.questions.filter(q => {
+          const t = q.type || q.questionType;
+          if (t === targetType) return true;
+          if (targetType === 'matching' && q.pairs && q.pairs.length > 0) return true;
+          if (targetType === 'multiple_select' && q.correctAnswers && Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'number') return true;
+          if (targetType === 'short_answer' && q.correctAnswers && Array.isArray(q.correctAnswers) && typeof q.correctAnswers[0] === 'string') return true;
+          return false;
+        });
+
+        const listToFormat = matchingQuestions.length > 0 ? matchingQuestions : customQuiz.questions;
+        pool = listToFormat.map(q => formatQuestionForGroupPlay(q, lvlKey));
       } else if (MODULE_QUESTION_BANKS[modIdStr] && MODULE_QUESTION_BANKS[modIdStr][lvlKey] && MODULE_QUESTION_BANKS[modIdStr][lvlKey].length > 0) {
         // 2. Built-in MODULE_QUESTION_BANKS for Modul 1, 2, 3, 4, 5
         pool = MODULE_QUESTION_BANKS[modIdStr][lvlKey].map(q => formatQuestionForGroupPlay(q, lvlKey));
