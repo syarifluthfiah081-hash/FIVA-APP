@@ -393,7 +393,7 @@ window.FIVIAGroupLevelEngine = (function() {
       <div style="background: rgba(15,23,42,0.85); border: 2px solid var(--fq-amber); border-radius: 18px; padding: 18px; margin-bottom: 18px; text-align: left;">
         <h4 style="color: var(--fq-amber); margin: 0 0 8px 0; font-weight: 900; font-size: 1.15rem;"><i class="fas fa-hand-point-right"></i> TUNJUK KELOMPOK LAIN UNTUK MENJAWAB REBOUND:</h4>
         <p style="color: #e2e8f0; margin: 0 0 14px 0; font-size: 0.95rem; line-height: 1.4;">
-          Kelompok saat ini berhak menunjuk kelompok lain untuk mencoba menjawab. <strong>⚠️ Perhatian: Jika kelompok yang ditunjuk MENJAWAB SALAH, Poin Kelompok tersebut akan BERKURANG 10 POIN (-10 POIN)!</strong>
+          Kelompok saat ini berhak menunjuk kelompok lain untuk mencoba menjawab. <strong>⚠️ Perhatian: Jika BENAR mendapat +50 POIN, dan jika SALAH Poin Kelompok akan BERKURANG 50 POIN (-50 POIN)!</strong>
         </p>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           ${groupButtonsHtml}
@@ -638,7 +638,7 @@ window.FIVIAGroupLevelEngine = (function() {
                 👉 DITUNJUK UNTUK MENJAWAB REBOUND: <span style="color: #fff;">${activeReboundGroup.groupName}</span>
               </div>
               <div style="font-size: 0.85rem; color: #e2e8f0; font-weight: 700;">
-                ⚠️ Perhatian: Jika jawaban kelompokmu SALAH, Poin Kelompok berkurang 10 Poin (-10 POIN).
+                ⚠️ Perhatian: Jika BENAR +50 POIN, dan jika SALAH Poin Kelompok berkurang 50 Poin (-50 POIN).
               </div>
             </div>
           ` : ''}
@@ -784,20 +784,20 @@ window.FIVIAGroupLevelEngine = (function() {
         `;
       } else {
         playEnergeticSound('wrong');
-        // -10 Point Penalty for wrong rebound answer
-        currentGrp.score = (currentGrp.score || 0) - 10;
+        // -50 Point Penalty for wrong rebound answer
+        currentGrp.score = (currentGrp.score || 0) - 50;
         localStorage.setItem("fivia_group_play_session", JSON.stringify(sessionState));
-        syncGroupPlayScoreToRoster(currentGrp, -10, 0);
+        syncGroupPlayScoreToRoster(currentGrp, -50, 0);
 
         fb.style.background = 'rgba(244,63,94,0.18)';
         fb.style.border = '2.5px solid var(--fq-rose)';
         fb.innerHTML = `
           <div style="font-weight: 900; font-size: 1.4rem; color: var(--fq-rose); margin-bottom: 8px;">
-            ❌ JAWABAN REBOUND SALAH! POIN ${currentGrp.groupName} BERKURANG 10 POIN (-10 POIN)!
+            ❌ JAWABAN REBOUND SALAH! POIN ${currentGrp.groupName} BERKURANG 50 POIN (-50 POIN)!
           </div>
           <p style="color: #fff; margin: 0 0 16px 0; font-size: 1.05rem; line-height: 1.4;">${q.explanation}</p>
           <div style="font-size: 1.1rem; color: var(--fq-rose); font-weight: 800; margin-bottom: 16px;">
-            ⚠️ TOTAL POIN ${currentGrp.groupName} SEKARANG: ${currentGrp.score} POIN (-10)
+            ⚠️ TOTAL POIN ${currentGrp.groupName} SEKARANG: ${currentGrp.score} POIN (-50)
           </div>
           <button class="fq-btn fq-btn-cyan fq-btn-lg" style="width: 100%; min-height: 56px; font-size: 1.15rem;" onclick="window.FIVIAGroupLevelEngine.nextTurn()">
             ▶ LANJUTKAN KE KELOMPOK SELANJUTNYA &rarr;
