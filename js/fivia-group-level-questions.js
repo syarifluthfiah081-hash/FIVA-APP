@@ -235,6 +235,13 @@ window.FIVIAGroupLevelQuestions = (function() {
         id: typeof opt === 'object' && opt.id ? opt.id : String.fromCharCode(65 + i),
         label: typeof opt === 'string' ? opt : (opt.label || opt.text || '')
       }));
+    } else if (type === 'multiple_choice' || type === 'multiple_select') {
+      opts = [
+        { id: 'A', label: 'Opsi Jawaban A' },
+        { id: 'B', label: 'Opsi Jawaban B' },
+        { id: 'C', label: 'Opsi Jawaban C' },
+        { id: 'D', label: 'Opsi Jawaban D' }
+      ];
     }
 
     // 3. Format correctAnswer / correctAnswers / pairs safely

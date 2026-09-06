@@ -955,10 +955,21 @@ window.FIVIAGroupLevelEngine = (function() {
         const cells = row.querySelectorAll('th, td');
         if (cells.length < 3) return;
 
-        const cellTexts = Array.from(cells).map(c => c.innerText ? c.innerText.trim() : c.textContent.trim());
-        const firstCell = (cellTexts[0] || '').toUpperCase();
-        if (firstCell.includes('NO') || firstCell.includes('JENIS') || firstCell.includes('SOAL') || firstCell.includes('PERTANYAAN')) {
-          if (rIdx === 0 || firstCell.includes('PERTANYAAN')) return;
+        const cellTexts = Array.from(cells).map(c => (c.innerText || c.textContent || '').trim());
+        const fullRowText = cellTexts.join(' ').toUpperCase();
+
+        // Skip header rows, instruction rows, and table headers
+        if (
+          fullRowText.includes('PERTANYAAN / SOAL') ||
+          fullRowText.includes('PERTANYAAN/SOAL') ||
+          fullRowText.includes('OPSI JAWABAN') ||
+          fullRowText.includes('KUNCI JAWABAN') ||
+          fullRowText.includes('PENJELASAN / PEMBAHASAN') ||
+          fullRowText.includes('PANDUAN PENGISIAN') ||
+          fullRowText.includes('TEMPLATE BANK SOAL') ||
+          fullRowText.includes('JENIS SOAL')
+        ) {
+          return;
         }
 
         let jenisText = '';
@@ -987,6 +998,16 @@ window.FIVIAGroupLevelEngine = (function() {
         }
 
         if (!questionText || questionText.trim().length === 0) return;
+
+        const qUpper = questionText.toUpperCase();
+        if (
+          qUpper.includes('PERTANYAAN / SOAL') ||
+          qUpper.includes('PERTANYAAN/SOAL') ||
+          qUpper === 'PERTANYAAN' ||
+          qUpper === 'SOAL FISIKA'
+        ) {
+          return;
+        }
 
         let type = 'multiple_choice';
         const jUpper = jenisText.toUpperCase();
