@@ -1574,13 +1574,24 @@ function renderClassManagement() {
   // Apply search/filters
   const searchEl = document.getElementById("search-student");
   const filterEl = document.getElementById("filter-class");
-  const searchVal = searchEl ? searchEl.value.toLowerCase().trim() : '';
-  const classVal = filterEl ? filterEl.value : '';
+  
+  // Clear browser-autofilled email (e.g. admin@sekolah.sch.id) from search input
+  if (searchEl && searchEl.value) {
+    const rawVal = searchEl.value.trim().toLowerCase();
+    if (user && user.email && (rawVal === user.email.toLowerCase() || rawVal.includes("@sekolah") || rawVal.includes("admin@"))) {
+      searchEl.value = "";
+    }
+  }
+
+  let searchVal = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  if (user && user.email && searchVal === user.email.toLowerCase()) {
+    searchVal = "";
+  }
 
   if (searchVal) {
     students = students.filter(s => 
-      s.name.toLowerCase().includes(searchVal) || 
-      (s.nis && s.nis.includes(searchVal)) || 
+      (s.name && s.name.toLowerCase().includes(searchVal)) || 
+      (s.nis && String(s.nis).includes(searchVal)) || 
       (s.studentCode && s.studentCode.toLowerCase().includes(searchVal))
     );
   }
