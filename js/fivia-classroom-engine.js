@@ -333,11 +333,11 @@ window.FIVIAClassroomEngine = (function() {
   }
 
   function showAddStudentModal() {
-    const name = prompt('Masukkan Nama Lengkap Siswa:', 'Ahmad Fauzan');
+    const name = prompt('Masukkan Nama Lengkap Siswa:', '');
     if (!name) return;
-    const nis = prompt('Masukkan NIS Siswa (String):', '001');
+    const nis = prompt('Masukkan NIS Siswa (String):', '');
     if (!nis) return;
-    const className = prompt('Masukkan Kelas Siswa:', 'X.F.1');
+    const className = prompt('Masukkan Kelas Siswa (contoh: X.F.1):', 'X.F.1');
     if (!className) return;
 
     const studentCode = window.FIVIAExcelImport.generateStudentCode(nis, className);

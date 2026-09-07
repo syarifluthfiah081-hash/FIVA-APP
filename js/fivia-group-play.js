@@ -108,11 +108,20 @@ window.FIVIAGroupPlay = (function() {
 
   function getRosterForClass(classId) {
     const studentMap = new Map();
+    const DUMMY_NAMES_TO_IGNORE = [
+      'pasya ramadhan', 'pasya ramadahan', 'budi santoso', 'sitti aminah', 'siti rahma',
+      'ahmad fauzan', 'citra dewi', 'dinda putri', 'eko prasetyo', 'fajar ramadhan',
+      'gita gutawa', 'hadi wijaya', 'indah permata', 'joko widodo', 'kiki amalia', 'lia lestari'
+    ];
 
-    const addStudent = (s) => {
+    const addStudent = (s, allowFilterDummy = true) => {
       if (!s) return;
       const name = s.name || s.studentName || s.nama;
       if (!name || s.status === 'ARCHIVED') return;
+
+      if (allowFilterDummy && DUMMY_NAMES_TO_IGNORE.includes(name.trim().toLowerCase()) && (s.id === 'usr_siswa' || s.studentId === 'usr_siswa')) {
+        return;
+      }
 
       const key = (s.studentId || s.id || s.studentCode || s.nis || name).toString().trim().toLowerCase();
       if (!studentMap.has(key)) {
@@ -129,50 +138,29 @@ window.FIVIAGroupPlay = (function() {
       }
     };
 
-    // 1. Try FIVIAExcelImport
+    // 1. Primary Source of Truth: Manajemen Kelas (fivia_student_roster)
+    let mainRoster = [];
     if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === 'function') {
-      const imp = window.FIVIAExcelImport.getExistingRoster() || [];
-      imp.forEach(addStudent);
+      mainRoster = window.FIVIAExcelImport.getExistingRoster() || [];
+    }
+    if (!mainRoster || mainRoster.length === 0) {
+      try {
+        const saved = localStorage.getItem('fivia_student_roster');
+        if (saved) mainRoster = JSON.parse(saved);
+      } catch (e) {}
     }
 
-    // 2. Try window.db.getTable('students')
-    if (window.db && typeof window.db.getTable === 'function') {
-      const dbStudents = (window.db.getTable('students') || []).filter(s => !['std_2', 'std_3', 'std_4', 'std_5'].includes(s.id || s.studentId));
-      dbStudents.forEach(addStudent);
+    if (Array.isArray(mainRoster) && mainRoster.length > 0) {
+      mainRoster.forEach(s => addStudent(s, false));
+    } else {
+      // 2. Secondary fallback: check window.db students only if not dummy
+      if (window.db && typeof window.db.getTable === 'function') {
+        const dbStudents = (window.db.getTable('students') || []).filter(s => 
+          s.id !== 'usr_siswa' && s.studentId !== 'usr_siswa' && !DUMMY_NAMES_TO_IGNORE.includes((s.name || s.studentName || '').toLowerCase())
+        );
+        dbStudents.forEach(addStudent);
+      }
     }
-
-    // 3. Try window.db.getTable('users') for role === 'siswa'
-    if (window.db && typeof window.db.getTable === 'function') {
-      const dbUsers = (window.db.getTable('users') || []).filter(u => u.role === 'siswa');
-      dbUsers.forEach(addStudent);
-    }
-
-    // 4. Try localStorage 'fivia_student_roster'
-    try {
-      const saved = localStorage.getItem('fivia_student_roster');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) parsed.forEach(addStudent);
-      }
-    } catch (e) {}
-
-    // 5. Try localStorage 'fivia_classroom_students'
-    try {
-      const saved = localStorage.getItem('fivia_classroom_students');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) parsed.forEach(addStudent);
-      }
-    } catch (e) {}
-
-    // 6. Try localStorage 'vlab_fisika_students'
-    try {
-      const saved = localStorage.getItem('vlab_fisika_students');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) parsed.forEach(addStudent);
-      }
-    } catch (e) {}
 
     let roster = Array.from(studentMap.values());
 

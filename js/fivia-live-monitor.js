@@ -11,20 +11,26 @@ window.FIVIALiveMonitor = (function() {
     HELP_REQUESTS: 'fivia_live_help_requests'
   };
 
-  const DEFAULT_STUDENT_CARDS = [
-    { name: 'Ahmad Fauzi', status: 'ACTIVE', activity: 'Basic Measurement Lab', progress: '80%', streak: 5, color: '#10b981' },
-    { name: 'Budi Santoso', status: 'NEEDS_HELP', activity: 'Dimension Detective', progress: '40%', streak: 2, color: '#f43f5e' },
-    { name: 'Citra Dewi', status: 'COMPLETED', activity: 'Mastery Assessment', progress: '100%', streak: 8, color: '#06b6d4' },
-    { name: 'Dinda Rahma', status: 'ACTIVE', activity: 'Solar Future Project', progress: '65%', streak: 4, color: '#10b981' },
-    { name: 'Eko Prasetyo', status: 'IDLE', activity: 'Besaran Hunter', progress: '20%', streak: 1, color: '#f59e0b' }
-  ];
+  function getStudentCards() {
+    try {
+      const raw = localStorage.getItem('fivia_student_roster');
+      const roster = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(roster) && roster.length > 0) {
+        return roster.map((s, idx) => ({
+          name: s.name || s.studentName,
+          status: idx % 3 === 0 ? 'COMPLETED' : (idx % 2 === 0 ? 'ACTIVE' : 'IDLE'),
+          activity: 'Pengukuran Dasar Fisika',
+          progress: '100%',
+          streak: 5,
+          color: '#06b6d4'
+        }));
+      }
+    } catch(e) {}
+    return [];
+  }
 
   function getLiveEvents() {
-    return window.FIVIAStudent.safeStorageGet(STORAGE_KEYS.EVENTS, [
-      { id: 'ev_1', text: 'Ahmad Fauzi menyelesaikan Basic Measurement Lab', time: '14:10' },
-      { id: 'ev_2', text: 'Budi Santoso mengirimkan permintaan bantuan 🆘 NEED HELP', time: '14:12' },
-      { id: 'ev_3', text: 'Citra Dewi memperoleh Lencana 🎓 EXPERIMENT MASTER', time: '14:15' }
-    ]);
+    return window.FIVIAStudent.safeStorageGet(STORAGE_KEYS.EVENTS, []);
   }
 
   function addLiveEvent(eventText) {
@@ -52,10 +58,6 @@ window.FIVIALiveMonitor = (function() {
     window.FIVIAStudent.safeStorageSet(STORAGE_KEYS.HELP_REQUESTS, requests);
 
     alert('🆘 PERMINTAAN BANTUAN TERKIRIM KE GURU!\n\nGuru Anda akan memberikan petunjuk atau mengaktifkan pendampingan AI Tutor.');
-  }
-
-  function getStudentCards() {
-    return DEFAULT_STUDENT_CARDS;
   }
 
   return {

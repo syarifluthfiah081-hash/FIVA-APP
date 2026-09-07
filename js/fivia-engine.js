@@ -25,10 +25,10 @@ window.FIVIAQuest = (function() {
   };
 
   const DEFAULT_TEAMS = [
-    { id: 't1', name: 'TEAM NEWTON', score: 0, players: [{ name: 'Ahmad', turnsPlayed: 0 }, { name: 'Budi', turnsPlayed: 0 }, { name: 'Citra', turnsPlayed: 0 }] },
-    { id: 't2', name: 'TEAM EINSTEIN', score: 0, players: [{ name: 'Dinda', turnsPlayed: 0 }, { name: 'Eko', turnsPlayed: 0 }, { name: 'Fajar', turnsPlayed: 0 }] },
-    { id: 't3', name: 'TEAM FARADAY', score: 0, players: [{ name: 'Gita', turnsPlayed: 0 }, { name: 'Hadi', turnsPlayed: 0 }, { name: 'Indah', turnsPlayed: 0 }] },
-    { id: 't4', name: 'TEAM GALILEO', score: 0, players: [{ name: 'Joko', turnsPlayed: 0 }, { name: 'Kiki', turnsPlayed: 0 }, { name: 'Lia', turnsPlayed: 0 }] }
+    { id: 't1', name: 'TEAM NEWTON', score: 0, players: [] },
+    { id: 't2', name: 'TEAM EINSTEIN', score: 0, players: [] },
+    { id: 't3', name: 'TEAM FARADAY', score: 0, players: [] },
+    { id: 't4', name: 'TEAM GALILEO', score: 0, players: [] }
   ];
 
   const DEFAULT_SETTINGS = { thinkTime: 10, discussTime: 20, playTime: 30, soundEnabled: true, fullscreen: false };
@@ -967,19 +967,6 @@ window.FIVIAQuest = (function() {
           turnsPlayed: 0
         });
       });
-    } else {
-      const sampleNames = [
-        ['Ahmad Fauzan', 'Budi Santoso', 'Citra Dewi'],
-        ['Dinda Putri', 'Eko Prasetyo', 'Fajar Ramadhan'],
-        ['Gita Gutawa', 'Hadi Wijaya', 'Indah Permata'],
-        ['Joko Widodo', 'Kiki Amalia', 'Lia Lestari']
-      ];
-      for (let t = 0; t < teamCount; t++) {
-        const names = sampleNames[t % 4];
-        names.forEach(n => {
-          teams[t].players.push({ id: 'p_' + Math.random(), name: n, turnsPlayed: 0 });
-        });
-      }
     }
 
     state.teams = teams;

@@ -14,7 +14,7 @@ const SEED_DATA = {
   users: [
     { id: "usr_admin", email: "admin@hidayahstore.edu", password: "admin123", name: "Admin Hidayah", role: "admin" },
     { id: "usr_guru", email: "guru@hidayahstore.edu", password: "guru123", name: "Hidayat, S.Pd., M.Si.", role: "guru" },
-    { id: "usr_siswa", email: "siswa@hidayahstore.edu", password: "siswa123", name: "Pasya Ramadhan", role: "siswa", classId: "cls_x1" }
+    { id: "usr_siswa", email: "siswa@hidayahstore.edu", password: "siswa123", name: "Siswa", role: "siswa", classId: "cls_x1" }
   ],
   classes: [
     { id: "cls_x1", name: "Kelas X-1", teacherId: "usr_guru" },
@@ -22,9 +22,7 @@ const SEED_DATA = {
     { id: "cls_xi1", name: "Kelas XI IPA-1", teacherId: "usr_guru" },
     { id: "cls_xi2", name: "Kelas XI IPA-2", teacherId: "usr_guru" }
   ],
-  students: [
-    { id: "usr_siswa", name: "Pasya Ramadhan", classId: "cls_x1", email: "siswa@hidayahstore.edu" }
-  ],
+  students: [],
   materials: [
     { id: 1, name: "Hakikat Fisika dan Metode Ilmiah", fase: "E", topic: "Definisi fisika, keselamatan kerja laboratorium, metode ilmiah.", equation: "\\text{Metode Ilmiah: Observasi} \\rightarrow \\text{Hipotesis} \\rightarrow \\text{Eksperimen} \\rightarrow \\text{Analisis} \\rightarrow \\text{Kesimpulan}", videoUrl: "https://www.youtube.com/embed/3U_yD1u7W-w", desc: "Materi ini membahas definisi fisika sebagai bagian sains, langkah-langkah penelitian ilmiah secara sistematis, serta aturan keselamatan kerja saat beraktivitas di laboratorium fisika." },
     { id: 2, name: "Pengukuran Dasar Fisika", fase: "E", topic: "Besaran, satuan SI, konversi, dimensi, pengukuran dasar, angka penting.", equation: "x = \\bar{x} \\pm \\Delta x", videoUrl: "https://www.youtube.com/embed/5U7zBscL-C4", desc: "Praktikum dasar fisika untuk melatih keterampilan proses dalam mengukur panjang dan diameter benda menggunakan Mistar, Jangka Sorong, dan Mikrometer Sekrup secara presisi." },
@@ -484,7 +482,7 @@ class LocalDatabase {
 
   init() {
     // Force re-seeding if code has changed
-    const SEED_VERSION = "7.0";
+    const SEED_VERSION = "8.0";
     if (localStorage.getItem(DB_PREFIX + "seed_version") !== SEED_VERSION) {
       localStorage.removeItem(DB_PREFIX + "initialized");
       localStorage.setItem(DB_PREFIX + "seed_version", SEED_VERSION);

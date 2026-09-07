@@ -520,11 +520,9 @@ window.FIVIAExcelImport = (function() {
    */
   function downloadExcelTemplate() {
     const templateData = [
-      { NAMA: "Ahmad Fauzan", NIS: "001", KELAS: "X.F.1" },
-      { NAMA: "Siti Rahma", NIS: "002", KELAS: "X.F.1" },
-      { NAMA: "Budi Santoso", NIS: "003", KELAS: "X.F.1" },
-      { NAMA: "Dinda Putri", NIS: "004", KELAS: "X.F.1" },
-      { NAMA: "Eko Prasetyo", NIS: "005", KELAS: "X.F.1" }
+      { NAMA: "Contoh Siswa 1", NIS: "001", KELAS: "X.F.1" },
+      { NAMA: "Contoh Siswa 2", NIS: "002", KELAS: "X.F.1" },
+      { NAMA: "Contoh Siswa 3", NIS: "003", KELAS: "X.F.1" }
     ];
 
     if (window.XLSX && window.XLSX.utils && window.XLSX.writeFile) {
@@ -540,7 +538,7 @@ window.FIVIAExcelImport = (function() {
     }
 
     // Fallback if XLSX CDN is unavailable
-    const csvContent = "NAMA,NIS,KELAS\nAhmad Fauzan,001,X.F.1\nSiti Rahma,002,X.F.1\nBudi Santoso,003,X.F.1\n";
+    const csvContent = "NAMA,NIS,KELAS\nContoh Siswa 1,001,X.F.1\nContoh Siswa 2,002,X.F.1\nContoh Siswa 3,003,X.F.1\n";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

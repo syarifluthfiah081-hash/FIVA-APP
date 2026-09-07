@@ -62,13 +62,27 @@ window.FIVIASession = (function() {
       startedAt: new Date().toISOString(),
       endedAt: null,
       maxStudents: 36,
-      students: [
-        { studentId: 'STD-101', name: 'Ahmad Dahlan', class: 'X-1', score: 1450, xp: 450, accuracy: 92, masteryLevel: 'MASTER', masteryLabel: 'MASTER — Sangat Menguasai', status: 'MASTER', joinedAt: new Date().toISOString() },
-        { studentId: 'STD-102', name: 'Budi Santoso', class: 'X-1', score: 1200, xp: 380, accuracy: 84, masteryLevel: 'ADVANCED', masteryLabel: 'ADVANCED — Menguasai', status: 'ADVANCED', joinedAt: new Date().toISOString() },
-        { studentId: 'STD-103', name: 'Citra Dewi', class: 'X-1', score: 1100, xp: 340, accuracy: 78, masteryLevel: 'PROFICIENT', masteryLabel: 'PROFICIENT — Cukup Menguasai', status: 'PROFICIENT', joinedAt: new Date().toISOString() },
-        { studentId: 'STD-104', name: 'Dinda Lestari', class: 'X-1', score: 950, xp: 290, accuracy: 68, masteryLevel: 'DEVELOPING', masteryLabel: 'DEVELOPING — Sedang Berkembang', status: 'DEVELOPING', joinedAt: new Date().toISOString() },
-        { studentId: 'STD-105', name: 'Eko Prasetyo', class: 'X-1', score: 720, xp: 210, accuracy: 54, masteryLevel: 'NEEDS_REMEDIATION', masteryLabel: 'NEEDS REMEDIATION — Perlu Penguatan', status: 'REMEDIATION', joinedAt: new Date().toISOString() }
-      ],
+      students: (function() {
+        try {
+          const raw = localStorage.getItem('fivia_student_roster');
+          const roster = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(roster) && roster.length > 0) {
+            return roster.map(s => ({
+              studentId: s.studentId || s.id || ('STD-' + Math.floor(Math.random() * 1000)),
+              name: s.name || s.studentName,
+              class: s.className || s.kelas || 'X-1',
+              score: s.groupPlayScore || 0,
+              xp: s.xp || 0,
+              accuracy: 85,
+              masteryLevel: 'PROFICIENT',
+              masteryLabel: 'PROFICIENT — Cukup Menguasai',
+              status: 'PROFICIENT',
+              joinedAt: new Date().toISOString()
+            }));
+          }
+        } catch(e) {}
+        return [];
+      })(),
       status: 'ACTIVE'
     };
 

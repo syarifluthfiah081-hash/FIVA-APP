@@ -11,41 +11,27 @@ window.FIVIAIntervention = (function() {
     FEEDBACK: 'fivia_classroom_feedback'
   };
 
-  const DEFAULT_INTERVENTIONS = [
-    {
-      id: 'int_01',
-      studentName: 'Budi Santoso',
-      priority: 'HIGH',
-      badgeColor: '#f43f5e',
-      issue: 'Kelemahan pada Analisis Dimensional & Persamaan',
-      recommendation: 'Replay Level 04 Dimension Detective dan konseling AI Tutor.',
-      targetLink: '#quest/dimension-detective',
-      status: 'ACTIVE'
-    },
-    {
-      id: 'int_02',
-      studentName: 'Eko Prasetyo',
-      priority: 'MEDIUM',
-      badgeColor: '#f59e0b',
-      issue: 'Tugas Praktikum Basic Measurement Lab Belum Selesai',
-      recommendation: 'Tugaskan ulang praktikum terpandu dengan batas waktu baru.',
-      targetLink: '#quest/virtual-lab',
-      status: 'ACTIVE'
-    },
-    {
-      id: 'int_03',
-      studentName: 'Citra Dewi',
-      priority: 'ENRICHMENT',
-      badgeColor: '#06b6d4',
-      issue: 'Mastery >95% (Kualifikasi Pengayaan)',
-      recommendation: 'Tugaskan Proyek Real-World Solar Future.',
-      targetLink: '#quest/project-mission',
-      status: 'ACTIVE'
-    }
-  ];
-
   function getInterventions() {
-    return window.FIVIAStudent.safeStorageGet(STORAGE_KEYS.INTERVENTIONS, DEFAULT_INTERVENTIONS);
+    const defaultInterventions = (function() {
+      try {
+        const raw = localStorage.getItem('fivia_student_roster');
+        const roster = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(roster) && roster.length > 0) {
+          return roster.slice(0, 3).map((s, idx) => ({
+            id: 'int_0' + (idx + 1),
+            studentName: s.name || s.studentName,
+            priority: idx === 0 ? 'HIGH' : (idx === 1 ? 'MEDIUM' : 'ENRICHMENT'),
+            badgeColor: idx === 0 ? '#f43f5e' : (idx === 1 ? '#f59e0b' : '#06b6d4'),
+            issue: 'Kelemahan pada Analisis Dimensional & Persamaan',
+            recommendation: 'Replay Level 04 Dimension Detective dan konseling AI Tutor.',
+            targetLink: '#quest/dimension-detective',
+            status: 'ACTIVE'
+          }));
+        }
+      } catch(e) {}
+      return [];
+    })();
+    return window.FIVIAStudent.safeStorageGet(STORAGE_KEYS.INTERVENTIONS, defaultInterventions);
   }
 
   function assignRemediation(studentName, activityLink) {
