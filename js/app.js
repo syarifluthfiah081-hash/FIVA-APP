@@ -112,10 +112,12 @@ function getMenuForRole(role) {
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-kelas"><a href="#kelas"><i class="fas fa-users"></i> <span>Manajemen Kelas</span></a></li>
       <li class="sidebar-menu-item" id="menu-guru-laporan"><a href="#laporan"><i class="fas fa-file-pdf"></i> <span>Laporan Nilai</span></a></li>
+      <li class="sidebar-menu-item" id="menu-guru-management"><a href="#manajemen-guru"><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> <span>Manajemen Guru</span></a></li>
     `;
   } else if (role === "admin") {
     menuHtml = `
       <li class="sidebar-menu-item" id="menu-admin-dashboard"><a href="#dashboard"><i class="fas fa-user-shield"></i> <span>Admin Control</span></a></li>
+      <li class="sidebar-menu-item" id="menu-guru-management"><a href="#manajemen-guru"><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> <span>Manajemen Guru</span></a></li>
       <li class="sidebar-menu-item" id="menu-materi"><a href="#materi"><i class="fas fa-book-open"></i> <span>Materi & Lab</span></a></li>
     `;
   }
@@ -311,6 +313,13 @@ function handleRouting() {
     highlightSidebar("menu-guru-laporan");
     document.getElementById("teacher-reports-section").classList.remove("hidden-section");
     if (window.renderTeacherReports) window.renderTeacherReports();
+  }
+
+  else if (hash === "#manajemen-guru") {
+    if (!user || (user.role !== "guru" && user.role !== "admin")) { window.location.hash = "#dashboard"; return; }
+    highlightSidebar("menu-guru-management");
+    document.getElementById("teacher-management-section").classList.remove("hidden-section");
+    if (window.renderTeacherManagement) window.renderTeacherManagement();
   }
   
   else {

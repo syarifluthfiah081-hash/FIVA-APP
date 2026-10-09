@@ -99,6 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     addStudentForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const name = document.getElementById("add-student-name").value;
+      const nisInput = document.getElementById("add-student-nis") ? document.getElementById("add-student-nis").value.trim() : "";
       const email = document.getElementById("add-student-email").value;
       const classId = document.getElementById("add-student-class").value;
       
@@ -109,12 +110,15 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
+      const assignedNis = nisInput || Math.floor(10000 + Math.random() * 90000).toString();
+
       // Add standard user
       const newUserId = "usr_" + Math.random().toString(36).substr(2, 9);
       users.push({
         id: newUserId,
         email: email,
         password: "password123", // default
+        nis: assignedNis,
         name: name,
         role: "siswa",
         classId: classId
@@ -126,6 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
       students.push({
         id: newUserId,
         name: name,
+        nis: assignedNis,
         classId: classId,
         email: email
       });
@@ -133,8 +138,62 @@ document.addEventListener("DOMContentLoaded", () => {
       
       window.closeAllModals();
       addStudentForm.reset();
-      window.showToast(`Siswa ${name} berhasil didaftarkan dengan kata sandi: password123`);
+      window.showToast(`Siswa ${name} (NIS: ${assignedNis}) berhasil didaftarkan!`);
       renderClassManagement();
+    });
+  }
+
+  // Teacher Management bindings
+  const addTeacherBtn = document.getElementById("btn-open-add-teacher");
+  if (addTeacherBtn) {
+    addTeacherBtn.addEventListener("click", () => {
+      window.openModal("add-teacher-modal");
+    });
+  }
+
+  const searchTeacherInput = document.getElementById("search-teacher");
+  if (searchTeacherInput) {
+    searchTeacherInput.addEventListener("input", () => {
+      if (window.renderTeacherManagement) window.renderTeacherManagement();
+    });
+  }
+
+  const addTeacherForm = document.getElementById("form-add-teacher");
+  if (addTeacherForm) {
+    addTeacherForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("add-teacher-name").value.trim();
+      const email = document.getElementById("add-teacher-email").value.trim();
+      const password = document.getElementById("add-teacher-password").value;
+
+      if (!name || !email || !password) {
+        window.showToast("Semua kolom harus diisi!", "warning");
+        return;
+      }
+
+      const users = window.db.getTable("users") || [];
+      const exists = users.some(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+      if (exists) {
+        window.showToast("Email guru sudah terdaftar!", "danger");
+        return;
+      }
+
+      const newTeacherId = "usr_guru_" + Math.random().toString(36).substr(2, 9);
+      users.push({
+        id: newTeacherId,
+        name: name,
+        email: email,
+        password: password,
+        role: "guru"
+      });
+      window.db.saveTable("users", users);
+
+      window.closeAllModals();
+      addTeacherForm.reset();
+      window.showToast(`Akun guru ${name} berhasil ditambahkan!`);
+      if (typeof window.renderTeacherManagement === 'function') {
+        window.renderTeacherManagement();
+      }
     });
   }
 
@@ -1315,6 +1374,30 @@ function initBesaranGame(containerId = "besaran-game-placeholder") {
   renderAllCards();
 }
 
+// Helper to get total unique student count from all data sources
+function getCombinedStudentsCount() {
+  const excelRoster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
+  const dbStudents = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("students") || [] : [];
+  const localRoster = JSON.parse(localStorage.getItem('fivia_student_roster') || '[]');
+  const localClassStudents = JSON.parse(localStorage.getItem('fivia_classroom_students') || '[]');
+
+  const studentMap = new Map();
+
+  [...excelRoster, ...dbStudents, ...localRoster, ...localClassStudents].forEach(s => {
+    const sId = s.id || s.studentId;
+    const sNis = s.nis || s.studentCode;
+    const sName = s.name || s.studentName;
+    const key = sId || (sNis ? `nis_${sNis}` : (sName ? `name_${sName}` : null));
+    if (key && !['std_2', 'std_3', 'std_4', 'std_5'].includes(key)) {
+      if (!studentMap.has(key)) {
+        studentMap.set(key, s);
+      }
+    }
+  });
+
+  return studentMap.size;
+}
+
 // Teacher Dashboard renderer logic
 function renderTeacherDashboard() {
   updateHeaderUserBadge();
@@ -1322,15 +1405,13 @@ function renderTeacherDashboard() {
   if (!user) return;
   
   const classes = window.db.getTable("classes").filter(c => c.teacherId === user.id);
-  const classIds = classes.map(c => c.id);
-  
-  const allStudents = window.db.getTable("students").filter(s => classIds.includes(s.classId));
   const submissions = window.db.getPendingSubmissions(user.id);
   const pendingCount = submissions.filter(s => s.status === "pending").length;
+  const totalStudentsCount = getCombinedStudentsCount();
 
   document.getElementById("teacher-stat-classes").textContent = classes.length;
   document.getElementById("teacher-stat-pending").textContent = pendingCount;
-  document.getElementById("teacher-stat-students").textContent = allStudents.length;
+  document.getElementById("teacher-stat-students").textContent = totalStudentsCount;
 
   // Render Submissions Table
   const tableBody = document.querySelector("#teacher-submissions-table tbody");
@@ -2153,11 +2234,79 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(updateAllClassDropdowns, 300);
 });
 
+// Teacher Management screen renderer logic
+function renderTeacherManagement() {
+  const users = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("users") || [] : [];
+  const teachers = users.filter(u => u.role === "guru");
+
+  const searchEl = document.getElementById("search-teacher");
+  const searchVal = searchEl ? searchEl.value.toLowerCase().trim() : "";
+
+  let filteredTeachers = teachers;
+  if (searchVal) {
+    filteredTeachers = teachers.filter(t => 
+      (t.name && t.name.toLowerCase().includes(searchVal)) ||
+      (t.email && t.email.toLowerCase().includes(searchVal))
+    );
+  }
+
+  const tableBody = document.querySelector("#teachers-table tbody");
+  if (!tableBody) return;
+  tableBody.innerHTML = "";
+
+  if (filteredTeachers.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 20px;">Tidak ada data akun guru ditemukan. Gunakan tombol <strong>➕ Tambah Akun Guru</strong> di atas.</td></tr>`;
+    return;
+  }
+
+  const currentUser = window.auth ? window.auth.getCurrentUser() : null;
+
+  filteredTeachers.forEach(t => {
+    const row = document.createElement("tr");
+    const isSelf = currentUser && (currentUser.id === t.id || currentUser.email === t.email);
+
+    row.innerHTML = `
+      <td style="font-weight: 600;">${t.name}</td>
+      <td style="font-family: monospace; color: var(--brand-blue);">${t.email}</td>
+      <td><span class="badge badge-blue">Guru Fisika</span></td>
+      <td>
+        ${isSelf ? `<span class="badge badge-success" style="font-size: 0.75rem;">(Akun Anda)</span>` : `
+          <button class="btn btn-outline btn-delete-teacher" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);" data-id="${t.id}" data-name="${t.name}">
+            <i class="fas fa-trash-alt"></i> Hapus
+          </button>
+        `}
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+
+  tableBody.querySelectorAll(".btn-delete-teacher").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const teacherId = btn.getAttribute("data-id");
+      const teacherName = btn.getAttribute("data-name");
+      deleteTeacher(teacherId, teacherName);
+    });
+  });
+}
+
+function deleteTeacher(teacherId, teacherName) {
+  if (confirm(`Apakah Anda yakin ingin menghapus akun guru "${teacherName}"?`)) {
+    let users = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("users") || [] : [];
+    users = users.filter(u => u.id !== teacherId);
+    window.db.saveTable("users", users);
+
+    if (window.showToast) window.showToast(`Akun guru "${teacherName}" berhasil dihapus.`, "success");
+    renderTeacherManagement();
+  }
+}
+
 // Map globals
 window.renderStudentDashboard = renderStudentDashboard;
 window.renderTeacherDashboard = renderTeacherDashboard;
 window.renderClassManagement = renderClassManagement;
 window.renderTeacherReports = renderTeacherReports;
+window.renderTeacherManagement = renderTeacherManagement;
+window.deleteTeacher = deleteTeacher;
 window.renderMaterialsList = renderMaterialsList;
 window.renderMaterialDetail = renderMaterialDetail;
 window.renderCertificatesList = renderCertificatesList;

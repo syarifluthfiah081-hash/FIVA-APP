@@ -1326,6 +1326,34 @@
                 <!-- Injected dynamically -->
               </tbody>
             </table>
+          </section>
+
+      <!-- 5B. GURU MANAGEMENT SECTION -->
+      <section id="teacher-management-section" class="spa-section dashboard-container hidden-section fade-in-section">
+        <div class="glass-panel dashboard-section">
+          <div class="section-header" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+            <h3 class="section-title"><i class="fas fa-chalkboard-teacher" style="color: var(--brand-blue);"></i> Manajemen Akun Guru</h3>
+            <button class="btn btn-primary" id="btn-open-add-teacher"><i class="fas fa-user-plus"></i> Tambah Akun Guru</button>
+          </div>
+          
+          <div class="action-box" style="margin-top: 16px;">
+            <input type="text" class="form-control search-input" id="search-teacher" placeholder="Cari nama guru atau email..." style="width: 100%;">
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="teachers-table">
+              <thead>
+                <tr>
+                  <th>Nama Lengkap Guru</th>
+                  <th>Email Guru</th>
+                  <th>Peran (Role)</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -1895,8 +1923,8 @@
       <!-- Segmented Control for SISWA / GURU demo login -->
       <div style="display: flex; gap: 8px; margin-bottom: 20px; justify-content: center;">
         <button type="button" class="btn btn-outline" id="login-role-siswa" style="flex: 1; font-size: 0.85rem; padding: 8px; font-weight: 700;" onclick="
-          document.getElementById('login-email').value = 'siswa@hidayahstore.edu';
-          document.getElementById('login-password').value = 'siswa123';
+          document.getElementById('login-email').value = 'Siswa';
+          document.getElementById('login-password').value = '12345';
           this.style.backgroundColor = 'var(--brand-blue)';
           this.style.color = '#fff';
           const btnGuru = document.getElementById('login-role-guru');
@@ -1916,19 +1944,19 @@
       
       <form id="form-login">
         <div class="form-group">
-          <label for="login-email">Alamat Email</label>
-          <input type="email" class="form-control" id="login-email" required placeholder="siswa@hidayahstore.edu">
+          <label for="login-email">Nama Lengkap / Email</label>
+          <input type="text" class="form-control" id="login-email" required placeholder="Siswa / email@sekolah.id">
         </div>
         <div class="form-group">
-          <label for="login-password">Kata Sandi</label>
-          <input type="password" class="form-control" id="login-password" required placeholder="siswa123">
+          <label for="login-password">NIS / Kata Sandi</label>
+          <input type="password" class="form-control" id="login-password" required placeholder="12345 / kata sandi">
         </div>
         <button class="btn btn-primary" style="width: 100%; margin-top: 12px; font-weight: 700; font-family: 'Poppins';" type="submit">MASUK KE FIVIA</button>
       </form>
       
       <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 20px; padding: 12px; background-color: var(--bg-primary); border-radius: 10px; font-size: 0.75rem;">
-        <span style="font-weight: bold; color: var(--brand-blue);">Petunjuk Demo:</span>
-        <span>Pilih tombol <strong>SISWA</strong> atau <strong>GURU</strong> di atas untuk memuat akun uji coba secara otomatis.</span>
+        <span style="font-weight: bold; color: var(--brand-blue);">Petunjuk Masuk:</span>
+        <span>Siswa dapat masuk menggunakan <strong>Nama Lengkap</strong> &amp; <strong>NIS</strong> (atau Email &amp; Password). Klik tombol <strong>SISWA</strong> di atas untuk demo langsung!</span>
       </div>
       
       <p style="text-align: center; font-size: 0.85rem; margin-top: 20px; color: var(--text-secondary);">
@@ -1953,8 +1981,8 @@
           <input type="email" class="form-control" id="register-email" required placeholder="budi@email.com">
         </div>
         <div class="form-group">
-          <label for="register-password">Kata Sandi</label>
-          <input type="password" class="form-control" id="register-password" required placeholder="minimal 6 karakter">
+          <label for="register-password">Kata Sandi / NIS</label>
+          <input type="password" class="form-control" id="register-password" required placeholder="minimal 5 karakter/angka">
         </div>
         <div class="form-group">
           <label for="register-role">Tipe Pengguna (Peran)</label>
@@ -1989,6 +2017,10 @@
           <input type="text" class="form-control" id="add-student-name" required placeholder="Contoh: Andi Pratama">
         </div>
         <div class="form-group">
+          <label for="add-student-nis">NIS (Nomor Induk Siswa)</label>
+          <input type="text" class="form-control" id="add-student-nis" placeholder="Contoh: 12345">
+        </div>
+        <div class="form-group">
           <label for="add-student-email">Alamat Email</label>
           <input type="email" class="form-control" id="add-student-email" required placeholder="andi@hidayahstore.edu">
         </div>
@@ -2002,6 +2034,34 @@
           </select>
         </div>
         <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" type="submit">Tambahkan Siswa</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD TEACHER (MANAJEMEN GURU) -->
+  <div class="modal-overlay" id="add-teacher-modal">
+    <div class="modal-container">
+      <button class="modal-close"><i class="fas fa-times"></i></button>
+      <h3 style="font-size: 1.5rem; margin-bottom: 20px; text-align: center; font-family: 'Poppins'; font-weight: 700; color: var(--brand-blue);">
+        <i class="fas fa-chalkboard-teacher"></i> Tambah Akun Guru Baru
+      </h3>
+      
+      <form id="form-add-teacher">
+        <div class="form-group">
+          <label for="add-teacher-name">Nama Lengkap Guru (beserta Gelar)</label>
+          <input type="text" class="form-control" id="add-teacher-name" required placeholder="Contoh: Dra. Nurhayati, M.Pd.">
+        </div>
+        <div class="form-group">
+          <label for="add-teacher-email">Alamat Email Guru</label>
+          <input type="email" class="form-control" id="add-teacher-email" required placeholder="nurhayati@sekolah.sch.id">
+        </div>
+        <div class="form-group">
+          <label for="add-teacher-password">Kata Sandi</label>
+          <input type="password" class="form-control" id="add-teacher-password" required placeholder="Minimal 6 karakter">
+        </div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 16px; font-weight: 700; font-family: 'Poppins';" type="submit">
+          <i class="fas fa-plus-circle"></i> Daftarkan Akun Guru
+        </button>
       </form>
     </div>
   </div>
