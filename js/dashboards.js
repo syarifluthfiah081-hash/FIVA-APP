@@ -1921,7 +1921,7 @@ function renderTeacherReports() {
 
     const indivAvg = Math.round((lkpdAvg + quizAvg) / 2);
 
-    // Nilai Kelompok (Group Play / Level Kelompok)
+    // Nilai Kelompok (Group Play / Level Kelompok - Skala Nilai 0-100)
     let gpScore = s.groupPlayScore || 0;
     if (groupPlaySession && groupPlaySession.groups) {
       groupPlaySession.groups.forEach(g => {
@@ -1932,10 +1932,22 @@ function renderTeacherReports() {
       });
     }
 
+    // Konversi poin kelompok menjadi nilai 0-100 yang simpel
+    let gpGrade = 85;
+    if (gpScore > 0) {
+      if (gpScore <= 100) {
+        gpGrade = Math.round(gpScore);
+      } else {
+        gpGrade = Math.min(100, Math.max(75, Math.round(75 + Math.min(20, (gpScore / 2000) * 20))));
+      }
+    } else {
+      gpGrade = indivAvg;
+    }
+
     const totalXP = (s.xp || 0) + (gpScore > 0 ? gpScore : 0);
 
-    // Kolom Nilai Rata-rata
-    const overallAvg = gpScore > 0 ? Math.round((lkpdAvg + quizAvg + gpScore) / 3) : indivAvg;
+    // Kolom Nilai Rata-rata (Skala 0-100)
+    const overallAvg = Math.round((lkpdAvg + quizAvg + gpGrade) / 3);
 
     let predicate = "Kurang";
     let badgeClass = "badge-danger";
@@ -1951,7 +1963,7 @@ function renderTeacherReports() {
       <td style="font-family: monospace; font-weight: bold; color: var(--brand-orange);">${lkpdAvg}</td>
       <td style="font-family: monospace; font-weight: bold; color: var(--brand-blue);">${quizAvg}</td>
       <td style="font-family: monospace; font-weight: bold; color: #60a5fa; background: rgba(59, 130, 246, 0.08);">${indivAvg}</td>
-      <td style="font-family: monospace; font-weight: bold; color: ${gpScore < 0 ? 'var(--danger)' : '#34d399'}; background: rgba(16, 185, 129, 0.08);">${gpScore} Poin</td>
+      <td style="font-family: monospace; font-weight: bold; color: #34d399; background: rgba(16, 185, 129, 0.08);">${gpGrade}</td>
       <td style="font-family: monospace; font-weight: 800; font-size: 1.05rem; color: #fbbf24; background: rgba(245, 158, 11, 0.12);">${overallAvg}</td>
       <td><span class="badge badge-success"><i class="fas fa-bolt"></i> ${totalXP} XP</span></td>
       <td><span class="badge ${badgeClass}">${predicate}</span></td>
