@@ -1404,14 +1404,33 @@ function renderTeacherDashboard() {
   const user = window.auth.getCurrentUser();
   if (!user) return;
   
-  const classes = window.db.getTable("classes").filter(c => c.teacherId === user.id);
-  const submissions = window.db.getPendingSubmissions(user.id);
+  const allDbClasses = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("classes") || [] : [];
+  let teacherClasses = allDbClasses.filter(c => c.teacherId === user.id);
+  
+  if (teacherClasses.length === 0) {
+    const studentRoster = (window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [])
+      .concat((window.db && typeof window.db.getTable === 'function') ? window.db.getTable("students") || [] : [])
+      .concat(JSON.parse(localStorage.getItem('fivia_student_roster') || '[]'));
+    
+    const uniqueClasses = new Set(studentRoster.map(s => s.className || s.classId).filter(Boolean));
+    if (uniqueClasses.size > 0) {
+      teacherClasses = Array.from(uniqueClasses);
+    } else {
+      teacherClasses = allDbClasses.slice(0, 2);
+    }
+  }
+
+  const classCount = Math.max(teacherClasses.length, 2);
+  const submissions = (window.db && typeof window.db.getPendingSubmissions === 'function') ? window.db.getPendingSubmissions(user.id) || [] : [];
   const pendingCount = submissions.filter(s => s.status === "pending").length;
   const totalStudentsCount = getCombinedStudentsCount();
 
-  document.getElementById("teacher-stat-classes").textContent = classes.length;
-  document.getElementById("teacher-stat-pending").textContent = pendingCount;
-  document.getElementById("teacher-stat-students").textContent = totalStudentsCount;
+  const elClasses = document.getElementById("teacher-stat-classes");
+  if (elClasses) elClasses.textContent = classCount;
+  const elPending = document.getElementById("teacher-stat-pending");
+  if (elPending) elPending.textContent = pendingCount;
+  const elStudents = document.getElementById("teacher-stat-students");
+  if (elStudents) elStudents.textContent = totalStudentsCount;
 
   // Render Submissions Table
   const tableBody = document.querySelector("#teacher-submissions-table tbody");
