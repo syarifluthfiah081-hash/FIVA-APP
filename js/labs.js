@@ -4838,10 +4838,12 @@ function initRedesignedMeasurementLab() {
               <div id="meas-analysis-feedback-card" class="glass-panel" style="padding: 12px; margin-top: 16px; border-left: 4px solid var(--brand-orange); display: none; background: #fff;">
                 <h6 style="margin: 0 0 4px 0; color: var(--brand-blue); font-weight: 700;"><i class="fas fa-brain"></i> Analisis Feedback Akurasi</h6>
                 <p id="meas-analysis-feedback-text" style="font-size: 0.8rem; line-height: 1.4; color: #475569; margin: 0;"></p>
+              </div>
+            </div>
           </div>
 
           <!-- LKPD DIGITAL VIEW -->
-          <div id="meas-view-lkpd" class="meas-tab-view" style="display: none; flex-direction: column; gap: 20px; max-width: 800px; margin: 0 auto; width: 100%;">
+          <div id="meas-view-lkpd" class="meas-tab-view" style="display: none; flex-direction: column; gap: 20px; max-width: 800px; margin: 0 auto; width: 100%; height: 100%; max-height: 100%; overflow-y: auto; padding: 10px;">
             <div class="custom-card">
               <h3 style="font-family: 'Poppins'; font-weight: 800; color: var(--brand-blue); margin-bottom: 12px; border-bottom: 2px solid var(--brand-orange); padding-bottom: 8px;">FIVIA Digital LKPD</h3>
               
