@@ -1781,6 +1781,7 @@ function renderTeacherReports() {
   
   const excelRoster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
   const dbStudents = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("students") || [] : [];
+  const dbUsers = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("users") || [] : [];
   
   const studentMap = new Map();
 
@@ -1794,38 +1795,77 @@ function renderTeacherReports() {
     return (cleanId.includes(cleanVal) || cleanName.includes(cleanVal) || cleanVal.includes(cleanId) || cleanVal.includes(cleanName));
   }
 
-  const hasCustomRoster = Array.isArray(excelRoster) && excelRoster.length > 0;
-
-  excelRoster.forEach(s => {
-    if (isMatchClass(s.classId, s.className)) {
-      studentMap.set(s.studentId || s.id, {
-        id: s.studentId || s.id,
-        nis: s.nis || '001',
-        studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis || '001')),
-        name: s.name || s.studentName,
-        className: s.className || (classObj ? classObj.name : 'Kelas X-1'),
-        classId: s.classId || classVal,
-        xp: s.xp || 0,
-        groupPlayScore: s.groupPlayScore || 0
-      });
-    }
-  });
-
-  if (!hasCustomRoster) {
-    dbStudents.forEach(s => {
-      const key = s.id || s.studentId;
-      if (key && ['std_2', 'std_3', 'std_4', 'std_5'].includes(key)) return;
+  // 1. Load Excel Roster if available
+  if (Array.isArray(excelRoster)) {
+    excelRoster.forEach(s => {
       if (isMatchClass(s.classId, s.className)) {
-        if (!studentMap.has(key)) {
-          studentMap.set(key, {
-            id: key,
+        const sId = s.studentId || s.id;
+        const nameCandidate = s.name || s.studentName || s.fullName || s.nama;
+        if (sId) {
+          studentMap.set(sId, {
+            id: sId,
             nis: s.nis || '001',
             studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis || '001')),
-            name: s.name || s.studentName,
+            name: nameCandidate,
             className: s.className || (classObj ? classObj.name : 'Kelas X-1'),
             classId: s.classId || classVal,
             xp: s.xp || 0,
             groupPlayScore: s.groupPlayScore || 0
+          });
+        }
+      }
+    });
+  }
+
+  // 2. Load DB Students (merge/supplement)
+  if (Array.isArray(dbStudents)) {
+    dbStudents.forEach(s => {
+      const key = s.id || s.studentId;
+      if (key && ['std_2', 'std_3', 'std_4', 'std_5'].includes(key)) return;
+      if (isMatchClass(s.classId, s.className)) {
+        const nameCandidate = s.name || s.studentName || s.fullName || s.nama;
+        const existing = studentMap.get(key);
+        if (existing) {
+          if (!existing.name && nameCandidate) existing.name = nameCandidate;
+          if (s.nis) existing.nis = s.nis;
+          if (s.xp) existing.xp = Math.max(existing.xp || 0, s.xp);
+          if (s.groupPlayScore) existing.groupPlayScore = Math.max(existing.groupPlayScore || 0, s.groupPlayScore);
+        } else {
+          studentMap.set(key, {
+            id: key,
+            nis: s.nis || '001',
+            studentCode: s.studentCode || ('FIVIA-X1-' + (s.nis || '001')),
+            name: nameCandidate,
+            className: s.className || (classObj ? classObj.name : 'Kelas X-1'),
+            classId: s.classId || classVal,
+            xp: s.xp || 0,
+            groupPlayScore: s.groupPlayScore || 0
+          });
+        }
+      }
+    });
+  }
+
+  // 3. Load Registered Users with role === 'siswa'
+  if (Array.isArray(dbUsers)) {
+    dbUsers.filter(u => u.role === 'siswa').forEach(u => {
+      const key = u.id;
+      if (isMatchClass(u.classId, u.className)) {
+        const nameCandidate = u.name || u.fullName || u.username;
+        const existing = studentMap.get(key);
+        if (existing) {
+          if (!existing.name && nameCandidate) existing.name = nameCandidate;
+          if (u.nis) existing.nis = u.nis;
+        } else {
+          studentMap.set(key, {
+            id: key,
+            nis: u.nis || '001',
+            studentCode: u.studentCode || ('FIVIA-X1-' + (u.nis || '001')),
+            name: nameCandidate,
+            className: u.className || (classObj ? classObj.name : 'Kelas X-1'),
+            classId: u.classId || classVal,
+            xp: u.xp || 0,
+            groupPlayScore: u.groupPlayScore || 0
           });
         }
       }
@@ -1847,21 +1887,41 @@ function renderTeacherReports() {
   tableBody.innerHTML = "";
 
   if (students.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 24px;">Tidak ada data siswa ditemukan pada kelas ini. Silakan import data siswa via Excel.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-secondary); padding: 24px;">Tidak ada data siswa ditemukan pada kelas ini. Silakan import data siswa via Excel.</td></tr>`;
     return;
   }
 
   students.forEach((s) => {
     const sId = s.id;
-    const sName = s.name;
+    let sName = s.name || s.studentName || s.fullName || s.nama;
+    if (!sName) {
+      const foundU = dbUsers.find(u => u.id === sId || u.nis === s.nis);
+      if (foundU) sName = foundU.name;
+    }
+    if (!sName) {
+      const foundSub = submissions.find(sub => sub.studentId === sId);
+      if (foundSub) sName = foundSub.studentName;
+    }
+    if (!sName) {
+      const foundQuiz = quizScores.find(q => q.userId === sId);
+      if (foundQuiz) sName = foundQuiz.userName;
+    }
+    if (!sName) {
+      sName = 'Siswa (' + (s.nis || sId) + ')';
+    }
+
     const sCode = s.studentCode || ('FIVIA-X1-' + (s.nis || '001'));
 
+    // Nilai Individu (LKPD & Kuis)
     const stdSubs = submissions.filter(sub => (sub.studentId === sId || sub.studentName === sName) && sub.score !== undefined);
     const lkpdAvg = stdSubs.length > 0 ? Math.round(stdSubs.reduce((acc, curr) => acc + curr.score, 0) / stdSubs.length) : 80;
     
     const stdQuizzes = quizScores.filter(q => q.userId === sId || q.userName === sName);
     const quizAvg = stdQuizzes.length > 0 ? Math.round(stdQuizzes.reduce((acc, curr) => acc + curr.score, 0) / stdQuizzes.length) : 85;
 
+    const indivAvg = Math.round((lkpdAvg + quizAvg) / 2);
+
+    // Nilai Kelompok (Group Play / Level Kelompok)
     let gpScore = s.groupPlayScore || 0;
     if (groupPlaySession && groupPlaySession.groups) {
       groupPlaySession.groups.forEach(g => {
@@ -1874,7 +1934,9 @@ function renderTeacherReports() {
 
     const totalXP = (s.xp || 0) + (gpScore > 0 ? gpScore : 0);
 
-    const overallAvg = Math.round((lkpdAvg + quizAvg + (gpScore > 0 ? 85 : 75)) / 3);
+    // Kolom Nilai Rata-rata
+    const overallAvg = gpScore > 0 ? Math.round((lkpdAvg + quizAvg + gpScore) / 3) : indivAvg;
+
     let predicate = "Kurang";
     let badgeClass = "badge-danger";
     if (overallAvg >= 85) { predicate = "Sangat Baik"; badgeClass = "badge-success"; }
@@ -1883,17 +1945,19 @@ function renderTeacherReports() {
 
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td style="font-weight: 700; color: #fff;">${sName}</td>
+      <td style="font-weight: 700; color: var(--text-primary, #ffffff);">${sName}</td>
       <td style="font-family: monospace; font-weight: bold; color: var(--brand-blue);">${sCode}</td>
       <td><span class="badge badge-blue">${s.className}</span></td>
       <td style="font-family: monospace; font-weight: bold; color: var(--brand-orange);">${lkpdAvg}</td>
       <td style="font-family: monospace; font-weight: bold; color: var(--brand-blue);">${quizAvg}</td>
-      <td style="font-family: monospace; font-weight: bold; color: ${gpScore < 0 ? 'var(--danger)' : 'var(--brand-orange)'};">${gpScore} Poin</td>
+      <td style="font-family: monospace; font-weight: bold; color: #60a5fa; background: rgba(59, 130, 246, 0.08);">${indivAvg}</td>
+      <td style="font-family: monospace; font-weight: bold; color: ${gpScore < 0 ? 'var(--danger)' : '#34d399'}; background: rgba(16, 185, 129, 0.08);">${gpScore} Poin</td>
+      <td style="font-family: monospace; font-weight: 800; font-size: 1.05rem; color: #fbbf24; background: rgba(245, 158, 11, 0.12);">${overallAvg}</td>
       <td><span class="badge badge-success"><i class="fas fa-bolt"></i> ${totalXP} XP</span></td>
       <td><span class="badge ${badgeClass}">${predicate}</span></td>
       <td>
         <button class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem; border-color: #ef4444; color: #ef4444;" 
-                onclick="window.deleteStudentScores('${sId}', '${sName}')" title="Reset Nilai Siswa Ini"><i class="fas fa-undo"></i> Reset</button>
+                onclick="window.deleteStudentScores('${sId}', '${sName.replace(/'/g, "\\'")}')" title="Reset Nilai Siswa Ini"><i class="fas fa-undo"></i> Reset</button>
       </td>
     `;
     tableBody.appendChild(row);

@@ -372,6 +372,12 @@
     background: #ffffff !important;
     color: #000000 !important;
   }
+  body.printing-reports #printable-reports-area table,
+  body.printing-reports #printable-reports-area th,
+  body.printing-reports #printable-reports-area td {
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
 
   /* Hide print buttons */
   .certificate-actions {
