@@ -19,6 +19,20 @@ document.addEventListener("DOMContentLoaded", () => {
         window.showToast(`Selamat datang kembali, ${res.user.name}!`);
         // Update top header user indicator
         updateHeaderUserBadge();
+        // If student, sync Quest & Lab profile
+        if (res.user.role === "siswa") {
+          if (window.FIVIAStudent && typeof window.FIVIAStudent.saveStudentProfile === "function") {
+            window.FIVIAStudent.saveStudentProfile({
+              name: res.user.name,
+              nis: res.user.nis,
+              studentCode: res.user.studentCode || ('FIVIA-' + res.user.nis),
+              className: res.user.classId
+            });
+          }
+          if (window.FIVIAStudentSession && typeof window.FIVIAStudentSession.startStudentSession === "function") {
+            window.FIVIAStudentSession.startStudentSession(res.user.name, res.user.classId, res.user.studentCode || res.user.nis);
+          }
+        }
         // Redirect to dashboard
         window.location.hash = "#dashboard";
       } else {
@@ -36,9 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const email = document.getElementById("register-email").value;
       const pass = document.getElementById("register-password").value;
       const role = document.getElementById("register-role").value;
+      const nisInput = document.getElementById("register-nis") ? document.getElementById("register-nis").value.trim() : "";
       const classId = role === "siswa" ? document.getElementById("register-class").value : null;
       
-      const res = window.auth.register(name, email, pass, role, classId);
+      const res = window.auth.register(name, email, pass, role, classId, nisInput);
       if (res.success) {
         window.closeAllModals();
         window.showToast(`Pendaftaran berhasil! Selamat datang, ${res.user.name}!`);
@@ -49,15 +64,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     
-    // Toggle class selector based on role
+    // Toggle class and NIS selector based on role
     const roleSelect = document.getElementById("register-role");
     const classGroup = document.getElementById("register-class-group");
-    if (roleSelect && classGroup) {
+    const nisGroup = document.getElementById("register-nis-group");
+    if (roleSelect) {
       roleSelect.addEventListener("change", () => {
         if (roleSelect.value === "guru") {
-          classGroup.style.display = "none";
+          if (classGroup) classGroup.style.display = "none";
+          if (nisGroup) nisGroup.style.display = "none";
         } else {
-          classGroup.style.display = "block";
+          if (classGroup) classGroup.style.display = "block";
+          if (nisGroup) nisGroup.style.display = "block";
         }
       });
     }
@@ -111,14 +129,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       const assignedNis = nisInput || Math.floor(10000 + Math.random() * 90000).toString();
+      const studentCode = window.FIVIAExcelImport ? window.FIVIAExcelImport.generateStudentCode(assignedNis, classId) : ('FIVIA-' + assignedNis);
 
-      // Add standard user
+      // Add standard user (password can be NIS or default password123)
       const newUserId = "usr_" + Math.random().toString(36).substr(2, 9);
       users.push({
         id: newUserId,
         email: email,
-        password: "password123", // default
+        password: assignedNis, // allows login with NIS directly as password
         nis: assignedNis,
+        studentCode: studentCode,
         name: name,
         role: "siswa",
         classId: classId
@@ -131,10 +151,36 @@ document.addEventListener("DOMContentLoaded", () => {
         id: newUserId,
         name: name,
         nis: assignedNis,
+        studentCode: studentCode,
         classId: classId,
         email: email
       });
       window.db.saveTable("students", students);
+
+      // Add to fivia_student_roster
+      try {
+        let roster = [];
+        if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === "function") {
+          roster = window.FIVIAExcelImport.getExistingRoster() || [];
+        } else {
+          const raw = localStorage.getItem("fivia_student_roster");
+          if (raw) roster = JSON.parse(raw);
+        }
+        roster.push({
+          studentId: newUserId,
+          id: newUserId,
+          name: name,
+          nis: assignedNis,
+          studentCode: studentCode,
+          classId: classId,
+          className: classId,
+          xp: 0
+        });
+        localStorage.setItem("fivia_student_roster", JSON.stringify(roster));
+        if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.saveRoster === "function") {
+          window.FIVIAExcelImport.saveRoster(roster);
+        }
+      } catch (e) {}
       
       window.closeAllModals();
       addStudentForm.reset();

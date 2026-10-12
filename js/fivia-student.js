@@ -182,43 +182,89 @@ window.FIVIAStudent = (function() {
   }
 
   /**
-   * Finds student by NIS or Student Code + Class
+   * Finds student by NIS or Student Code or Name + Class
    */
-  function loginStudentByNisOrCode(nisOrCode, className) {
-    if (!nisOrCode) return null;
-    const searchKey = String(nisOrCode).trim().toUpperCase();
+  function loginStudentByNisOrCode(nisOrCode, className, nameHint) {
+    if (!nisOrCode && !nameHint) return null;
+    const searchKey = String(nisOrCode || '').trim().toUpperCase();
     const cleanClass = String(className || '').trim().toUpperCase();
+    const cleanNameHint = String(nameHint || '').trim().toUpperCase();
+    const searchDigits = String(nisOrCode || '').replace(/[^0-9]/g, '').replace(/^0+/, '');
 
-    let roster = [];
-    if (window.FIVIAExcelImport) {
-      roster = window.FIVIAExcelImport.getExistingRoster();
-    } else {
-      try {
+    let allCandidates = [];
+
+    // 1. Excel/Main Roster
+    try {
+      let roster = [];
+      if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === 'function') {
+        roster = window.FIVIAExcelImport.getExistingRoster() || [];
+      } else {
         const raw = localStorage.getItem('fivia_student_roster');
         if (raw) roster = JSON.parse(raw);
-      } catch (e) {}
+      }
+      if (Array.isArray(roster)) allCandidates.push(...roster);
+    } catch (e) {}
+
+    // 2. window.db students table
+    if (window.db && typeof window.db.getTable === 'function') {
+      const dbStudents = window.db.getTable('students') || [];
+      if (Array.isArray(dbStudents)) allCandidates.push(...dbStudents);
+
+      const dbUsers = window.db.getTable('users') || [];
+      if (Array.isArray(dbUsers)) {
+        allCandidates.push(...dbUsers.filter(u => (u.role || '').toLowerCase() === 'siswa'));
+      }
     }
 
-    // Match by studentCode OR NIS
-    const match = roster.find(s => {
-      const sCode = String(s.studentCode || '').toUpperCase();
+    // 3. fivia_classroom_students
+    try {
+      const rawCs = localStorage.getItem('fivia_classroom_students');
+      if (rawCs) {
+        const cs = JSON.parse(rawCs);
+        if (Array.isArray(cs)) allCandidates.push(...cs);
+      }
+    } catch (e) {}
+
+    // Match by studentCode OR NIS OR Name
+    const match = allCandidates.find(s => {
+      const sCode = String(s.studentCode || s.code || '').toUpperCase();
       const sNis = String(s.nis || '').toUpperCase();
+      const sName = String(s.name || s.studentName || s.displayName || '').toUpperCase();
+      const sDigits = sNis.replace(/[^0-9]/g, '').replace(/^0+/, '');
       const sClass = String(s.className || s.classId || '').toUpperCase();
 
-      const codeMatches = (sCode === searchKey);
-      const nisMatches = (sNis === searchKey);
-      
+      const codeMatches = searchKey && (sCode === searchKey);
+      const nisMatches = searchKey && (sNis === searchKey || (searchDigits && sDigits === searchDigits));
+      const nameMatches = (searchKey && sName && (sName === searchKey || sName.includes(searchKey) || searchKey.includes(sName))) ||
+                          (cleanNameHint && sName && (sName === cleanNameHint || sName.includes(cleanNameHint) || cleanNameHint.includes(sName)));
+
       if (codeMatches) return true;
       if (nisMatches) {
         if (!cleanClass) return true;
-        return sClass.includes(cleanClass) || cleanClass.includes(sClass);
+        return sClass.includes(cleanClass) || cleanClass.includes(sClass) || !sClass;
+      }
+      if (nameMatches && (nisMatches || !searchKey)) {
+        return true;
       }
       return false;
     });
 
     if (match) {
-      saveStudentProfile(match);
-      return match;
+      const formattedMatch = {
+        name: match.name || match.studentName || match.displayName || 'Siswa',
+        nis: match.nis || searchKey,
+        studentCode: match.studentCode || match.code || ('FIVIA-' + (match.nis || searchKey)),
+        className: match.className || match.classId || className || 'X.F.1',
+        classId: match.classId || match.className || className || 'cls_x1'
+      };
+      saveStudentProfile(formattedMatch);
+
+      // Also sync to auth session if available
+      if (window.auth && typeof window.auth.directLoginStudent === 'function') {
+        window.auth.directLoginStudent(formattedMatch);
+      }
+
+      return formattedMatch;
     }
     return null;
   }

@@ -821,14 +821,20 @@
                 const className = document.getElementById('fq-std-class').value.trim(); 
                 const nameInput = document.getElementById('fq-std-name').value.trim();
 
-                const matched = window.FIVIAStudent ? window.FIVIAStudent.loginStudentByNisOrCode(nisOrCode, className) : null;
+                const matched = window.FIVIAStudent ? window.FIVIAStudent.loginStudentByNisOrCode(nisOrCode, className, nameInput) : null;
                 if (matched) {
                   alert('👋 SELAMAT DATANG KEMBALI!\n\nNama: ' + matched.name + '\nNIS: ' + matched.nis + '\nKelas: ' + (matched.className || className) + '\nKode: ' + matched.studentCode);
                   if (window.FIVIAStudentSession) window.FIVIAStudentSession.startStudentSession(matched.name, matched.className || className, matched.studentCode);
+                  if (window.auth && typeof window.auth.directLoginStudent === 'function') {
+                    window.auth.directLoginStudent(matched);
+                  }
                 } else {
                   const name = nameInput || ('Siswa (' + (nisOrCode || 'FIVIA') + ')');
                   const code = window.FIVIAExcelImport ? window.FIVIAExcelImport.generateStudentCode(nisOrCode || '001', className) : ('FIVIA-' + nisOrCode);
                   if (window.FIVIAStudentSession) window.FIVIAStudentSession.startStudentSession(name, className, code);
+                  if (window.auth && typeof window.auth.directLoginStudent === 'function') {
+                    window.auth.directLoginStudent({ name: name, nis: nisOrCode || '001', studentCode: code, className: className });
+                  }
                 }
                 window.location.hash='#quest/student-dashboard';">
                 
@@ -2021,12 +2027,16 @@
           <label for="register-name">Nama Lengkap</label>
           <input type="text" class="form-control" id="register-name" required placeholder="Budi Wijaya">
         </div>
+        <div class="form-group" id="register-nis-group">
+          <label for="register-nis">NIS (Nomor Induk Siswa)</label>
+          <input type="text" class="form-control" id="register-nis" placeholder="Contoh: 12345 (Wajib bagi siswa)">
+        </div>
         <div class="form-group">
           <label for="register-email">Alamat Email</label>
           <input type="email" class="form-control" id="register-email" required placeholder="budi@email.com">
         </div>
         <div class="form-group">
-          <label for="register-password">Kata Sandi / NIS</label>
+          <label for="register-password">Kata Sandi</label>
           <input type="password" class="form-control" id="register-password" required placeholder="minimal 5 karakter/angka">
         </div>
         <div class="form-group">
