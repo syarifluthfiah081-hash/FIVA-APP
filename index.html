@@ -67,14 +67,19 @@
     
     <!-- Left Navigation Sidebar (Hidden for guests) -->
     <aside class="sidebar hidden-section">
-      <div class="sidebar-logo" style="gap: 10px;">
-        <svg viewBox="0 0 100 100" width="30" height="30" style="fill: none; stroke-linecap: round; stroke-linejoin: round;">
-          <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-orange)" stroke-width="4" transform="rotate(30 50 50)" />
-          <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--accent-violet)" stroke-width="4" transform="rotate(-30 50 50)" />
-          <path d="M35 38 L50 68 L65 38" stroke="var(--brand-orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="50" cy="42" r="5" fill="var(--brand-blue)" />
-        </svg>
-        <span>FIVIA</span>
+      <div class="sidebar-logo" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 100 100" width="30" height="30" style="fill: none; stroke-linecap: round; stroke-linejoin: round;">
+            <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--brand-orange)" stroke-width="4" transform="rotate(30 50 50)" />
+            <ellipse cx="50" cy="50" rx="40" ry="15" stroke="var(--accent-violet)" stroke-width="4" transform="rotate(-30 50 50)" />
+            <path d="M35 38 L50 68 L65 38" stroke="var(--brand-orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="50" cy="42" r="5" fill="var(--brand-blue)" />
+          </svg>
+          <span>FIVIA</span>
+        </div>
+        <button class="sidebar-close-btn" id="btn-close-sidebar" aria-label="Tutup Menu" title="Tutup Menu">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
       
       <div class="sidebar-user">
@@ -95,6 +100,14 @@
         </button>
       </div>
     </aside>
+
+    <!-- Dimmed Backdrop Overlay for Mobile Sidebar -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" title="Klik untuk menutup menu"></div>
+
+    <!-- Floating Exit Fullscreen Button (Active during simulation/immersive fullscreen) -->
+    <button id="btn-floating-exit-fullscreen" onclick="if(window.exitFullScreen) window.exitFullScreen(); else if(window.toggleFullScreen) window.toggleFullScreen();" title="Keluar dari Mode Layar Penuh">
+      <i class="fas fa-compress"></i> <span>Keluar Fullscreen</span>
+    </button>
 
     <!-- Main App Container Wrapper -->
     <div id="main-content" class="expanded">
@@ -1445,16 +1458,23 @@
 
       <!-- 8. VIRTUAL LAB PLAYER SECTION -->
       <section id="lab-viewport-section" class="spa-section hidden-section fade-in-section" style="flex: 1; display: flex; flex-direction: column;">
-        <div class="lab-navigation-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(8px);">
-          <a href="#materi" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px;"><i class="fas fa-arrow-left"></i> Kembali ke Modul</a>
-          <h3 id="lab-header-title" style="font-size: 1.1rem; margin: 0; font-family: 'Outfit', sans-serif;">Eksperimen Virtual</h3>
-          <div style="width: 120px;"></div> <!-- spacer for centering visual balance -->
+        <div class="lab-navigation-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(8px); gap: 8px;">
+          <a href="#materi" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.82rem; border-radius: 8px;"><i class="fas fa-arrow-left"></i> <span>Kembali</span></a>
+          <h3 id="lab-header-title" style="font-size: 1.05rem; margin: 0; font-family: 'Outfit', sans-serif; text-align: center;">Eksperimen Virtual</h3>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="btn btn-orange" id="btn-lab-nav-fullscreen" onclick="window.toggleFullScreen()" style="padding: 6px 14px; font-size: 0.8rem; border-radius: 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Perbesar Simulasi ke Layar Penuh">
+              <i class="fas fa-expand"></i> <span>Layar Penuh</span>
+            </button>
+          </div>
         </div>
         <div class="lab-layout">
           
           <!-- Left Column: Simulation Display & Controls -->
           <div class="lab-main-view">
             <div class="lab-canvas-container">
+              <button class="lab-canvas-fs-btn" onclick="window.toggleFullScreen()" title="Mode Layar Penuh Simulasi">
+                <i class="fas fa-expand"></i>
+              </button>
               <div class="lab-viewport-overlay" id="lab-overlay-title" style="display: none;">Simulasi: Jangka Sorong</div>
               <div class="lab-viewport-stats" id="lab-overlay-stats">
                 <!-- Injected dynamically -->

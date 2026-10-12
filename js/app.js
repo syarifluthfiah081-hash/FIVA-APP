@@ -124,23 +124,233 @@ function getMenuForRole(role) {
   return menuHtml;
 }
 
+// Sidebar & Layout state helpers
+function openSidebar() {
+  const sidebar = document.querySelector("aside.sidebar");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  if (!sidebar) return;
+  if (window.innerWidth <= 992) {
+    sidebar.classList.add("active");
+    if (backdrop) backdrop.classList.add("active");
+    document.body.classList.add("sidebar-open-mobile");
+  } else {
+    sidebar.classList.remove("hidden-desktop");
+    const mainContent = document.getElementById("main-content");
+    if (mainContent) mainContent.classList.remove("expanded");
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.querySelector("aside.sidebar");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  if (!sidebar) return;
+  sidebar.classList.remove("active");
+  if (backdrop) backdrop.classList.remove("active");
+  document.body.classList.remove("sidebar-open-mobile");
+}
+
+function toggleSidebar() {
+  const sidebar = document.querySelector("aside.sidebar");
+  if (!sidebar) return;
+  if (window.innerWidth <= 992) {
+    if (sidebar.classList.contains("active")) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  } else {
+    sidebar.classList.toggle("hidden-desktop");
+    const mainContent = document.getElementById("main-content");
+    if (mainContent) mainContent.classList.toggle("expanded");
+  }
+}
+
+window.openSidebar = openSidebar;
+window.closeSidebar = closeSidebar;
+window.toggleSidebar = toggleSidebar;
+
+// Unified Simulation & App Fullscreen Engine
+function isFullscreenActive() {
+  return !!(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    document.body.classList.contains("fivia-fullscreen-active") ||
+    document.body.classList.contains("fq-fullscreen-active")
+  );
+}
+
+function updateAllFullscreenUI(isActive) {
+  if (isActive) {
+    document.body.classList.add("fivia-fullscreen-active", "fq-fullscreen-active");
+    document.documentElement.classList.add("fivia-fullscreen-active");
+  } else {
+    document.body.classList.remove("fivia-fullscreen-active", "fq-fullscreen-active");
+    document.documentElement.classList.remove("fivia-fullscreen-active");
+  }
+
+  // Update navbar & lab buttons
+  const btns = document.querySelectorAll(".fq-fullscreen-toggle-btn, #btn-lab-nav-fullscreen, #btn-meas-fullscreen-toggle");
+  btns.forEach(btn => {
+    const icon = btn.querySelector("i");
+    const span = btn.querySelector("span");
+    if (isActive) {
+      if (icon) icon.className = "fas fa-compress";
+      if (span) span.textContent = "Keluar Fullscreen";
+      btn.style.background = "rgba(245,158,11,0.25)";
+      btn.style.borderColor = "var(--brand-orange, #f97316)";
+      btn.style.color = "#fef08a";
+    } else {
+      if (icon) icon.className = "fas fa-expand";
+      if (span) span.textContent = "Layar Penuh";
+      btn.style.background = "rgba(6,182,212,0.15)";
+      btn.style.borderColor = "var(--fq-cyan, #06b6d4)";
+      btn.style.color = "var(--fq-cyan, #06b6d4)";
+    }
+  });
+
+  // Floating exit button visibility
+  const floatingExit = document.getElementById("btn-floating-exit-fullscreen");
+  if (floatingExit) {
+    floatingExit.style.display = isActive ? "inline-flex" : "none";
+  }
+
+  // Trigger resize to recalculate canvas viewports
+  setTimeout(() => {
+    window.dispatchEvent(new Event("resize"));
+    if (typeof resizeCanvases === "function") resizeCanvases();
+    if (typeof drawSimulation === "function") drawSimulation();
+    if (typeof drawActiveSimulator === "function") drawActiveSimulator();
+  }, 100);
+}
+
+function toggleFullScreen() {
+  const currentlyActive = isFullscreenActive();
+  if (!currentlyActive) {
+    // Request Native HTML5 Fullscreen if supported
+    const docEl = document.documentElement;
+    const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+    if (req) {
+      try {
+        const p = req.call(docEl);
+        if (p && typeof p.catch === "function") {
+          p.catch(() => {});
+        }
+      } catch (_) {}
+    }
+    // Always apply CSS Immersive Fullscreen Mode
+    updateAllFullscreenUI(true);
+  } else {
+    // Exit Native Fullscreen if active
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+    if (exit && (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement)) {
+      try {
+        const p = exit.call(document);
+        if (p && typeof p.catch === "function") {
+          p.catch(() => {});
+        }
+      } catch (_) {}
+    }
+    // Remove CSS Immersive Fullscreen Mode
+    updateAllFullscreenUI(false);
+  }
+}
+
+function exitFullScreen() {
+  const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if (exit && (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement)) {
+    try {
+      const p = exit.call(document);
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {});
+      }
+    } catch (_) {}
+  }
+  updateAllFullscreenUI(false);
+}
+
+window.toggleFullScreen = toggleFullScreen;
+window.exitFullScreen = exitFullScreen;
+window.isFullscreenActive = isFullscreenActive;
+
+// Listen to native fullscreen changes
+["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(evt => {
+  document.addEventListener(evt, () => {
+    const isNativeFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    if (!isNativeFS && (document.body.classList.contains("fivia-fullscreen-active") || document.body.classList.contains("fq-fullscreen-active"))) {
+      updateAllFullscreenUI(false);
+    }
+  });
+});
+
 // UI Interactive Bindings
 function initUIEvents() {
-  // Sidebar Toggler
+  // Sidebar Toggler Button in Header
   const toggleBtn = document.querySelector(".header-toggle-sidebar");
-  const sidebar = document.querySelector("aside.sidebar");
-  const mainContent = document.getElementById("main-content");
-  
-  if (toggleBtn && sidebar && mainContent) {
+  if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
-      if (window.innerWidth > 992) {
-        sidebar.classList.toggle("hidden-desktop");
-        mainContent.classList.toggle("expanded");
-      } else {
-        sidebar.classList.toggle("active");
-      }
+      toggleSidebar();
     });
   }
+
+  // Sidebar Close Button ("X") inside Sidebar Header
+  const closeBtn = document.getElementById("btn-close-sidebar");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      closeSidebar();
+    });
+  }
+
+  // Backdrop Overlay Click (Dismiss on tap outside)
+  const backdrop = document.getElementById("sidebar-backdrop");
+  if (backdrop) {
+    backdrop.addEventListener("click", () => {
+      closeSidebar();
+    });
+  }
+
+  // Auto-dismiss sidebar on mobile when ANY menu link is tapped
+  const sidebar = document.querySelector("aside.sidebar");
+  if (sidebar) {
+    sidebar.addEventListener("click", (e) => {
+      const link = e.target.closest("a") || e.target.closest("#btn-logout");
+      if (link && window.innerWidth <= 992) {
+        closeSidebar();
+      }
+    });
+
+    // Touch gesture: Swipe left to dismiss sidebar
+    let touchStartX = 0;
+    let touchStartY = 0;
+    sidebar.addEventListener("touchstart", (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    sidebar.addEventListener("touchend", (e) => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        const diffX = e.changedTouches[0].clientX - touchStartX;
+        const diffY = e.changedTouches[0].clientY - touchStartY;
+        // If swiped left by at least 45px with predominantly horizontal gesture
+        if (diffX < -45 && Math.abs(diffX) > Math.abs(diffY)) {
+          closeSidebar();
+        }
+      }
+    }, { passive: true });
+  }
+
+  // Global Keyboard: Escape dismisses sidebar and exits fullscreen
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeSidebar();
+      if (isFullscreenActive()) {
+        exitFullScreen();
+      }
+    }
+  });
 
   // Header Logout Button Trigger
   const headerLogoutBtn = document.getElementById("btn-header-logout");
@@ -328,8 +538,8 @@ function handleRouting() {
   }
   
   // Collapse sidebar on small screens after routing
-  if (window.innerWidth <= 992 && sidebar) {
-    sidebar.classList.remove("active");
+  if (window.innerWidth <= 992) {
+    closeSidebar();
   }
   
   // Scroll to top

@@ -1106,22 +1106,25 @@ window.FIVIAGroupLevelEngine = (function() {
 
   // FULLSCREEN TOGGLE & NO-SCROLL HANDLER
   function toggleFullScreen() {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+    if (typeof window.toggleFullScreen === 'function' && window.toggleFullScreen !== toggleFullScreen) {
+      window.toggleFullScreen();
+      return;
+    }
+    const isFS = !(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement || document.body.classList.contains('fivia-fullscreen-active'));
+    if (isFS) {
       const docEl = document.documentElement;
-      if (docEl.requestFullscreen) docEl.requestFullscreen();
-      else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
-      else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
-      else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+      const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+      if (req) { try { const p = req.call(docEl); if (p && p.catch) p.catch(() => {}); } catch (_) {} }
+      document.body.classList.add('fq-fullscreen-active', 'fivia-fullscreen-active');
     } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-      else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-      else if (document.msExitFullscreen) document.msExitFullscreen();
+      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+      if (exit) { try { const p = exit.call(document); if (p && p.catch) p.catch(() => {}); } catch (_) {} }
+      document.body.classList.remove('fq-fullscreen-active', 'fivia-fullscreen-active');
     }
   }
 
   function updateFullscreenUI() {
-    const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement || document.body.classList.contains('fq-fullscreen-active'));
     if (isFS) {
       document.body.classList.add('fq-fullscreen-active');
     } else {
@@ -1141,7 +1144,9 @@ window.FIVIAGroupLevelEngine = (function() {
   document.addEventListener('mozfullscreenchange', updateFullscreenUI);
   document.addEventListener('MSFullscreenChange', updateFullscreenUI);
 
-  window.toggleFullScreen = toggleFullScreen;
+  if (!window.toggleFullScreen) {
+    window.toggleFullScreen = toggleFullScreen;
+  }
 
   function playFestiveFanfare() {
     try {

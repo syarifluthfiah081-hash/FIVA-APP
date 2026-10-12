@@ -613,6 +613,65 @@ footer.app-footer {
   display: none !important;
 }
 
+/* Sidebar Backdrop for Mobile Screens */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 11, 24, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.sidebar-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Sidebar Close Button */
+.sidebar-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover,
+.sidebar-close-btn:active {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: #ef4444;
+  color: #fca5a5;
+  transform: scale(1.05);
+}
+
+@media (min-width: 993px) {
+  .sidebar-close-btn {
+    display: none;
+  }
+}
+
+body.sidebar-open-mobile {
+  overflow: hidden !important;
+}
+
 @media (max-width: 992px) {
   .hero-section {
     grid-template-columns: 1fr;
@@ -623,8 +682,15 @@ footer.app-footer {
   .hero-text h1 { font-size: 2.5rem; }
   .hero-cta { justify-content: center; }
   #main-content { margin-left: 0; }
-  aside.sidebar { transform: translateX(-100%); }
-  aside.sidebar.active { transform: translateX(0); }
+  aside.sidebar { 
+    transform: translateX(-100%); 
+    z-index: 999; 
+    box-shadow: 6px 0 30px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  aside.sidebar.active { 
+    transform: translateX(0); 
+  }
 }
 
 /* Desktop Sidebar Toggle */
@@ -632,4 +698,105 @@ footer.app-footer {
   aside.sidebar.hidden-desktop {
     transform: translateX(-100%);
   }
+}
+
+/* =========================================================
+   FIVIA IMMERSIVE FULLSCREEN MODE (MOBILE & DESKTOP)
+   ========================================================= */
+body.fivia-fullscreen-active,
+html.fivia-fullscreen-active,
+body.fq-fullscreen-active,
+html.fq-fullscreen-active {
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+}
+
+body.fivia-fullscreen-active .app-header,
+body.fq-fullscreen-active .app-header {
+  display: none !important;
+}
+
+body.fivia-fullscreen-active aside.sidebar,
+body.fq-fullscreen-active aside.sidebar {
+  display: none !important;
+}
+
+body.fivia-fullscreen-active .sidebar-backdrop,
+body.fq-fullscreen-active .sidebar-backdrop {
+  display: none !important;
+}
+
+body.fivia-fullscreen-active #main-content,
+body.fq-fullscreen-active #main-content {
+  margin-left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Floating Exit Fullscreen Button */
+#btn-floating-exit-fullscreen {
+  position: fixed;
+  top: 10px;
+  right: 14px;
+  z-index: 100000;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1.5px solid var(--brand-orange);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+body.fivia-fullscreen-active #btn-floating-exit-fullscreen,
+body.fq-fullscreen-active #btn-floating-exit-fullscreen {
+  display: inline-flex !important;
+}
+
+#btn-floating-exit-fullscreen:hover,
+#btn-floating-exit-fullscreen:active {
+  background: var(--brand-orange);
+  color: #050b18;
+  transform: scale(1.05);
+}
+
+/* Fullscreen Simulation Viewport */
+body.fivia-fullscreen-active #lab-viewport-section,
+body.fq-fullscreen-active #lab-viewport-section {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+body.fivia-fullscreen-active .fivia-measurement-lab-container,
+body.fq-fullscreen-active .fivia-measurement-lab-container {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }

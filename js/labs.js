@@ -4653,7 +4653,9 @@ function initRedesignedMeasurementLab() {
             FIVIA Virtual Lab: Pengukuran Dasar Fisika
           </h3>
         </div>
-        <div style="display: flex; gap: 12px; align-items: center;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-outline" id="btn-toggle-meas-nav" onclick="toggleMeasSidebar()" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px;" title="Pilih Alat Ukur"><i class="fas fa-bars"></i> Alat</button>
+          <button type="button" class="btn btn-orange" id="btn-meas-fullscreen-toggle" onclick="window.toggleFullScreen()" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700;" title="Layar Penuh"><i class="fas fa-expand"></i> Full Screen</button>
           <div class="glass-panel" style="padding: 4px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; text-align: right;">
             <div id="meas-progress-text" style="font-size: 0.8rem; font-weight: bold; color: var(--brand-orange);">Benda Terukur: 0/3</div>
           </div>
@@ -4661,9 +4663,12 @@ function initRedesignedMeasurementLab() {
         </div>
       </div>
 
-      <div style="display: flex; flex: 1; overflow: hidden; max-height: calc(100vh - 50px);">
+      <div style="display: flex; flex: 1; overflow: hidden; max-height: calc(100vh - 50px); position: relative;">
+        <!-- BACKDROP UNTUK DRAWER MOBILE -->
+        <div id="meas-sidebar-backdrop" class="meas-sidebar-backdrop" onclick="toggleMeasSidebar(false)"></div>
+
         <!-- SIDEBAR KIRI -->
-        <div style="width: 200px; flex-shrink: 0; background-color: #0a1128; border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 4px; padding: 10px 6px; overflow-y: auto;">
+        <div id="meas-sidebar-left" class="meas-sidebar-left" style="width: 200px; flex-shrink: 0; background-color: #0a1128; border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 4px; padding: 10px 6px; overflow-y: auto;">
           <button class="meas-nav-btn active" id="btn-nav-caliper" onclick="switchMeasTab('caliper')"><i class="fas fa-drafting-compass"></i> Jangka Sorong</button>
           <button class="meas-nav-btn" id="btn-nav-mistar" onclick="switchMeasTab('mistar')"><i class="fas fa-ruler"></i> Mistar</button>
           <button class="meas-nav-btn" id="btn-nav-micrometer" onclick="switchMeasTab('micrometer')"><i class="fas fa-cogs"></i> Mikrometer Sekrup</button>
@@ -4933,8 +4938,23 @@ function initRedesignedMeasurementLab() {
   switchMeasTab("caliper");
 }
 
+function toggleMeasSidebar(force) {
+  const sb = document.getElementById("meas-sidebar-left");
+  const bd = document.getElementById("meas-sidebar-backdrop");
+  if (!sb) return;
+  const shouldOpen = typeof force === "boolean" ? force : !sb.classList.contains("open");
+  sb.classList.toggle("open", shouldOpen);
+  if (bd) bd.classList.toggle("open", shouldOpen);
+}
+window.toggleMeasSidebar = toggleMeasSidebar;
+
 function switchMeasTab(tabId) {
   measState.activeTab = tabId;
+
+  // On mobile devices, dismiss sidebar drawer once tool is clicked
+  if (window.innerWidth <= 768) {
+    toggleMeasSidebar(false);
+  }
   
   // Highlight sidebar active state
   document.querySelectorAll(".meas-nav-btn").forEach(btn => {
