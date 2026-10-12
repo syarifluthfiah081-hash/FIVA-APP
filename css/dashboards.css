@@ -125,22 +125,35 @@
 /* Tab Switcher */
 .tab-container {
   display: flex;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 2px solid var(--glass-border);
   margin-bottom: 20px;
-  gap: 20px;
+  gap: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 100%;
+  scrollbar-width: none;
+}
+
+.tab-container::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
-  font-size: 1rem;
-  padding: 12px 8px;
+  font-size: 0.92rem;
+  padding: 10px 14px;
   cursor: pointer;
   position: relative;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border-radius: 8px 8px 0 0;
 }
 
 .tab-btn:hover {
@@ -261,4 +274,78 @@
 
 .search-input {
   max-width: 300px;
+}
+
+/* Mobile Responsive Dashboard & Modules */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 8px 10px 24px 10px !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .dashboard-section {
+    padding: 16px 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    padding: 8px 0 !important;
+    gap: 12px !important;
+  }
+
+  .stat-card {
+    padding: 16px 14px !important;
+  }
+
+  .stat-value {
+    font-size: 1.5rem !important;
+  }
+
+  .course-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .course-card {
+    padding: 16px !important;
+  }
+
+  .section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .section-title {
+    font-size: 1.15rem !important;
+  }
+
+  .action-box {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .action-box .form-control,
+  .action-box .search-input,
+  .action-box select,
+  .action-box button {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .custom-table th,
+  .custom-table td {
+    padding: 10px 12px !important;
+    font-size: 0.82rem !important;
+  }
 }
