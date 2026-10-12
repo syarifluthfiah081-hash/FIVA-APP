@@ -428,6 +428,30 @@ function handleRouting() {
     return;
   }
 
+  // Direct Class Roster Link Activation (for multi-device instant sync)
+  if (hash.startsWith("#sync-roster=")) {
+    try {
+      const payloadBase64 = hash.replace("#sync-roster=", "");
+      const jsonStr = decodeURIComponent(escape(atob(payloadBase64)));
+      const students = JSON.parse(jsonStr);
+      if (Array.isArray(students) && students.length > 0) {
+        let count = 0;
+        students.forEach(std => {
+          if (window.syncStudentRecordLocally) {
+            window.syncStudentRecordLocally(std);
+            count++;
+          }
+        });
+        alert(`🎉 DATA KELAS BERHASIL DIAKTIFKAN!\n\nSebanyak ${count} siswa berhasil dimuat di perangkat ini.\nSilakan masuk sekarang menggunakan Nama Lengkap & NIS Anda.`);
+      }
+    } catch(err) {
+      console.warn("Error parsing roster sync payload:", err);
+    }
+    window.location.hash = "#landing";
+    if (window.openModal) window.openModal("login-modal");
+    return;
+  }
+
   // Route Definitions
   if (hash.startsWith("#quest")) {
     highlightSidebar("menu-guru-group-play");

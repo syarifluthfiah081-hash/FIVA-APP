@@ -69,7 +69,7 @@ class AuthManager {
     return { success: true, user: sessionUser };
   }
 
-  login(identifier, password) {
+  async login(identifier, password) {
     const rawId = (identifier || "").trim();
     const rawPass = (password || "").trim();
 
@@ -159,11 +159,11 @@ class AuthManager {
     }
 
     // Default hardcoded fallbacks for Teacher & Admin
-    if ((inputId === "guru" || inputId === "guru@hidayahstore.edu" || inputId.includes("hidayat")) && (rawPass === "guru123" || rawPass === "guru")) {
+    if ((inputId === "guru" || inputId === "guru@hidayahstore.edu" || inputId.includes("hidayat") || inputId.includes("syarifhidayatullah64") || inputId.includes("syarif")) && (rawPass === "guru123" || rawPass === "guru")) {
       return this._setSessionUser({
-        id: "usr_guru",
-        email: "guru@hidayahstore.edu",
-        name: "Hidayat, S.Pd., M.Si.",
+        id: "usr_guru_syarif",
+        email: "syarifhidayatullah64@guru.sma.belajar.id",
+        name: "Syarif Hidayatullah, S.Pd.",
         role: "guru",
         nis: null,
         classId: null
@@ -319,6 +319,50 @@ class AuthManager {
           classId: "cls_x1",
           password: "siswa123"
         };
+      }
+    }
+
+    // Pattern 5: Real-time Cloud Firestore Lookup (if not yet in local device storage)
+    if (!matchedCandidate && window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+      try {
+        const firestore = window.FIVIA_FIREBASE.db;
+        const collections = ["vlab_student_roster", "vlab_students", "vlab_users"];
+        for (const col of collections) {
+          const snap = await firestore.collection(col).get();
+          if (!snap.empty) {
+            for (const doc of snap.docs) {
+              const data = doc.data();
+              const candName = data.name || data.studentName || data.displayName;
+              const candNis = data.nis || data.studentCode;
+              const candPass = data.password;
+
+              const isNameMatch = testNameMatch(candName, inputId) || (data.email && testEmailMatch(data.email, inputId));
+              const isNisMatch = testNisMatch(candNis, data.studentCode, inputPass, inputPassDigits, inputPassAlpha) || testPasswordMatch(candPass, rawPass);
+              const isInvertedMatch = testNisMatch(candNis, data.studentCode, inputId, inputIdDigits, inputIdAlpha) &&
+                                      (testNameMatch(candName, inputPass) || testPasswordMatch(candPass, rawPass));
+
+              if ((isNameMatch && isNisMatch) || isInvertedMatch) {
+                matchedCandidate = {
+                  id: doc.id,
+                  name: candName || "Siswa",
+                  nis: candNis || rawPass,
+                  studentCode: data.studentCode || ('FIVIA-' + candNis),
+                  email: data.email || `${normAlphaNum(candName)}@sekolah.id`,
+                  password: candPass || rawPass,
+                  classId: data.className || data.classId || "cls_x1",
+                  role: "siswa"
+                };
+                if (window.syncStudentRecordLocally) {
+                  window.syncStudentRecordLocally(matchedCandidate);
+                }
+                break;
+              }
+            }
+          }
+          if (matchedCandidate) break;
+        }
+      } catch (cloudErr) {
+        console.warn("[Auth] Cloud Firestore lookup error:", cloudErr);
       }
     }
 

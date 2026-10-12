@@ -14,13 +14,14 @@ const SEED_DATA = {
   users: [
     { id: "usr_admin", email: "admin@hidayahstore.edu", password: "admin123", name: "Admin Hidayah", role: "admin" },
     { id: "usr_guru", email: "guru@hidayahstore.edu", password: "guru123", name: "Hidayat, S.Pd., M.Si.", role: "guru" },
+    { id: "usr_guru_syarif", email: "syarifhidayatullah64@guru.sma.belajar.id", password: "guru123", name: "Syarif Hidayatullah, S.Pd.", role: "guru" },
     { id: "usr_siswa", email: "siswa@hidayahstore.edu", password: "siswa123", nis: "12345", name: "Siswa", role: "siswa", classId: "cls_x1" }
   ],
   classes: [
-    { id: "cls_x1", name: "Kelas X-1", teacherId: "usr_guru" },
-    { id: "cls_x2", name: "Kelas X-2", teacherId: "usr_guru" },
-    { id: "cls_xi1", name: "Kelas XI IPA-1", teacherId: "usr_guru" },
-    { id: "cls_xi2", name: "Kelas XI IPA-2", teacherId: "usr_guru" }
+    { id: "cls_x1", name: "Kelas X-1", teacherId: "usr_guru_syarif" },
+    { id: "cls_x2", name: "Kelas X-2", teacherId: "usr_guru_syarif" },
+    { id: "cls_xi1", name: "Kelas XI IPA-1", teacherId: "usr_guru_syarif" },
+    { id: "cls_xi2", name: "Kelas XI IPA-2", teacherId: "usr_guru_syarif" }
   ],
   students: [
     { id: "usr_siswa", name: "Siswa", nis: "12345", classId: "cls_x1", email: "siswa@hidayahstore.edu" }
@@ -507,6 +508,21 @@ class LocalDatabase {
       this.saveTable("detektifProgress", []);
       
       localStorage.setItem(DB_PREFIX + "initialized", "true");
+    } else {
+      // Ensure Pak Syarif's teacher account is present in existing users table
+      try {
+        const users = this.getTable("users");
+        if (users && !users.some(u => (u.email || "").toLowerCase() === "syarifhidayatullah64@guru.sma.belajar.id")) {
+          users.push({
+            id: "usr_guru_syarif",
+            email: "syarifhidayatullah64@guru.sma.belajar.id",
+            password: "guru123",
+            name: "Syarif Hidayatullah, S.Pd.",
+            role: "guru"
+          });
+          this.saveTable("users", users);
+        }
+      } catch(e) {}
     }
   }
 

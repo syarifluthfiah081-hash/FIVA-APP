@@ -9,7 +9,8 @@ const FIRESTORE_COLLECTIONS = {
   game_progress: "vlab_game_progress",
   students: "vlab_students",
   classes: "vlab_classes",
-  users: "vlab_users"
+  users: "vlab_users",
+  roster: "vlab_student_roster"
 };
 
 let syncUnsubscribers = [];
@@ -59,7 +60,10 @@ async function initFirebaseSync() {
     }
   });
 
-  // Push local items that might not yet exist on Firestore (initial backfill)
+  // Fetch full roster from cloud to ensure local cache is completely up to date
+  await fetchRosterFromCloud();
+
+  // Push local items that might not yet exist on Firestore (backfill)
   await backfillLocalToCloud();
 }
 
@@ -67,24 +71,109 @@ async function initFirebaseSync() {
  * Update local storage when a cloud record changes
  */
 function handleCloudRecordUpdate(localCollection, id, data) {
-  if (typeof db === "undefined") return;
-  const localList = db.get(localCollection) || [];
-  const idx = localList.findIndex((item) => String(item.id) === String(id));
-
   const mergedItem = { ...data, id: id };
 
-  if (idx !== -1) {
-    // Only update if cloud record is newer or updated
-    localList[idx] = { ...localList[idx], ...mergedItem };
-  } else {
-    localList.push(mergedItem);
+  // 1. If it's a student or user, sync across both tables and local rosters
+  if (localCollection === "students" || localCollection === "users" || localCollection === "roster") {
+    syncStudentRecordLocally(mergedItem);
   }
 
-  localStorage.setItem(DB_PREFIX + localCollection, JSON.stringify(localList));
+  if (typeof db !== "undefined" && typeof db.getTable === "function") {
+    const tableName = (localCollection === "roster") ? "students" : localCollection;
+    const localList = db.getTable(tableName) || [];
+    const idx = localList.findIndex((item) => String(item.id) === String(id) || (item.nis && String(item.nis) === String(data.nis)));
 
-  // Trigger UI refresh if currently on dashboard or LKPD
+    if (idx !== -1) {
+      localList[idx] = { ...localList[idx], ...mergedItem };
+    } else {
+      localList.push(mergedItem);
+    }
+
+    db.saveTable(tableName, localList);
+  }
+
+  // Trigger UI refresh if currently on dashboard, class management, or LKPD
+  if (window.renderClassManagement && (localCollection === "students" || localCollection === "users" || localCollection === "roster")) {
+    window.renderClassManagement();
+  }
   if (window.renderSubmissionsList && (localCollection === "submissions")) {
     window.renderSubmissionsList();
+  }
+}
+
+/**
+ * Sync a student record across all local storage targets
+ */
+function syncStudentRecordLocally(std) {
+  if (!std) return;
+  const sName = std.name || std.studentName || std.displayName || "Siswa";
+  const sNis = String(std.nis || std.studentCode || "").trim();
+  const sCode = std.studentCode || (sNis ? ('FIVIA-' + sNis) : 'STD');
+  const sClass = std.className || std.classId || "cls_x1";
+  const sId = std.id || std.studentId || ("usr_" + Math.random().toString(36).substr(2, 9));
+
+  // A. Sync to fivia_student_roster
+  try {
+    let roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
+    const rIdx = roster.findIndex(r => String(r.id || r.studentId) === String(sId) || (r.nis && String(r.nis) === sNis) || (r.name && r.name.toLowerCase().trim() === sName.toLowerCase().trim()));
+    const rosterObj = {
+      id: sId,
+      studentId: sId,
+      name: sName,
+      nis: sNis,
+      studentCode: sCode,
+      className: sClass,
+      classId: sClass,
+      xp: std.xp || 0
+    };
+    if (rIdx >= 0) {
+      roster[rIdx] = { ...roster[rIdx], ...rosterObj };
+    } else {
+      roster.push(rosterObj);
+    }
+    localStorage.setItem("fivia_student_roster", JSON.stringify(roster));
+  } catch(e) {}
+
+  // B. Sync to fivia_classroom_students
+  try {
+    let cs = JSON.parse(localStorage.getItem("fivia_classroom_students") || "[]");
+    const csIdx = cs.findIndex(c => String(c.studentId || c.id) === String(sId) || (c.nis && String(c.nis) === sNis));
+    const csObj = {
+      studentId: sId,
+      id: sId,
+      displayName: sName,
+      name: sName,
+      nis: sNis,
+      classId: sClass
+    };
+    if (csIdx >= 0) {
+      cs[csIdx] = { ...cs[csIdx], ...csObj };
+    } else {
+      cs.push(csObj);
+    }
+    localStorage.setItem("fivia_classroom_students", JSON.stringify(cs));
+  } catch(e) {}
+
+  // C. Sync to users table for login authentication
+  if (window.db && typeof window.db.getTable === "function") {
+    let users = window.db.getTable("users") || [];
+    const uIdx = users.findIndex(u => String(u.id) === String(sId) || (u.nis && String(u.nis) === sNis) || (u.name && u.name.toLowerCase().trim() === sName.toLowerCase().trim()));
+    const userObj = {
+      id: sId,
+      name: sName,
+      nis: sNis,
+      studentCode: sCode,
+      email: std.email || `${sName.toLowerCase().replace(/[^a-z0-9]/g, '')}@sekolah.id`,
+      role: "siswa",
+      password: std.password || sNis || "12345",
+      classId: sClass
+    };
+    if (uIdx >= 0) {
+      users[uIdx] = { ...users[uIdx], ...userObj };
+    } else {
+      users.push(userObj);
+    }
+    window.db.saveTable("users", users);
   }
 }
 
@@ -92,10 +181,11 @@ function handleCloudRecordUpdate(localCollection, id, data) {
  * Handle remote delete
  */
 function handleCloudRecordDelete(localCollection, id) {
-  if (typeof db === "undefined") return;
-  const localList = db.get(localCollection) || [];
+  if (typeof db === "undefined" || !db.getTable) return;
+  const tableName = (localCollection === "roster") ? "students" : localCollection;
+  const localList = db.getTable(tableName) || [];
   const filtered = localList.filter((item) => String(item.id) !== String(id));
-  localStorage.setItem(DB_PREFIX + localCollection, JSON.stringify(filtered));
+  db.saveTable(tableName, filtered);
 }
 
 /**
@@ -125,34 +215,129 @@ async function syncLocalChangeToCloud(collectionName, item) {
 }
 
 /**
- * Sync a deletion to Firestore
+ * Fetch entire roster and student records directly from Firestore Cloud into LocalStorage
  */
-async function syncLocalDeleteToCloud(collectionName, id) {
+async function fetchRosterFromCloud() {
   if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
-    return;
+    return false;
   }
 
-  const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
-  if (!cloudCollection || !id) return;
+  const firestore = window.FIVIA_FIREBASE.db;
+  let count = 0;
 
   try {
-    const firestore = window.FIVIA_FIREBASE.db;
-    await firestore.collection(cloudCollection).doc(String(id)).delete();
-    console.log(`[Firebase Sync] Terhapus dari Firestore: ${cloudCollection}/${id}`);
+    // 1. Fetch vlab_users (especially registered students & teachers)
+    const usersSnap = await firestore.collection("vlab_users").get();
+    if (!usersSnap.empty) {
+      usersSnap.forEach(doc => {
+        handleCloudRecordUpdate("users", doc.id, doc.data());
+        count++;
+      });
+    }
+
+    // 2. Fetch vlab_students
+    const studentsSnap = await firestore.collection("vlab_students").get();
+    if (!studentsSnap.empty) {
+      studentsSnap.forEach(doc => {
+        handleCloudRecordUpdate("students", doc.id, doc.data());
+        count++;
+      });
+    }
+
+    // 3. Fetch vlab_student_roster
+    const rosterSnap = await firestore.collection("vlab_student_roster").get();
+    if (!rosterSnap.empty) {
+      rosterSnap.forEach(doc => {
+        handleCloudRecordUpdate("roster", doc.id, doc.data());
+        count++;
+      });
+    }
+
+    // 4. Fetch vlab_classes
+    const classSnap = await firestore.collection("vlab_classes").get();
+    if (!classSnap.empty) {
+      classSnap.forEach(doc => {
+        handleCloudRecordUpdate("classes", doc.id, doc.data());
+      });
+    }
+
+    console.log(`[Firebase Sync] Berhasil memuat ${count} data siswa dari Cloud!`);
+    return { success: true, count };
   } catch (err) {
-    console.warn(`[Firebase Sync] Gagal menghapus data di cloud:`, err);
+    console.warn("[Firebase Sync] Gagal memuat data dari cloud:", err);
+    return { success: false, error: err.message };
   }
 }
 
 /**
- * Push all local data to Firestore
+ * Push all local data (students, roster, users, classes) to Firestore Cloud
+ */
+async function syncAllRosterToCloud() {
+  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
+    return { success: false, message: "Firebase belum terhubung. Periksa konfigurasi di menu Cloud DB." };
+  }
+
+  const firestore = window.FIVIA_FIREBASE.db;
+  let uploaded = 0;
+
+  try {
+    // 1. Upload students table
+    const students = (window.db && window.db.getTable("students")) || [];
+    for (const s of students) {
+      if (s && (s.id || s.nis)) {
+        const docId = String(s.id || ('std_' + s.nis));
+        await firestore.collection("vlab_students").doc(docId).set(JSON.parse(JSON.stringify(s)), { merge: true });
+        uploaded++;
+      }
+    }
+
+    // 2. Upload users table (students and teachers)
+    const users = (window.db && window.db.getTable("users")) || [];
+    for (const u of users) {
+      if (u && (u.id || u.email || u.nis)) {
+        const docId = String(u.id || ('usr_' + (u.nis || u.email)));
+        await firestore.collection("vlab_users").doc(docId).set(JSON.parse(JSON.stringify(u)), { merge: true });
+        uploaded++;
+      }
+    }
+
+    // 3. Upload fivia_student_roster
+    let roster = [];
+    try {
+      roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
+    } catch(e) {}
+    for (const r of roster) {
+      if (r && (r.studentId || r.id || r.nis)) {
+        const docId = String(r.studentId || r.id || ('ros_' + r.nis));
+        await firestore.collection("vlab_student_roster").doc(docId).set(JSON.parse(JSON.stringify(r)), { merge: true });
+        uploaded++;
+      }
+    }
+
+    // 4. Upload classes
+    const classes = (window.db && window.db.getTable("classes")) || [];
+    for (const c of classes) {
+      if (c && c.id) {
+        await firestore.collection("vlab_classes").doc(String(c.id)).set(JSON.parse(JSON.stringify(c)), { merge: true });
+      }
+    }
+
+    return { success: true, count: uploaded };
+  } catch (err) {
+    console.error("[Firebase Sync] Gagal mengunggah seluruh roster ke cloud:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Push all local items that might not yet exist on Firestore
  */
 async function backfillLocalToCloud() {
   if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) return;
 
-  const collections = ["submissions", "quiz_results", "game_progress", "students", "classes"];
+  const collections = ["students", "classes", "users"];
   for (const col of collections) {
-    const items = (typeof db !== "undefined") ? (db.get(col) || []) : [];
+    const items = (typeof db !== "undefined" && db.getTable) ? (db.getTable(col) || []) : [];
     for (const item of items) {
       if (item && item.id) {
         await syncLocalChangeToCloud(col, item);
@@ -166,3 +351,5 @@ window.initFirebaseSync = initFirebaseSync;
 window.syncLocalChangeToCloud = syncLocalChangeToCloud;
 window.syncLocalDeleteToCloud = syncLocalDeleteToCloud;
 window.backfillLocalToCloud = backfillLocalToCloud;
+window.fetchRosterFromCloud = fetchRosterFromCloud;
+window.syncAllRosterToCloud = syncAllRosterToCloud;

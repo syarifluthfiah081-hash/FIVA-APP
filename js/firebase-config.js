@@ -5,14 +5,14 @@
 
 const FIREBASE_CONFIG_STORAGE_KEY = "fivia_firebase_config";
 
-// Default template config (can be updated dynamically from Admin UI or settings)
+// Default Firebase credentials for FIVIA Physics Lab & Quest
 const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyCr9M3ZzdTZivxfDlLSm3JHOY39ezQCWRk",
+  authDomain: "fiva-app.firebaseapp.com",
+  projectId: "fiva-app",
+  storageBucket: "fiva-app.appspot.com",
+  messagingSenderId: "1028714041793",
+  appId: "1:1028714041793:web:fivaapp"
 };
 
 window.FIVIA_FIREBASE = {
@@ -31,7 +31,10 @@ function getFirebaseConfig() {
   try {
     const saved = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.apiKey && parsed.projectId) {
+        return parsed;
+      }
     }
   } catch (e) {
     console.warn("[Firebase Config] Error parsing saved config:", e);
