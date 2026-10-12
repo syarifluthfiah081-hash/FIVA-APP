@@ -29,6 +29,23 @@
   <link rel="stylesheet" href="css/fivia-quest.css">
   
   <script>
+    // Enforce instant cache purge for new application versions
+    (function() {
+      const APP_VERSION = '1.2.3';
+      const storedVersion = localStorage.getItem('fivia_app_version');
+      if (storedVersion !== APP_VERSION) {
+        localStorage.setItem('fivia_app_version', APP_VERSION);
+        if ('caches' in window) {
+          caches.keys().then(names => names.forEach(name => caches.delete(name)));
+        }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(reg => reg.unregister());
+          });
+        }
+      }
+    })();
+
     // Hide loading screen after full load
     window.addEventListener("load", () => {
       const loader = document.getElementById("fivia-loading-screen");
@@ -2212,15 +2229,15 @@
   <script src="js/firebase-sync.js"></script>
 
   <!-- APPLICATION CORE SCRIPTS -->
-  <script src="js/database.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/dashboards.js"></script>
-  <script src="js/labs.js"></script>
-  <script src="js/lkpd.js"></script>
-  <script src="js/quiz.js"></script>
-  <script src="js/ai-tutor.js"></script>
-  <script src="js/detektif.js"></script>
+  <script src="js/database.js?v=1.2.3"></script>
+  <script src="js/auth.js?v=1.2.3"></script>
+  <script src="js/app.js?v=1.2.3"></script>
+  <script src="js/dashboards.js?v=1.2.3"></script>
+  <script src="js/labs.js?v=1.2.3"></script>
+  <script src="js/lkpd.js?v=1.2.3"></script>
+  <script src="js/quiz.js?v=1.2.3"></script>
+  <script src="js/ai-tutor.js?v=1.2.3"></script>
+  <script src="js/detektif.js?v=1.2.3"></script>
   <!-- PHASE 4, 5, 6, 7 & 8 SCRIPTS -->
   <script src="js/fivia-assessment.js"></script>
   <script src="js/fivia-student.js"></script>
@@ -2247,14 +2264,6 @@
   <script src="js/fivia-student-session.js"></script>
   <script src="js/fivia-private-classroom.js"></script>
   <script src="js/fivia-private-backup.js"></script>
-  <script src="js/fivia-teacher-home.js"></script>
-  <script src="js/fivia-classroom-today.js"></script>
-  <script src="js/fivia-attendance.js"></script>
-  <script src="js/fivia-daily-session.js"></script>
-  <script src="js/fivia-session-summary.js"></script>
-  <script src="js/fivia-teacher-notes.js"></script>
-  <script src="js/fivia-projector.js"></script>
-  <script src="js/fivia-data-health.js"></script>
   <script src="js/fivia-data-validator.js"></script>
   <script src="js/fivia-presence.js"></script>
   <script src="js/fivia-firebase-sync-v2.js"></script>

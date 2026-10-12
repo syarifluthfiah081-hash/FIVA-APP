@@ -415,6 +415,12 @@ function handleRouting() {
     if (el) el.classList.add("active");
   };
 
+  // Toggle footer visibility (hide inside virtual lab viewport)
+  const appFooter = document.querySelector("footer.app-footer");
+  if (appFooter) {
+    appFooter.style.display = hash.startsWith("#lab/") ? "none" : "";
+  }
+
   // Auth Guards (Allow #quest for both guests & logged in users)
   if (hash !== "#landing" && !hash.startsWith("#quest") && !user) {
     // Redirect anonymous to landing
@@ -475,12 +481,7 @@ function handleRouting() {
     highlightSidebar("menu-materi");
     const labId = hash.split("/")[1];
     document.getElementById("lab-viewport-section").classList.remove("hidden-section");
-    const appFooter = document.querySelector("footer.app-footer");
-    if (appFooter) appFooter.style.display = "none";
     if (window.renderLab) window.renderLab(labId);
-  } else {
-    const appFooter = document.querySelector("footer.app-footer");
-    if (appFooter) appFooter.style.display = "";
   }
 
   else if (hash === "#detektif") {
