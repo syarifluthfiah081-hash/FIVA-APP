@@ -151,7 +151,9 @@ body.fq-fullscreen-active #main-content,
   margin: 0 !important;
   padding: 0 !important;
   width: 100vw !important;
+  width: 100dvw !important;
   min-height: 100vh !important;
+  min-height: 100dvh !important;
   max-width: 100vw !important;
   height: auto !important;
   max-height: none !important;
@@ -165,10 +167,11 @@ body.fq-fullscreen-active #fq-group-levels-container,
   max-width: 100vw !important;
   width: 100vw !important;
   min-height: 100vh !important;
+  min-height: 100dvh !important;
   height: auto !important;
   max-height: none !important;
   margin: 0 !important;
-  padding: 16px 20px !important;
+  padding: 8px 12px !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
@@ -180,8 +183,11 @@ body.fq-fullscreen-active .fivia-quest,
 :fullscreen .fivia-quest {
   border-radius: 0 !important;
   min-height: 100vh !important;
+  min-height: 100dvh !important;
   height: auto !important;
+  padding: 10px 12px !important;
   overflow-y: auto !important;
+  box-sizing: border-box !important;
 }
 
 body.fq-fullscreen-active .fq-view,
@@ -189,6 +195,118 @@ body.fq-fullscreen-active .fq-view,
   min-height: 100% !important;
   height: auto !important;
   overflow-y: auto !important;
+}
+
+/* PORTRAIT MODE: FULL KE SAMPING (FIVIA QUEST & GAME ARENA) */
+@media (orientation: portrait), (max-aspect-ratio: 1/1) {
+  body.fq-fullscreen-active .fivia-quest,
+  :fullscreen .fivia-quest {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    padding-top: 6px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  body.fq-fullscreen-active .fq-header,
+  :fullscreen .fq-header {
+    margin-left: 2px !important;
+    margin-right: 2px !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+  }
+
+  body.fq-fullscreen-active #fq-group-play-container,
+  body.fq-fullscreen-active #fq-group-levels-container,
+  :fullscreen #fq-group-play-container,
+  :fullscreen #fq-group-levels-container {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  body.fq-fullscreen-active #fq-group-play-container > div,
+  body.fq-fullscreen-active #fq-group-levels-container > div,
+  :fullscreen #fq-group-play-container > div,
+  :fullscreen #fq-group-levels-container > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  body.fq-fullscreen-active .fq-view,
+  :fullscreen .fq-view {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* LANDSCAPE MODE: FULL KE BAWAH (FIVIA QUEST & GAME ARENA) */
+@media (orientation: landscape) {
+  body.fq-fullscreen-active #main-content,
+  :fullscreen #main-content {
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    height: 100% !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.fq-fullscreen-active .fivia-quest,
+  :fullscreen .fivia-quest {
+    flex: 1 !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    height: 100% !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 4px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.fq-fullscreen-active #fq-group-play-container,
+  body.fq-fullscreen-active #fq-group-levels-container,
+  :fullscreen #fq-group-play-container,
+  :fullscreen #fq-group-levels-container {
+    flex: 1 !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    height: 100% !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 4px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.fq-fullscreen-active #fq-group-play-container > div,
+  body.fq-fullscreen-active #fq-group-levels-container > div,
+  :fullscreen #fq-group-play-container > div,
+  :fullscreen #fq-group-levels-container > div {
+    flex: 1 !important;
+    min-height: calc(100vh - 16px) !important;
+    min-height: calc(100dvh - 16px) !important;
+    margin-bottom: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
 }
 
 /* Ensure images & diagrams in Fullscreen auto-fit responsively & allow vertical scrolling */
@@ -209,4 +327,5 @@ body.fq-fullscreen-active .fivia-quest-modal-content,
   max-height: 88vh !important;
   overflow-y: auto !important;
 }
+
 
