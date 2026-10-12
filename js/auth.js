@@ -16,6 +16,10 @@ class AuthManager {
     if (session) {
       try {
         this.currentUser = JSON.parse(session);
+        if (this.currentUser && (this.currentUser.email || "").toLowerCase() === "syarifhidayatullah64@guru.sma.belajar.id") {
+          this.currentUser.name = "Syarif Hidayatullah";
+          localStorage.setItem(SESSION_KEY, JSON.stringify(this.currentUser));
+        }
       } catch (e) {
         console.error("Failed to parse active user session", e);
         this.logout();
@@ -163,7 +167,7 @@ class AuthManager {
       return this._setSessionUser({
         id: "usr_guru_syarif",
         email: "syarifhidayatullah64@guru.sma.belajar.id",
-        name: "Syarif Hidayatullah, S.Pd.",
+        name: "Syarif Hidayatullah",
         role: "guru",
         nis: null,
         classId: null

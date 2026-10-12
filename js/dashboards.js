@@ -2451,8 +2451,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Teacher Management screen renderer logic
 function renderTeacherManagement() {
-  const users = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("users") || [] : [];
-  const teachers = users.filter(u => u.role === "guru");
+  let users = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("users") || [] : [];
+  
+  // Purge any duplicate Syarif Hidayatullah, S.Pd. account from localStorage
+  const syarifEmail = "syarifhidayatullah64@guru.sma.belajar.id";
+  const hadSpd = users.some(u => u.email && u.email.toLowerCase() === syarifEmail && (u.name || "").includes("S.Pd"));
+  if (hadSpd) {
+    users = users.filter(u => !(u.email && u.email.toLowerCase() === syarifEmail && (u.name || "").includes("S.Pd")));
+    if (window.db) window.db.saveTable("users", users);
+  }
+
+  // Deduplicate teachers by email
+  const teacherMap = new Map();
+  users.filter(u => u.role === "guru").forEach(t => {
+    const key = (t.email || "").toLowerCase().trim();
+    if (!teacherMap.has(key)) {
+      teacherMap.set(key, t);
+    }
+  });
+  const teachers = Array.from(teacherMap.values());
 
   const searchEl = document.getElementById("search-teacher");
   const searchVal = searchEl ? searchEl.value.toLowerCase().trim() : "";

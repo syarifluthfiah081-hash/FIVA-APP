@@ -14,7 +14,7 @@ const SEED_DATA = {
   users: [
     { id: "usr_admin", email: "admin@hidayahstore.edu", password: "admin123", name: "Admin Hidayah", role: "admin" },
     { id: "usr_guru", email: "guru@hidayahstore.edu", password: "guru123", name: "Hidayat, S.Pd., M.Si.", role: "guru" },
-    { id: "usr_guru_syarif", email: "syarifhidayatullah64@guru.sma.belajar.id", password: "Syarif121220", name: "Syarif Hidayatullah, S.Pd.", role: "guru" },
+    { id: "usr_guru_syarif", email: "syarifhidayatullah64@guru.sma.belajar.id", password: "Syarif121220", name: "Syarif Hidayatullah", role: "guru" },
     // Kelas X-1
     { id: "usr_std_7702", email: "ahmadnaufal@sekolah.id", password: "7702", nis: "7702", name: "AHMAD NAUFAL", studentCode: "FIVIA-X1-860", role: "siswa", classId: "cls_x1" },
     { id: "usr_std_192", email: "sulkifli@sekolah.id", password: "192", nis: "192", name: "SULKIFLI", studentCode: "FIVIA-ZJFFO", role: "siswa", classId: "cls_x1" },
@@ -611,16 +611,19 @@ class LocalDatabase {
     // Ensure teacher credentials (Syarif121220) & registered students are guaranteed on all devices
     try {
       let users = this.getTable("users") || [];
-      // 1. Upsert teacher Pak Syarif with password Syarif121220
+      // 1. Remove duplicate teacher account named "Syarif Hidayatullah, S.Pd." and keep single "Syarif Hidayatullah"
+      const syarifEmail = "syarifhidayatullah64@guru.sma.belajar.id";
+      users = users.filter(u => !(u.email && u.email.toLowerCase() === syarifEmail && (u.name || "").includes("S.Pd")));
+      
       const syarifIdx = users.findIndex(u => 
-        (u.email || "").toLowerCase() === "syarifhidayatullah64@guru.sma.belajar.id" || 
+        (u.email || "").toLowerCase() === syarifEmail || 
         u.id === "usr_guru_syarif"
       );
       const teacherObj = {
         id: "usr_guru_syarif",
-        email: "syarifhidayatullah64@guru.sma.belajar.id",
+        email: syarifEmail,
         password: "Syarif121220",
-        name: "Syarif Hidayatullah, S.Pd.",
+        name: "Syarif Hidayatullah",
         role: "guru"
       };
       if (syarifIdx !== -1) {
@@ -628,6 +631,16 @@ class LocalDatabase {
       } else {
         users.push(teacherObj);
       }
+
+      // Ensure no duplicate emails exist for the teacher
+      const seenGuru = new Set();
+      users = users.filter(u => {
+        if (u.role === "guru" && u.email && u.email.toLowerCase() === syarifEmail) {
+          if (seenGuru.has(syarifEmail)) return false;
+          seenGuru.add(syarifEmail);
+        }
+        return true;
+      });
 
       // Check permanently deleted students
       let deletedList = [];
