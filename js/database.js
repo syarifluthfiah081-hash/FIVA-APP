@@ -15,8 +15,47 @@ const SEED_DATA = {
     { id: "usr_admin", email: "admin@hidayahstore.edu", password: "admin123", name: "Admin Hidayah", role: "admin" },
     { id: "usr_guru", email: "guru@hidayahstore.edu", password: "guru123", name: "Hidayat, S.Pd., M.Si.", role: "guru" },
     { id: "usr_guru_syarif", email: "syarifhidayatullah64@guru.sma.belajar.id", password: "Syarif121220", name: "Syarif Hidayatullah, S.Pd.", role: "guru" },
-    { id: "usr_siswa_naufal", email: "ahmadnaufal@sekolah.id", password: "7702", nis: "7702", name: "AHMAD NAUFAL", studentCode: "FIVIA-X1-860", role: "siswa", classId: "cls_x1" },
-    { id: "usr_siswa_sulkifli", email: "sulkifli@sekolah.id", password: "192", nis: "192", name: "SULKIFLI", studentCode: "FIVIA-ZJFFO", role: "siswa", classId: "cls_x1" },
+    // Kelas X-1
+    { id: "usr_std_7702", email: "ahmadnaufal@sekolah.id", password: "7702", nis: "7702", name: "AHMAD NAUFAL", studentCode: "FIVIA-X1-860", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_192", email: "sulkifli@sekolah.id", password: "192", nis: "192", name: "SULKIFLI", studentCode: "FIVIA-ZJFFO", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7703", email: "adifa@sekolah.id", password: "7703", nis: "7703", name: "ADIFA KHAIRUNNIZA'A", studentCode: "FIVIA-X1-7703", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7704", email: "alvin@sekolah.id", password: "7704", nis: "7704", name: "ALVIN ABHISTA ANGGARA", studentCode: "FIVIA-X1-7704", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7705", email: "amiruddin@sekolah.id", password: "7705", nis: "7705", name: "AMIRUDDIN", studentCode: "FIVIA-X1-7705", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7706", email: "arfiandi@sekolah.id", password: "7706", nis: "7706", name: "ARFIANDI KUSUMA RAMDANA", studentCode: "FIVIA-X1-7706", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7707", email: "dzaky@sekolah.id", password: "7707", nis: "7707", name: "DZAKY RAISSA ABQARY", studentCode: "FIVIA-X1-7707", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7708", email: "egil@sekolah.id", password: "7708", nis: "7708", name: "EGIL SAPUTRA", studentCode: "FIVIA-X1-7708", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7709", email: "israfil@sekolah.id", password: "7709", nis: "7709", name: "ISRAFIL", studentCode: "FIVIA-X1-7709", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7710", email: "shaswan@sekolah.id", password: "7710", nis: "7710", name: "MOHD SHASWAN", studentCode: "FIVIA-X1-7710", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7711", email: "hidayat@sekolah.id", password: "7711", nis: "7711", name: "MUH HIDAYAT", studentCode: "FIVIA-X1-7711", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7712", email: "ridho@sekolah.id", password: "7712", nis: "7712", name: "MUH RIDHO", studentCode: "FIVIA-X1-7712", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7713", email: "ninis@sekolah.id", password: "7713", nis: "7713", name: "NINIS", studentCode: "FIVIA-X1-7713", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7714", email: "atiyah@sekolah.id", password: "7714", nis: "7714", name: "NUR ATIYAH", studentCode: "FIVIA-X1-7714", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7715", email: "azizah@sekolah.id", password: "7715", nis: "7715", name: "NUR AZIZAH PUTRI", studentCode: "FIVIA-X1-7715", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7716", email: "nurul@sekolah.id", password: "7716", nis: "7716", name: "NURUL HIDAYAH", studentCode: "FIVIA-X1-7716", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7717", email: "renaldi@sekolah.id", password: "7717", nis: "7717", name: "RENALDIANSAH", studentCode: "FIVIA-X1-7717", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7718", email: "renanda@sekolah.id", password: "7718", nis: "7718", name: "RENANDA QALBI", studentCode: "FIVIA-X1-7718", role: "siswa", classId: "cls_x1" },
+    { id: "usr_std_7719", email: "shofiyya@sekolah.id", password: "7719", nis: "7719", name: "SHOFIYYA ALIYYANA PUTRI", studentCode: "FIVIA-X1-7719", role: "siswa", classId: "cls_x1" },
+    // Kelas X-2
+    { id: "usr_std_7701", email: "alghifari@sekolah.id", password: "7701", nis: "7701", name: "AHMAD ALGHIFARI", studentCode: "FIVIA-X2-7701", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7720", email: "mufti@sekolah.id", password: "7720", nis: "7720", name: "AHMAD MUFTI", studentCode: "FIVIA-X2-7720", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7721", email: "ahsan@sekolah.id", password: "7721", nis: "7721", name: "AHSAN RANDI SAPUTRA", studentCode: "FIVIA-X2-7721", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7722", email: "arfa@sekolah.id", password: "7722", nis: "7722", name: "ARFA ALQHAERA", studentCode: "FIVIA-X2-7722", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7723", email: "asti@sekolah.id", password: "7723", nis: "7723", name: "ASTI MEILANI PUTRI", studentCode: "FIVIA-X2-7723", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7724", email: "ghali@sekolah.id", password: "7724", nis: "7724", name: "GHALI ZHAFRAN BATARA", studentCode: "FIVIA-X2-7724", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7725", email: "hasanuddin@sekolah.id", password: "7725", nis: "7725", name: "HASANUDDIN", studentCode: "FIVIA-X2-7725", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7726", email: "khaerfinanda@sekolah.id", password: "7726", nis: "7726", name: "KHAERFINANDA", studentCode: "FIVIA-X2-7726", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7727", email: "khairum@sekolah.id", password: "7727", nis: "7727", name: "KHAIRUM MUFAHDAL", studentCode: "FIVIA-X2-7727", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7728", email: "juswadi@sekolah.id", password: "7728", nis: "7728", name: "M. JUSWADI", studentCode: "FIVIA-X2-7728", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7729", email: "fitrah@sekolah.id", password: "7729", nis: "7729", name: "MUH. FITRAH", studentCode: "FIVIA-X2-7729", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7730", email: "idris@sekolah.id", password: "7730", nis: "7730", name: "MUH. IDRIS", studentCode: "FIVIA-X2-7730", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7731", email: "thariq@sekolah.id", password: "7731", nis: "7731", name: "MUH. THARIQ KEMAL AL KATIRI H", studentCode: "FIVIA-X2-7731", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7732", email: "faqih@sekolah.id", password: "7732", nis: "7732", name: "MUHAMMAD FAQIH SYAFA'AT", studentCode: "FIVIA-X2-7732", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7733", email: "rifal@sekolah.id", password: "7733", nis: "7733", name: "MUHAMMAD RIFAL", studentCode: "FIVIA-X2-7733", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7734", email: "muthiara@sekolah.id", password: "7734", nis: "7734", name: "MUTHIARA BUSTAN", studentCode: "FIVIA-X2-7734", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7735", email: "azkiyah@sekolah.id", password: "7735", nis: "7735", name: "NUR AZKIYAH MASANGKA", studentCode: "FIVIA-X2-7735", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7736", email: "nurbaya@sekolah.id", password: "7736", nis: "7736", name: "NURBAYA", studentCode: "FIVIA-X2-7736", role: "siswa", classId: "cls_x2" },
+    { id: "usr_std_7737", email: "saskia@sekolah.id", password: "7737", nis: "7737", name: "NURUL SASKIA PRADITA", studentCode: "FIVIA-X2-7737", role: "siswa", classId: "cls_x2" },
+    // Demo accounts
     { id: "usr_siswa_pasya", email: "pasya@sekolah.id", password: "202401", nis: "202401", name: "Pasya Ramadhan", studentCode: "FIVIA-X1-001", role: "siswa", classId: "cls_x1" },
     { id: "usr_siswa_budi", email: "budi@sekolah.id", password: "202402", nis: "202402", name: "Budi Santoso", studentCode: "FIVIA-X1-002", role: "siswa", classId: "cls_x1" },
     { id: "usr_siswa_siti", email: "siti@sekolah.id", password: "202403", nis: "202403", name: "Siti Aminah", studentCode: "FIVIA-X1-003", role: "siswa", classId: "cls_x1" },
@@ -31,8 +70,47 @@ const SEED_DATA = {
     { id: "cls_xi2", name: "Kelas XI IPA-2", teacherId: "usr_guru_syarif" }
   ],
   students: [
-    { id: "usr_siswa_naufal", name: "AHMAD NAUFAL", nis: "7702", studentCode: "FIVIA-X1-860", classId: "cls_x1", className: "Kelas X-1", email: "ahmadnaufal@sekolah.id" },
-    { id: "usr_siswa_sulkifli", name: "SULKIFLI", nis: "192", studentCode: "FIVIA-ZJFFO", classId: "cls_x1", className: "Kelas X-1", email: "sulkifli@sekolah.id" },
+    // Kelas X-1
+    { id: "usr_std_7702", name: "AHMAD NAUFAL", nis: "7702", studentCode: "FIVIA-X1-860", classId: "cls_x1", className: "Kelas X-1", email: "ahmadnaufal@sekolah.id" },
+    { id: "usr_std_192", name: "SULKIFLI", nis: "192", studentCode: "FIVIA-ZJFFO", classId: "cls_x1", className: "Kelas X-1", email: "sulkifli@sekolah.id" },
+    { id: "usr_std_7703", name: "ADIFA KHAIRUNNIZA'A", nis: "7703", studentCode: "FIVIA-X1-7703", classId: "cls_x1", className: "Kelas X-1", email: "adifa@sekolah.id" },
+    { id: "usr_std_7704", name: "ALVIN ABHISTA ANGGARA", nis: "7704", studentCode: "FIVIA-X1-7704", classId: "cls_x1", className: "Kelas X-1", email: "alvin@sekolah.id" },
+    { id: "usr_std_7705", name: "AMIRUDDIN", nis: "7705", studentCode: "FIVIA-X1-7705", classId: "cls_x1", className: "Kelas X-1", email: "amiruddin@sekolah.id" },
+    { id: "usr_std_7706", name: "ARFIANDI KUSUMA RAMDANA", nis: "7706", studentCode: "FIVIA-X1-7706", classId: "cls_x1", className: "Kelas X-1", email: "arfiandi@sekolah.id" },
+    { id: "usr_std_7707", name: "DZAKY RAISSA ABQARY", nis: "7707", studentCode: "FIVIA-X1-7707", classId: "cls_x1", className: "Kelas X-1", email: "dzaky@sekolah.id" },
+    { id: "usr_std_7708", name: "EGIL SAPUTRA", nis: "7708", studentCode: "FIVIA-X1-7708", classId: "cls_x1", className: "Kelas X-1", email: "egil@sekolah.id" },
+    { id: "usr_std_7709", name: "ISRAFIL", nis: "7709", studentCode: "FIVIA-X1-7709", classId: "cls_x1", className: "Kelas X-1", email: "israfil@sekolah.id" },
+    { id: "usr_std_7710", name: "MOHD SHASWAN", nis: "7710", studentCode: "FIVIA-X1-7710", classId: "cls_x1", className: "Kelas X-1", email: "shaswan@sekolah.id" },
+    { id: "usr_std_7711", name: "MUH HIDAYAT", nis: "7711", studentCode: "FIVIA-X1-7711", classId: "cls_x1", className: "Kelas X-1", email: "hidayat@sekolah.id" },
+    { id: "usr_std_7712", name: "MUH RIDHO", nis: "7712", studentCode: "FIVIA-X1-7712", classId: "cls_x1", className: "Kelas X-1", email: "ridho@sekolah.id" },
+    { id: "usr_std_7713", name: "NINIS", nis: "7713", studentCode: "FIVIA-X1-7713", classId: "cls_x1", className: "Kelas X-1", email: "ninis@sekolah.id" },
+    { id: "usr_std_7714", name: "NUR ATIYAH", nis: "7714", studentCode: "FIVIA-X1-7714", classId: "cls_x1", className: "Kelas X-1", email: "atiyah@sekolah.id" },
+    { id: "usr_std_7715", name: "NUR AZIZAH PUTRI", nis: "7715", studentCode: "FIVIA-X1-7715", classId: "cls_x1", className: "Kelas X-1", email: "azizah@sekolah.id" },
+    { id: "usr_std_7716", name: "NURUL HIDAYAH", nis: "7716", studentCode: "FIVIA-X1-7716", classId: "cls_x1", className: "Kelas X-1", email: "nurul@sekolah.id" },
+    { id: "usr_std_7717", name: "RENALDIANSAH", nis: "7717", studentCode: "FIVIA-X1-7717", classId: "cls_x1", className: "Kelas X-1", email: "renaldi@sekolah.id" },
+    { id: "usr_std_7718", name: "RENANDA QALBI", nis: "7718", studentCode: "FIVIA-X1-7718", classId: "cls_x1", className: "Kelas X-1", email: "renanda@sekolah.id" },
+    { id: "usr_std_7719", name: "SHOFIYYA ALIYYANA PUTRI", nis: "7719", studentCode: "FIVIA-X1-7719", classId: "cls_x1", className: "Kelas X-1", email: "shofiyya@sekolah.id" },
+    // Kelas X-2
+    { id: "usr_std_7701", name: "AHMAD ALGHIFARI", nis: "7701", studentCode: "FIVIA-X2-7701", classId: "cls_x2", className: "Kelas X-2", email: "alghifari@sekolah.id" },
+    { id: "usr_std_7720", name: "AHMAD MUFTI", nis: "7720", studentCode: "FIVIA-X2-7720", classId: "cls_x2", className: "Kelas X-2", email: "mufti@sekolah.id" },
+    { id: "usr_std_7721", name: "AHSAN RANDI SAPUTRA", nis: "7721", studentCode: "FIVIA-X2-7721", classId: "cls_x2", className: "Kelas X-2", email: "ahsan@sekolah.id" },
+    { id: "usr_std_7722", name: "ARFA ALQHAERA", nis: "7722", studentCode: "FIVIA-X2-7722", classId: "cls_x2", className: "Kelas X-2", email: "arfa@sekolah.id" },
+    { id: "usr_std_7723", name: "ASTI MEILANI PUTRI", nis: "7723", studentCode: "FIVIA-X2-7723", classId: "cls_x2", className: "Kelas X-2", email: "asti@sekolah.id" },
+    { id: "usr_std_7724", name: "GHALI ZHAFRAN BATARA", nis: "7724", studentCode: "FIVIA-X2-7724", classId: "cls_x2", className: "Kelas X-2", email: "ghali@sekolah.id" },
+    { id: "usr_std_7725", name: "HASANUDDIN", nis: "7725", studentCode: "FIVIA-X2-7725", classId: "cls_x2", className: "Kelas X-2", email: "hasanuddin@sekolah.id" },
+    { id: "usr_std_7726", name: "KHAERFINANDA", nis: "7726", studentCode: "FIVIA-X2-7726", classId: "cls_x2", className: "Kelas X-2", email: "khaerfinanda@sekolah.id" },
+    { id: "usr_std_7727", name: "KHAIRUM MUFAHDAL", nis: "7727", studentCode: "FIVIA-X2-7727", classId: "cls_x2", className: "Kelas X-2", email: "khairum@sekolah.id" },
+    { id: "usr_std_7728", name: "M. JUSWADI", nis: "7728", studentCode: "FIVIA-X2-7728", classId: "cls_x2", className: "Kelas X-2", email: "juswadi@sekolah.id" },
+    { id: "usr_std_7729", name: "MUH. FITRAH", nis: "7729", studentCode: "FIVIA-X2-7729", classId: "cls_x2", className: "Kelas X-2", email: "fitrah@sekolah.id" },
+    { id: "usr_std_7730", name: "MUH. IDRIS", nis: "7730", studentCode: "FIVIA-X2-7730", classId: "cls_x2", className: "Kelas X-2", email: "idris@sekolah.id" },
+    { id: "usr_std_7731", name: "MUH. THARIQ KEMAL AL KATIRI H", nis: "7731", studentCode: "FIVIA-X2-7731", classId: "cls_x2", className: "Kelas X-2", email: "thariq@sekolah.id" },
+    { id: "usr_std_7732", name: "MUHAMMAD FAQIH SYAFA'AT", nis: "7732", studentCode: "FIVIA-X2-7732", classId: "cls_x2", className: "Kelas X-2", email: "faqih@sekolah.id" },
+    { id: "usr_std_7733", name: "MUHAMMAD RIFAL", nis: "7733", studentCode: "FIVIA-X2-7733", classId: "cls_x2", className: "Kelas X-2", email: "rifal@sekolah.id" },
+    { id: "usr_std_7734", name: "MUTHIARA BUSTAN", nis: "7734", studentCode: "FIVIA-X2-7734", classId: "cls_x2", className: "Kelas X-2", email: "muthiara@sekolah.id" },
+    { id: "usr_std_7735", name: "NUR AZKIYAH MASANGKA", nis: "7735", studentCode: "FIVIA-X2-7735", classId: "cls_x2", className: "Kelas X-2", email: "azkiyah@sekolah.id" },
+    { id: "usr_std_7736", name: "NURBAYA", nis: "7736", studentCode: "FIVIA-X2-7736", classId: "cls_x2", className: "Kelas X-2", email: "nurbaya@sekolah.id" },
+    { id: "usr_std_7737", name: "NURUL SASKIA PRADITA", nis: "7737", studentCode: "FIVIA-X2-7737", classId: "cls_x2", className: "Kelas X-2", email: "saskia@sekolah.id" },
+    // Demo accounts
     { id: "usr_siswa_pasya", name: "Pasya Ramadhan", nis: "202401", studentCode: "FIVIA-X1-001", classId: "cls_x1", className: "Kelas X-1", email: "pasya@sekolah.id" },
     { id: "usr_siswa_budi", name: "Budi Santoso", nis: "202402", studentCode: "FIVIA-X1-002", classId: "cls_x1", className: "Kelas X-1", email: "budi@sekolah.id" },
     { id: "usr_siswa_siti", name: "Siti Aminah", nis: "202403", studentCode: "FIVIA-X1-003", classId: "cls_x1", className: "Kelas X-1", email: "siti@sekolah.id" },
@@ -551,8 +629,26 @@ class LocalDatabase {
         users.push(teacherObj);
       }
 
-      // 2. Upsert each registered student into users table
+      // Check permanently deleted students
+      let deletedList = [];
+      try {
+        deletedList = JSON.parse(localStorage.getItem("vlab_deleted_students") || "[]");
+      } catch(e) {}
+      const isDeleted = (item) => {
+        if (!item) return false;
+        const id = String(item.id || item.studentId || "").trim();
+        const nis = String(item.nis || "").trim();
+        const code = String(item.studentCode || "").trim();
+        const name = String(item.name || "").trim().toLowerCase();
+        return deletedList.some(d => {
+          const dl = String(d).trim().toLowerCase();
+          return dl === id.toLowerCase() || (nis && dl === nis.toLowerCase()) || (code && dl === code.toLowerCase()) || (name && dl === name);
+        });
+      };
+
+      // 2. Upsert each registered student into users table (excluding deleted)
       SEED_DATA.users.filter(u => u.role === "siswa").forEach(stdSeed => {
+        if (isDeleted(stdSeed)) return;
         const idx = users.findIndex(u => 
           (u.nis && String(u.nis).trim() === String(stdSeed.nis).trim()) ||
           (u.name && u.name.trim().toLowerCase() === stdSeed.name.trim().toLowerCase())
@@ -563,11 +659,14 @@ class LocalDatabase {
           users.push(stdSeed);
         }
       });
+      // Purge any deleted students from users table
+      users = users.filter(u => u.role !== "siswa" || !isDeleted(u));
       this.saveTable("users", users);
 
-      // 3. Upsert each registered student into students table
+      // 3. Upsert each registered student into students table (excluding deleted)
       let students = this.getTable("students") || [];
       SEED_DATA.students.forEach(stdSeed => {
+        if (isDeleted(stdSeed)) return;
         const idx = students.findIndex(s => 
           (s.nis && String(s.nis).trim() === String(stdSeed.nis).trim()) ||
           (s.name && s.name.trim().toLowerCase() === stdSeed.name.trim().toLowerCase())
@@ -578,14 +677,17 @@ class LocalDatabase {
           students.push(stdSeed);
         }
       });
+      // Purge any deleted students from students table
+      students = students.filter(s => !isDeleted(s));
       this.saveTable("students", students);
 
-      // 4. Mirror into fivia_student_roster for instant classroom display & offline use
+      // 4. Mirror into fivia_student_roster for instant classroom display & offline use (excluding deleted)
       let roster = [];
       try {
         roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
       } catch(e) {}
       SEED_DATA.students.forEach(stdSeed => {
+        if (isDeleted(stdSeed)) return;
         const idx = roster.findIndex(r => 
           (r.nis && String(r.nis).trim() === String(stdSeed.nis).trim()) ||
           (r.name && r.name.trim().toLowerCase() === stdSeed.name.trim().toLowerCase())
@@ -596,6 +698,8 @@ class LocalDatabase {
           roster.push(stdSeed);
         }
       });
+      // Purge any deleted students from roster
+      roster = roster.filter(r => !isDeleted(r));
       localStorage.setItem("fivia_student_roster", JSON.stringify(roster));
     } catch(e) {
       console.warn("Error ensuring seed data sync:", e);

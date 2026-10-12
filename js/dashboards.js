@@ -1684,58 +1684,64 @@ function renderClassManagement() {
   const user = window.auth.getCurrentUser();
   if (!user || user.role !== "guru") return;
   
-  // Merge legacy students table with Excel imported roster
-  const excelRoster = window.FIVIAExcelImport ? window.FIVIAExcelImport.getExistingRoster() : [];
-  const legacyStudents = window.db.getTable("students");
+  // Track deleted students so they are never displayed
+  let deletedList = [];
+  try {
+    deletedList = JSON.parse(localStorage.getItem("vlab_deleted_students") || "[]");
+  } catch(e) {}
+  const isDeleted = (item) => {
+    if (!item) return false;
+    const id = String(item.id || item.studentId || "").trim();
+    const nis = String(item.nis || "").trim();
+    const code = String(item.studentCode || "").trim();
+    const name = String(item.name || item.studentName || item.displayName || "").trim().toLowerCase();
+    return deletedList.some(d => {
+      const dl = String(d).trim().toLowerCase();
+      return dl === id.toLowerCase() || (nis && dl === nis.toLowerCase()) || (code && dl === code.toLowerCase()) || (name && dl === name);
+    });
+  };
 
-  const hasCustomRoster = Array.isArray(excelRoster) && excelRoster.length > 0;
+  const excelRoster = window.FIVIAExcelImport ? (window.FIVIAExcelImport.getExistingRoster() || []) : [];
+  const legacyStudents = (window.db && window.db.getTable("students")) || [];
+  const dbUsers = (window.db && window.db.getTable("users")) || [];
 
   const studentMap = new Map();
-  excelRoster.forEach(s => {
-    const sId = s.studentId || s.id;
-    const sName = s.name || s.studentName || s.displayName || 'Siswa';
-    const sNis = s.nis || s.studentCode || '001';
-    const sCode = s.studentCode || ('FIVIA-X1-' + sNis);
-    const sClassName = s.className || s.classId || 'Kelas X-1';
-    const sClassId = s.classId || 'cls_x1';
 
-    if (sId) {
-      studentMap.set(sId, {
+  // Helper to normalize class
+  const getNormClass = (rawClass) => {
+    const s = String(rawClass || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^kelas/, "").replace(/^cls/, "");
+    if (s === "x2" || s === "2" || s.includes("x2")) return { id: "cls_x2", name: "Kelas X-2" };
+    if (s === "xi1" || s.includes("xi1") || s.includes("ipa1")) return { id: "cls_xi1", name: "Kelas XI IPA-1" };
+    if (s === "xi2" || s.includes("xi2") || s.includes("ipa2")) return { id: "cls_xi2", name: "Kelas XI IPA-2" };
+    return { id: "cls_x1", name: "Kelas X-1" };
+  };
+
+  const addStudentToMap = (s) => {
+    if (!s || isDeleted(s)) return;
+    const sId = String(s.studentId || s.id || ('std_' + (s.nis || Math.random()))).trim();
+    const sName = String(s.name || s.studentName || s.displayName || s.nama || 'Siswa').trim();
+    const sNis = String(s.nis || s.studentCode || '').trim();
+    const classInfo = getNormClass(s.className || s.classId);
+    const sCode = String(s.studentCode || ('FIVIA-' + classInfo.id.replace('cls_', '').toUpperCase() + '-' + (sNis || '001'))).trim();
+
+    const key = sNis ? ('nis_' + sNis) : ('id_' + sId);
+    if (!studentMap.has(key)) {
+      studentMap.set(key, {
         id: sId,
-        nis: sNis,
+        nis: sNis || '-',
         studentCode: sCode,
         name: sName,
-        className: sClassName,
-        classId: sClassId,
+        className: classInfo.name,
+        classId: classInfo.id,
         xp: s.xp || 0
       });
     }
-  });
+  };
 
-  if (!hasCustomRoster) {
-    legacyStudents.forEach(s => {
-      const sId = s.id || s.studentId;
-      if (sId && ['std_2', 'std_3', 'std_4', 'std_5'].includes(sId)) return;
-
-      const sName = s.name || s.studentName || s.displayName || 'Siswa';
-      const sNis = s.nis || s.studentCode || '001';
-      const sCode = s.studentCode || ('FIVIA-X1-' + sNis);
-      const sClassName = s.className || s.classId || 'Kelas X-1';
-      const sClassId = s.classId || 'cls_x1';
-
-      if (sId && !studentMap.has(sId)) {
-        studentMap.set(sId, {
-          id: sId,
-          nis: sNis,
-          studentCode: sCode,
-          name: sName,
-          className: sClassName,
-          classId: sClassId,
-          xp: s.xp || 0
-        });
-      }
-    });
-  }
+  // Merge all sources
+  excelRoster.forEach(addStudentToMap);
+  legacyStudents.forEach(addStudentToMap);
+  dbUsers.filter(u => u.role === "siswa").forEach(addStudentToMap);
 
   let students = Array.from(studentMap.values());
 
@@ -1766,13 +1772,8 @@ function renderClassManagement() {
   }
   
   if (classVal) {
-    students = students.filter(s => {
-      if (s.classId === classVal || s.className === classVal) return true;
-      const cleanVal = String(classVal).toLowerCase().replace(/[^a-z0-9]/g, '');
-      const cleanId = String(s.classId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const cleanName = String(s.className || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      return (cleanId.includes(cleanVal) || cleanVal.includes(cleanId) || cleanName.includes(cleanVal) || cleanVal.includes(cleanName));
-    });
+    const filterBare = getNormClass(classVal).id;
+    students = students.filter(s => s.classId === filterBare);
   }
 
   const tableBody = document.querySelector("#class-students-table tbody");
@@ -1780,7 +1781,7 @@ function renderClassManagement() {
   tableBody.innerHTML = "";
 
   if (students.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 20px;">Tidak ada data siswa ditemukan. Gunakan tombol <strong>📥 Import Excel</strong> atau <strong>➕ Tambah Siswa</strong>.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 20px;">Tidak ada data siswa ditemukan untuk kelas ini. Gunakan tombol <strong>📥 Import Excel</strong> atau <strong>➕ Tambah Siswa</strong>.</td></tr>`;
     return;
   }
 
@@ -1814,7 +1815,7 @@ function renderClassManagement() {
   tableBody.querySelectorAll(".btn-delete-student").forEach(btn => {
     btn.addEventListener("click", () => {
       const stdId = btn.getAttribute("data-id");
-      if (confirm("Apakah Anda yakin ingin menghapus siswa ini dari kelas?")) {
+      if (confirm("Apakah Anda yakin ingin menghapus siswa ini dari sistem?")) {
         deleteStudent(stdId);
       }
     });
@@ -1822,15 +1823,85 @@ function renderClassManagement() {
 }
 
 function deleteStudent(studentId) {
-  let students = window.db.getTable("students");
-  students = students.filter(s => s.id !== studentId);
-  window.db.saveTable("students", students);
+  const stdIdStr = String(studentId).trim();
+  
+  // Track permanently deleted students
+  let deletedList = [];
+  try {
+    deletedList = JSON.parse(localStorage.getItem("vlab_deleted_students") || "[]");
+  } catch(e) {}
 
-  let users = window.db.getTable("users");
-  users = users.filter(u => u.id !== studentId);
-  window.db.saveTable("users", users);
+  // Find student in current storage to capture their NIS and code
+  let targetNis = "";
+  let targetCode = "";
+  let targetName = "";
+  
+  const allCurrent = [
+    ...(window.db ? window.db.getTable("students") : []),
+    ...(window.db ? window.db.getTable("users").filter(u => u.role === "siswa") : []),
+    ...(JSON.parse(localStorage.getItem("fivia_student_roster") || "[]"))
+  ];
+  
+  const found = allCurrent.find(s => 
+    (s.id && String(s.id) === stdIdStr) || 
+    (s.studentId && String(s.studentId) === stdIdStr)
+  );
+  if (found) {
+    targetNis = String(found.nis || "").trim();
+    targetCode = String(found.studentCode || "").trim();
+    targetName = String(found.name || "").trim();
+  }
 
-  window.showToast("Siswa berhasil dihapus.");
+  // Record deleted identifiers
+  [stdIdStr, targetNis, targetCode, targetName].filter(Boolean).forEach(id => {
+    if (!deletedList.includes(id)) deletedList.push(id);
+  });
+  localStorage.setItem("vlab_deleted_students", JSON.stringify(deletedList));
+
+  // Remove from window.db tables
+  if (window.db) {
+    let students = window.db.getTable("students") || [];
+    students = students.filter(s => 
+      String(s.id) !== stdIdStr && 
+      String(s.studentId) !== stdIdStr && 
+      (!targetNis || String(s.nis).trim() !== targetNis)
+    );
+    window.db.saveTable("students", students);
+
+    let users = window.db.getTable("users") || [];
+    users = users.filter(u => 
+      String(u.id) !== stdIdStr && 
+      (!targetNis || String(u.nis).trim() !== targetNis)
+    );
+    window.db.saveTable("users", users);
+  }
+
+  // Remove from fivia_student_roster
+  try {
+    let roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
+    roster = roster.filter(s => 
+      String(s.id) !== stdIdStr && 
+      String(s.studentId) !== stdIdStr && 
+      (!targetNis || String(s.nis).trim() !== targetNis)
+    );
+    localStorage.setItem("fivia_student_roster", JSON.stringify(roster));
+    if (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.saveRoster === "function") {
+      window.FIVIAExcelImport.saveRoster(roster);
+    }
+  } catch(e) {}
+
+  // Remove from fivia_classroom_students
+  try {
+    let cs = JSON.parse(localStorage.getItem("fivia_classroom_students") || "[]");
+    cs = cs.filter(s => 
+      String(s.id) !== stdIdStr && 
+      String(s.studentId) !== stdIdStr && 
+      (!targetNis || String(s.nis).trim() !== targetNis)
+    );
+    localStorage.setItem("fivia_classroom_students", JSON.stringify(cs));
+  } catch(e) {}
+
+  window.showToast("Siswa berhasil dihapus dari sistem.");
   renderClassManagement();
 }
 
@@ -1850,14 +1921,17 @@ function renderTeacherReports() {
   
   const studentMap = new Map();
 
+  function getNormClassId(raw) {
+    const s = String(raw || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^kelas/, "").replace(/^cls/, "");
+    if (s === "x2" || s === "2" || s.includes("x2")) return "cls_x2";
+    if (s === "xi1" || s.includes("xi1") || s.includes("ipa1")) return "cls_xi1";
+    if (s === "xi2" || s.includes("xi2") || s.includes("ipa2")) return "cls_xi2";
+    return "cls_x1";
+  }
+
   function isMatchClass(sClassId, sClassName) {
     if (!classVal) return true;
-    if (sClassId === classVal || sClassName === classVal) return true;
-    if (classObj && (sClassId === classObj.id || sClassName === classObj.name)) return true;
-    const cleanVal = String(classVal).toLowerCase().replace(/[^a-z0-9]/g, '');
-    const cleanId = String(sClassId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const cleanName = String(sClassName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    return (cleanId.includes(cleanVal) || cleanName.includes(cleanVal) || cleanVal.includes(cleanId) || cleanVal.includes(cleanName));
+    return getNormClassId(sClassId || sClassName) === getNormClassId(classVal);
   }
 
   // 1. Load Excel Roster if available
