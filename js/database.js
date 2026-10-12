@@ -14,8 +14,15 @@ const SEED_DATA = {
   users: [
     { id: "usr_admin", email: "admin@hidayahstore.edu", password: "admin123", name: "Admin Hidayah", role: "admin" },
     { id: "usr_guru", email: "guru@hidayahstore.edu", password: "guru123", name: "Hidayat, S.Pd., M.Si.", role: "guru" },
-    { id: "usr_guru_syarif", email: "syarifhidayatullah64@guru.sma.belajar.id", password: "guru123", name: "Syarif Hidayatullah, S.Pd.", role: "guru" },
-    { id: "usr_siswa", email: "siswa@hidayahstore.edu", password: "siswa123", nis: "12345", name: "Siswa", role: "siswa", classId: "cls_x1" }
+    { id: "usr_guru_syarif", email: "syarifhidayatullah64@guru.sma.belajar.id", password: "Syarif121220", name: "Syarif Hidayatullah, S.Pd.", role: "guru" },
+    { id: "usr_siswa_naufal", email: "ahmadnaufal@sekolah.id", password: "7702", nis: "7702", name: "AHMAD NAUFAL", studentCode: "FIVIA-X1-860", role: "siswa", classId: "cls_x1" },
+    { id: "usr_siswa_sulkifli", email: "sulkifli@sekolah.id", password: "192", nis: "192", name: "SULKIFLI", studentCode: "FIVIA-ZJFFO", role: "siswa", classId: "cls_x1" },
+    { id: "usr_siswa_pasya", email: "pasya@sekolah.id", password: "202401", nis: "202401", name: "Pasya Ramadhan", studentCode: "FIVIA-X1-001", role: "siswa", classId: "cls_x1" },
+    { id: "usr_siswa_budi", email: "budi@sekolah.id", password: "202402", nis: "202402", name: "Budi Santoso", studentCode: "FIVIA-X1-002", role: "siswa", classId: "cls_x1" },
+    { id: "usr_siswa_siti", email: "siti@sekolah.id", password: "202403", nis: "202403", name: "Siti Aminah", studentCode: "FIVIA-X1-003", role: "siswa", classId: "cls_x1" },
+    { id: "usr_siswa_dewi", email: "dewi@sekolah.id", password: "202404", nis: "202404", name: "Dewi Lestari", studentCode: "FIVIA-X1-004", role: "siswa", classId: "cls_x1" },
+    { id: "usr_siswa_rian", email: "rian@sekolah.id", password: "202405", nis: "202405", name: "Rian Wijaya", studentCode: "FIVIA-X1-005", role: "siswa", classId: "cls_x1" },
+    { id: "usr_siswa", email: "siswa@hidayahstore.edu", password: "12345", nis: "12345", name: "Siswa", studentCode: "FIVIA-X1-006", role: "siswa", classId: "cls_x1" }
   ],
   classes: [
     { id: "cls_x1", name: "Kelas X-1", teacherId: "usr_guru_syarif" },
@@ -24,7 +31,14 @@ const SEED_DATA = {
     { id: "cls_xi2", name: "Kelas XI IPA-2", teacherId: "usr_guru_syarif" }
   ],
   students: [
-    { id: "usr_siswa", name: "Siswa", nis: "12345", classId: "cls_x1", email: "siswa@hidayahstore.edu" }
+    { id: "usr_siswa_naufal", name: "AHMAD NAUFAL", nis: "7702", studentCode: "FIVIA-X1-860", classId: "cls_x1", className: "Kelas X-1", email: "ahmadnaufal@sekolah.id" },
+    { id: "usr_siswa_sulkifli", name: "SULKIFLI", nis: "192", studentCode: "FIVIA-ZJFFO", classId: "cls_x1", className: "Kelas X-1", email: "sulkifli@sekolah.id" },
+    { id: "usr_siswa_pasya", name: "Pasya Ramadhan", nis: "202401", studentCode: "FIVIA-X1-001", classId: "cls_x1", className: "Kelas X-1", email: "pasya@sekolah.id" },
+    { id: "usr_siswa_budi", name: "Budi Santoso", nis: "202402", studentCode: "FIVIA-X1-002", classId: "cls_x1", className: "Kelas X-1", email: "budi@sekolah.id" },
+    { id: "usr_siswa_siti", name: "Siti Aminah", nis: "202403", studentCode: "FIVIA-X1-003", classId: "cls_x1", className: "Kelas X-1", email: "siti@sekolah.id" },
+    { id: "usr_siswa_dewi", name: "Dewi Lestari", nis: "202404", studentCode: "FIVIA-X1-004", classId: "cls_x1", className: "Kelas X-1", email: "dewi@sekolah.id" },
+    { id: "usr_siswa_rian", name: "Rian Wijaya", nis: "202405", studentCode: "FIVIA-X1-005", classId: "cls_x1", className: "Kelas X-1", email: "rian@sekolah.id" },
+    { id: "usr_siswa", name: "Siswa", nis: "12345", studentCode: "FIVIA-X1-006", classId: "cls_x1", className: "Kelas X-1", email: "siswa@hidayahstore.edu" }
   ],
   materials: [
     { id: 1, name: "Hakikat Fisika dan Metode Ilmiah", fase: "E", topic: "Definisi fisika, keselamatan kerja laboratorium, metode ilmiah.", equation: "\\text{Metode Ilmiah: Observasi} \\rightarrow \\text{Hipotesis} \\rightarrow \\text{Eksperimen} \\rightarrow \\text{Analisis} \\rightarrow \\text{Kesimpulan}", videoUrl: "https://www.youtube.com/embed/3U_yD1u7W-w", desc: "Materi ini membahas definisi fisika sebagai bagian sains, langkah-langkah penelitian ilmiah secara sistematis, serta aturan keselamatan kerja saat beraktivitas di laboratorium fisika." },
@@ -484,14 +498,20 @@ class LocalDatabase {
   }
 
   init() {
-    // Force re-seeding if code has changed
-    const SEED_VERSION = "8.0";
-    if (localStorage.getItem(DB_PREFIX + "seed_version") !== SEED_VERSION) {
-      localStorage.removeItem(DB_PREFIX + "initialized");
+    const SEED_VERSION = "9.5";
+    const currentVersion = localStorage.getItem(DB_PREFIX + "seed_version");
+
+    // Preserve existing student submissions and quiz scores
+    const existingSubmissions = this.getTable("submissions") || [];
+    const existingScores = this.getTable("quizScores") || [];
+    const existingCerts = this.getTable("certificates") || [];
+    const existingDetektif = this.getTable("detektifProgress") || [];
+
+    if (currentVersion !== SEED_VERSION) {
       localStorage.setItem(DB_PREFIX + "seed_version", SEED_VERSION);
     }
 
-    // Check if base seed is already initialized
+    // Check if base seed is initialized
     if (!localStorage.getItem(DB_PREFIX + "initialized")) {
       console.log("Seeding Virtual Lab database to localStorage...");
       this.saveTable("roles", SEED_DATA.roles);
@@ -502,27 +522,83 @@ class LocalDatabase {
       this.saveTable("labs", SEED_DATA.labs);
       this.saveTable("worksheets", SEED_DATA.worksheets);
       this.saveTable("quizzes", SEED_DATA.quizzes);
-      this.saveTable("submissions", SEED_DATA.submissions);
-      this.saveTable("quizScores", SEED_DATA.quizScores || []);
-      this.saveTable("certificates", SEED_DATA.certificates || []);
-      this.saveTable("detektifProgress", []);
+      this.saveTable("submissions", existingSubmissions.length ? existingSubmissions : SEED_DATA.submissions);
+      this.saveTable("quizScores", existingScores.length ? existingScores : (SEED_DATA.quizScores || []));
+      this.saveTable("certificates", existingCerts.length ? existingCerts : (SEED_DATA.certificates || []));
+      this.saveTable("detektifProgress", existingDetektif);
       
       localStorage.setItem(DB_PREFIX + "initialized", "true");
-    } else {
-      // Ensure Pak Syarif's teacher account is present in existing users table
-      try {
-        const users = this.getTable("users");
-        if (users && !users.some(u => (u.email || "").toLowerCase() === "syarifhidayatullah64@guru.sma.belajar.id")) {
-          users.push({
-            id: "usr_guru_syarif",
-            email: "syarifhidayatullah64@guru.sma.belajar.id",
-            password: "guru123",
-            name: "Syarif Hidayatullah, S.Pd.",
-            role: "guru"
-          });
-          this.saveTable("users", users);
+    }
+
+    // Ensure teacher credentials (Syarif121220) & registered students are guaranteed on all devices
+    try {
+      let users = this.getTable("users") || [];
+      // 1. Upsert teacher Pak Syarif with password Syarif121220
+      const syarifIdx = users.findIndex(u => 
+        (u.email || "").toLowerCase() === "syarifhidayatullah64@guru.sma.belajar.id" || 
+        u.id === "usr_guru_syarif"
+      );
+      const teacherObj = {
+        id: "usr_guru_syarif",
+        email: "syarifhidayatullah64@guru.sma.belajar.id",
+        password: "Syarif121220",
+        name: "Syarif Hidayatullah, S.Pd.",
+        role: "guru"
+      };
+      if (syarifIdx !== -1) {
+        users[syarifIdx] = { ...users[syarifIdx], ...teacherObj };
+      } else {
+        users.push(teacherObj);
+      }
+
+      // 2. Upsert each registered student into users table
+      SEED_DATA.users.filter(u => u.role === "siswa").forEach(stdSeed => {
+        const idx = users.findIndex(u => 
+          (u.nis && String(u.nis).trim() === String(stdSeed.nis).trim()) ||
+          (u.name && u.name.trim().toLowerCase() === stdSeed.name.trim().toLowerCase())
+        );
+        if (idx !== -1) {
+          users[idx] = { ...users[idx], ...stdSeed };
+        } else {
+          users.push(stdSeed);
         }
+      });
+      this.saveTable("users", users);
+
+      // 3. Upsert each registered student into students table
+      let students = this.getTable("students") || [];
+      SEED_DATA.students.forEach(stdSeed => {
+        const idx = students.findIndex(s => 
+          (s.nis && String(s.nis).trim() === String(stdSeed.nis).trim()) ||
+          (s.name && s.name.trim().toLowerCase() === stdSeed.name.trim().toLowerCase())
+        );
+        if (idx !== -1) {
+          students[idx] = { ...students[idx], ...stdSeed };
+        } else {
+          students.push(stdSeed);
+        }
+      });
+      this.saveTable("students", students);
+
+      // 4. Mirror into fivia_student_roster for instant classroom display & offline use
+      let roster = [];
+      try {
+        roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
       } catch(e) {}
+      SEED_DATA.students.forEach(stdSeed => {
+        const idx = roster.findIndex(r => 
+          (r.nis && String(r.nis).trim() === String(stdSeed.nis).trim()) ||
+          (r.name && r.name.trim().toLowerCase() === stdSeed.name.trim().toLowerCase())
+        );
+        if (idx !== -1) {
+          roster[idx] = { ...roster[idx], ...stdSeed };
+        } else {
+          roster.push(stdSeed);
+        }
+      });
+      localStorage.setItem("fivia_student_roster", JSON.stringify(roster));
+    } catch(e) {
+      console.warn("Error ensuring seed data sync:", e);
     }
   }
 

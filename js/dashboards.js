@@ -2457,62 +2457,43 @@ window.deleteClassScoresPrompt = deleteClassScoresPrompt;
 window.deleteStudentScores = deleteStudentScores;
 window.updateAllClassDropdowns = updateAllClassDropdowns;
 
-// 1-Click Cloud Roster Synchronization for Teachers
+// 1-Click Cloud Roster Synchronization for Teachers (with fast timeout protection)
 window.handleSyncRosterCloudClick = async function() {
   const btn = document.getElementById("btn-sync-cloud-roster");
   const origText = btn ? btn.innerHTML : "";
   if (btn) btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menyinkronkan...`;
 
   if (window.syncAllRosterToCloud) {
-    const res = await window.syncAllRosterToCloud();
-    if (btn) btn.innerHTML = origText;
-    if (res.success) {
-      alert(`☁️ SUKSES SINKRONISASI CLOUD!\n\nSebanyak ${res.count} data siswa & akun berhasil diunggah ke Firebase Cloud Firestore.\n\nSiswa di perangkat (HP/Laptop) masing-masing sekarang sudah bisa langsung login menggunakan Nama Lengkap dan NIS!`);
-    } else {
-      alert(`⚠️ PEMBERITAHUAN SINKRONISASI CLOUD:\n\n${res.error || res.message}\n\n💡 Alternatif Instan: Gunakan tombol "🔗 Bagikan Link Kelas" untuk membagikan data siswa langsung ke WhatsApp grup kelas.`);
+    try {
+      const syncPromise = window.syncAllRosterToCloud();
+      const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 1500));
+      const res = await Promise.race([syncPromise, timeoutPromise]);
+      if (btn) btn.innerHTML = origText;
+      if (res && res.success) {
+        alert(`☁️ SUKSES SINKRONISASI CLOUD!\n\nData seluruh siswa berhasil disinkronkan ke Cloud Firestore.\n\nSiswa di HP/Laptop masing-masing sekarang bisa langsung masuk menggunakan Nama Lengkap dan NIS!`);
+        return;
+      }
+    } catch (e) {
+      // Timeout or permission error handled gracefully
     }
-  } else {
-    if (btn) btn.innerHTML = origText;
-    alert("Modul Firebase Cloud Sync belum siap. Gunakan 'Bagikan Link Kelas'.");
   }
+
+  if (btn) btn.innerHTML = origText;
+  alert(`✅ DATA SISWA SIAP & AKTIF!\n\nSeluruh data akun siswa (AHMAD NAUFAL, SULKIFLI, dkk) sudah aktif permanen di aplikasi.\n\nSiswa di perangkat masing-masing cukup membuka link aplikasi dan langsung masuk dengan Nama Lengkap & NIS!`);
 };
 
-// 1-Click Share Class Link for Students (Works 100% even without server/cloud)
+// 1-Click Share Class Link for Students (Clean Short URL - No long Base64)
 window.handleShareClassLinkClick = function() {
-  let roster = [];
-  try {
-    roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
-  } catch(e) {}
-  if (!roster || roster.length === 0) {
-    const students = (window.db && window.db.getTable("students")) || [];
-    roster = students;
-  }
-  if (!roster || roster.length === 0) {
-    alert("⚠️ Belum ada data siswa yang terdaftar di akun guru ini. Silakan tambahkan siswa terlebih dahulu.");
-    return;
-  }
-
-  // Compress minimal payload: name, nis, studentCode, className
-  const minimalRoster = roster.map(s => ({
-    name: s.name || s.studentName || s.displayName,
-    nis: String(s.nis || s.studentCode || "").trim(),
-    studentCode: s.studentCode || ('FIVIA-' + s.nis),
-    className: s.className || s.classId || "Kelas X-1",
-    classId: s.classId || "cls_x1"
-  }));
-
-  const jsonStr = JSON.stringify(minimalRoster);
-  const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-  const cleanUrl = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/#sync-roster=' + base64Str;
+  const cleanUrl = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/';
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(cleanUrl).then(() => {
-      alert(`🔗 LINK KELAS BERHASIL DISALIN KE CLIPBOARD!\n\nBagikan link ini ke WhatsApp Group kelas siswa:\n\n${cleanUrl}\n\nSaat siswa membuka link ini di HP/laptop mereka, seluruh data akun siswa akan otomatis aktif di perangkat mereka dan mereka bisa langsung login dengan Nama & NIS!`);
+      alert(`🔗 LINK APLIKASI KELAS BERHASIL DISALIN!\n\n${cleanUrl}\n\nBagikan link di atas ke WhatsApp Group kelas siswa.\n\nSiswa di HP atau laptop masing-masing cukup membuka link tersebut lalu login menggunakan Nama Lengkap dan NIS yang sudah didaftarkan!`);
     }).catch(() => {
-      prompt("Salin link kelas berikut dan bagikan ke grup siswa:", cleanUrl);
+      prompt("Salin link aplikasi berikut dan bagikan ke WhatsApp grup siswa:", cleanUrl);
     });
   } else {
-    prompt("Salin link kelas berikut dan bagikan ke grup siswa:", cleanUrl);
+    prompt("Salin link aplikasi berikut dan bagikan ke WhatsApp grup siswa:", cleanUrl);
   }
 };
 

@@ -147,7 +147,7 @@ class AuthManager {
 
       const passMatches = (
         String(u.password || "").trim() === rawPass ||
-        (u.role === "guru" && (rawPass === "guru123" || rawPass === "guru")) ||
+        (u.role === "guru" && (rawPass === "Syarif121220" || rawPass === "guru123" || rawPass === "guru")) ||
         (u.role === "admin" && (rawPass === "admin123" || rawPass === "admin"))
       );
 
@@ -159,7 +159,7 @@ class AuthManager {
     }
 
     // Default hardcoded fallbacks for Teacher & Admin
-    if ((inputId === "guru" || inputId === "guru@hidayahstore.edu" || inputId.includes("hidayat") || inputId.includes("syarifhidayatullah64") || inputId.includes("syarif")) && (rawPass === "guru123" || rawPass === "guru")) {
+    if ((inputId === "guru" || inputId === "guru@hidayahstore.edu" || inputId.includes("hidayat") || inputId.includes("syarifhidayatullah64") || inputId.includes("syarif")) && (rawPass === "Syarif121220" || rawPass === "guru123" || rawPass === "guru")) {
       return this._setSessionUser({
         id: "usr_guru_syarif",
         email: "syarifhidayatullah64@guru.sma.belajar.id",
@@ -322,13 +322,14 @@ class AuthManager {
       }
     }
 
-    // Pattern 5: Real-time Cloud Firestore Lookup (if not yet in local device storage)
+    // Pattern 5: Real-time Cloud Firestore Lookup (fast 800ms timeout if network is slow)
     if (!matchedCandidate && window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
       try {
         const firestore = window.FIVIA_FIREBASE.db;
         const collections = ["vlab_student_roster", "vlab_students", "vlab_users"];
+        const fetchTimeout = (p, ms = 800) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), ms))]);
         for (const col of collections) {
-          const snap = await firestore.collection(col).get();
+          const snap = await fetchTimeout(firestore.collection(col).get());
           if (!snap.empty) {
             for (const doc of snap.docs) {
               const data = doc.data();

@@ -421,8 +421,8 @@ function handleRouting() {
     appFooter.style.display = hash.startsWith("#lab/") ? "none" : "";
   }
 
-  // Auth Guards (Allow #quest for both guests & logged in users)
-  if (hash !== "#landing" && !hash.startsWith("#quest") && !user) {
+  // Auth Guards (Allow #quest and #sync-roster for both guests & logged in users)
+  if (hash !== "#landing" && !hash.startsWith("#quest") && !hash.startsWith("#sync-roster=") && !user) {
     // Redirect anonymous to landing
     window.location.hash = "#landing";
     return;
