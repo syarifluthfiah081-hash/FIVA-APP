@@ -462,6 +462,7 @@
   }
 
   /* Horizontal swipeable chip controls on mobile */
+  .meas-swipe-bar,
   #caliper-types-bar,
   #caliper-objects-bar,
   #caliper-nonius-bar {
@@ -471,24 +472,48 @@
     display: flex !important;
     flex-wrap: nowrap !important;
     gap: 4px !important;
-    padding: 2px 0 !important;
+    padding: 2px 2px !important;
     max-width: 100% !important;
+    scrollbar-width: thin !important;
+  }
+
+  .meas-swipe-bar .meas-chip-btn,
+  #caliper-types-bar .meas-chip-btn,
+  #caliper-objects-bar .meas-chip-btn,
+  #caliper-nonius-bar .meas-chip-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  #meas-ultra-compact-toolbar {
+    padding: 4px 6px !important;
+    gap: 4px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   #meas-canvas-wrapper {
-    min-height: 240px !important;
+    min-height: 200px !important;
   }
 
   #meas-direct-control-bar {
     flex-wrap: wrap !important;
-    gap: 8px !important;
-    padding: 6px 8px !important;
+    gap: 6px !important;
+    padding: 4px 8px !important;
   }
 
   #meas-direct-control-bar > div {
     width: 100% !important;
     justify-content: space-between !important;
   }
+}
+
+/* Hide app footer when inside virtual lab or in fullscreen mode */
+#lab-viewport-section:not(.hidden-section) ~ footer.app-footer,
+body.fivia-fullscreen-active footer.app-footer,
+body.fq-fullscreen-active footer.app-footer,
+:fullscreen footer.app-footer {
+  display: none !important;
 }
 
 /* Fullscreen Immersive Lab overrides */
@@ -549,6 +574,16 @@ body.fq-fullscreen-active .lab-canvas-container,
     padding-right: 2px !important;
     width: 100% !important;
   }
+  .meas-swipe-bar,
+  #caliper-types-bar,
+  #caliper-objects-bar,
+  #caliper-nonius-bar {
+    overflow-x: auto !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    max-width: 100% !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
 }
 
 /* LANDSCAPE MODE: FULL KE BAWAH (LABS) */
@@ -589,6 +624,36 @@ body.fq-fullscreen-active .lab-canvas-container,
     max-height: 100% !important;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
+  }
+  #meas-view-simulator {
+    overflow-y: auto !important;
+    max-height: 100% !important;
+    height: 100% !important;
+  }
+  #meas-canvas-wrapper {
+    min-height: 160px !important;
+    flex: 1 !important;
+  }
+}
+
+/* SMARTPHONE COMPACT LANDSCAPE OVERRIDES (Height <= 520px) */
+@media (orientation: landscape) and (max-height: 520px) {
+  .fivia-measurement-lab-container > div:first-child {
+    padding: 4px 10px !important;
+  }
+  .fivia-measurement-lab-container > div:first-child h3 {
+    font-size: 0.9rem !important;
+  }
+  #meas-ultra-compact-toolbar {
+    padding: 3px 6px !important;
+    gap: 3px !important;
+  }
+  #meas-direct-control-bar {
+    padding: 3px 6px !important;
+    gap: 4px !important;
+  }
+  #meas-canvas-wrapper {
+    min-height: 140px !important;
   }
 }
 

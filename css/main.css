@@ -613,6 +613,14 @@ footer.app-footer {
   color: var(--text-secondary);
 }
 
+/* Sembunyikan footer saat membuka Lab Virtual atau Fullscreen agar bagian bawah tidak tertutupi */
+#lab-viewport-section:not(.hidden-section) ~ footer.app-footer,
+body.fivia-fullscreen-active footer.app-footer,
+body.fq-fullscreen-active footer.app-footer,
+:fullscreen footer.app-footer {
+  display: none !important;
+}
+
 /* Hidden Class for SPA routing */
 .hidden-section {
   display: none !important;

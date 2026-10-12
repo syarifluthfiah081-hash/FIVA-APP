@@ -4718,19 +4718,20 @@ function initRedesignedMeasurementLab() {
             </div>
           </div>
 
-          <!-- SIMULATOR VIEW (FULL SCREEN IMMERSIVE WITHOUT SCROLLING) -->
-          <div id="meas-view-simulator" class="meas-tab-view" style="display: none; flex-direction: column; gap: 6px; width: 100%; height: 100%; max-height: 100%; overflow: hidden;">
+          <!-- SIMULATOR VIEW (FULL SCREEN IMMERSIVE WITH ADAPTIVE FIT) -->
+          <div id="meas-view-simulator" class="meas-tab-view" style="display: none; flex-direction: column; gap: 6px; width: 100%; height: 100%; max-height: 100%; overflow-y: auto;">
             
             <!-- ULTRA-COMPACT TOOLBAR -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: #fff; padding: 6px 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; flex-shrink: 0;">
+            <div id="meas-ultra-compact-toolbar" class="meas-ultra-compact-toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: #fff; padding: 6px 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; flex-shrink: 0;">
               
               <!-- Instrument Specs & Type -->
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span id="meas-tool-title" style="font-size: 0.85rem; font-weight: 800; color: var(--brand-blue);"><i class="fas fa-drafting-compass"></i> Jangka Sorong</span>
-                <span class="caliper-precision-badge" id="caliper-precision-indicator" style="padding: 2px 8px; font-size: 0.72rem;"><i class="fas fa-bullseye"></i> 0.05 mm</span>
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline" id="btn-meas-quick-tool-nav" onclick="toggleMeasSidebar()" style="padding: 4px 8px; font-size: 0.72rem; font-weight: 700; color: var(--brand-blue); border-color: var(--brand-blue); display: inline-flex; align-items: center; gap: 4px; border-radius: 6px;" title="Buka Menu Pilihan Alat Ukur"><i class="fas fa-bars"></i> Alat</button>
+                <span id="meas-tool-title" style="font-size: 0.82rem; font-weight: 800; color: var(--brand-blue);"><i class="fas fa-drafting-compass"></i> Jangka Sorong</span>
+                <span class="caliper-precision-badge" id="caliper-precision-indicator" style="padding: 2px 6px; font-size: 0.7rem;"><i class="fas fa-bullseye"></i> 0.05 mm</span>
                 
                 <!-- Caliper Mode Switcher -->
-                <div id="caliper-types-bar" style="display: inline-flex; gap: 4px; align-items: center; margin-left: 6px;">
+                <div id="caliper-types-bar" class="meas-swipe-bar" style="display: inline-flex; gap: 4px; align-items: center;">
                   <button class="meas-chip-btn active-orange" id="btn-type-diameter_luar" style="padding: 4px 8px; font-size: 0.72rem;" onclick="switchMeasType('diameter_luar')">D. Luar</button>
                   <button class="meas-chip-btn" id="btn-type-diameter_dalam" style="padding: 4px 8px; font-size: 0.72rem;" onclick="switchMeasType('diameter_dalam')">D. Dalam</button>
                   <button class="meas-chip-btn" id="btn-type-kedalaman" style="padding: 4px 8px; font-size: 0.72rem;" onclick="switchMeasType('kedalaman')">Kedalaman</button>
@@ -4739,7 +4740,7 @@ function initRedesignedMeasurementLab() {
               </div>
 
               <!-- Objek Selector Chips -->
-              <div id="caliper-objects-bar" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+              <div id="caliper-objects-bar" class="meas-swipe-bar" style="display: inline-flex; align-items: center; gap: 4px;">
                 <button class="meas-chip-btn active" id="btn-benda-kelereng" style="padding: 4px 8px; font-size: 0.72rem;" onclick="selectBenda('kelereng')">Kelereng</button>
                 <button class="meas-chip-btn" id="btn-benda-pensil" style="padding: 4px 8px; font-size: 0.72rem;" onclick="selectBenda('pensil')">Pensil</button>
                 <button class="meas-chip-btn" id="btn-benda-baut" style="padding: 4px 8px; font-size: 0.72rem;" onclick="selectBenda('baut')">Baut</button>
@@ -4748,9 +4749,9 @@ function initRedesignedMeasurementLab() {
                 <button class="meas-chip-btn" id="btn-benda-balok" style="padding: 4px 8px; font-size: 0.72rem;" onclick="selectBenda('balok')">Balok</button>
               </div>
 
-              <!-- Nonius & Learning Mode Toggle -->
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <div id="caliper-nonius-bar" style="display: inline-flex; gap: 3px;">
+              <!-- Nonius & Learning Mode Toggle & Fullscreen Button -->
+              <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                <div id="caliper-nonius-bar" class="meas-swipe-bar" style="display: inline-flex; gap: 3px;">
                   <button class="meas-chip-btn" id="btn-nonius-10" style="padding: 3px 6px; font-size: 0.7rem;" onclick="switchNoniusType(10)">10 (0.1)</button>
                   <button class="meas-chip-btn active" id="btn-nonius-20" style="padding: 3px 6px; font-size: 0.7rem;" onclick="switchNoniusType(20)">20 (0.05)</button>
                   <button class="meas-chip-btn" id="btn-nonius-50" style="padding: 3px 6px; font-size: 0.7rem;" onclick="switchNoniusType(50)">50 (0.02)</button>
@@ -4761,12 +4762,16 @@ function initRedesignedMeasurementLab() {
                 <button class="btn btn-outline" id="btn-toggle-lens" style="padding: 4px 8px; font-size: 0.72rem;" onclick="toggleZoomLens()" title="Lensa Pembesar"><i class="fas fa-search"></i> 🔍</button>
                 <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.72rem;" onclick="randomizeObjectSizes()" title="Acak Ukuran Benda"><i class="fas fa-random"></i></button>
                 <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.72rem;" onclick="resetActiveSimulator()" title="Reset"><i class="fas fa-undo"></i></button>
+                <button type="button" class="btn btn-orange fq-fullscreen-toggle-btn" id="btn-meas-toolbar-fullscreen" onclick="window.toggleFullScreen()" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; background: var(--brand-orange); color: #fff;" title="Mode Layar Penuh Alat Ukur"><i class="fas fa-expand"></i> <span>Layar Penuh</span></button>
               </div>
 
             </div>
 
             <!-- ENLARGED CANVAS CONTAINER (Fills available space directly without scrolling) -->
-            <div style="flex: 1; width: 100%; min-height: 380px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: #ffffff; border-radius: 10px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden;" id="meas-canvas-wrapper">
+            <div style="flex: 1; width: 100%; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: #ffffff; border-radius: 10px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden;" id="meas-canvas-wrapper">
+              <button class="lab-canvas-fs-btn" id="btn-meas-canvas-fs" onclick="window.toggleFullScreen()" title="Mode Layar Penuh Alat Ukur" style="position: absolute; top: 8px; right: 8px; z-index: 50; display: inline-flex; background: rgba(15,23,42,0.8); border: 1.5px solid var(--brand-orange); color: #fff; border-radius: 8px; padding: 6px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                <i class="fas fa-expand"></i>
+              </button>
               <canvas id="meas-canvas" width="1000" height="460" style="width: 100%; height: 100%; max-height: 100%; object-fit: contain; display: block;"></canvas>
               
               <!-- Floating Zoom Lens overlay -->

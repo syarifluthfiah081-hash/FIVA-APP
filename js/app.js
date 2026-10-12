@@ -191,7 +191,7 @@ function updateAllFullscreenUI(isActive) {
   }
 
   // Update navbar & lab buttons
-  const btns = document.querySelectorAll(".fq-fullscreen-toggle-btn, #btn-lab-nav-fullscreen, #btn-meas-fullscreen-toggle");
+  const btns = document.querySelectorAll(".fq-fullscreen-toggle-btn, #btn-lab-nav-fullscreen, #btn-meas-fullscreen-toggle, #btn-meas-toolbar-fullscreen, #btn-meas-canvas-fs");
   btns.forEach(btn => {
     const icon = btn.querySelector("i");
     const span = btn.querySelector("span");
@@ -475,7 +475,12 @@ function handleRouting() {
     highlightSidebar("menu-materi");
     const labId = hash.split("/")[1];
     document.getElementById("lab-viewport-section").classList.remove("hidden-section");
+    const appFooter = document.querySelector("footer.app-footer");
+    if (appFooter) appFooter.style.display = "none";
     if (window.renderLab) window.renderLab(labId);
+  } else {
+    const appFooter = document.querySelector("footer.app-footer");
+    if (appFooter) appFooter.style.display = "";
   }
 
   else if (hash === "#detektif") {
