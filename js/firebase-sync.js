@@ -81,7 +81,16 @@ function handleCloudRecordUpdate(localCollection, id, data) {
   if (typeof db !== "undefined" && typeof db.getTable === "function") {
     const tableName = (localCollection === "roster") ? "students" : localCollection;
     const localList = db.getTable(tableName) || [];
-    const idx = localList.findIndex((item) => String(item.id) === String(id) || (item.nis && String(item.nis) === String(data.nis)));
+    let idx = -1;
+
+    if (localCollection === "submissions") {
+      idx = localList.findIndex((item) => 
+        String(item.id) === String(id) || 
+        (item.studentId && item.labId && String(item.studentId) === String(data.studentId) && String(item.labId) === String(data.labId))
+      );
+    } else {
+      idx = localList.findIndex((item) => String(item.id) === String(id) || (item.nis && String(item.nis) === String(data.nis)));
+    }
 
     if (idx !== -1) {
       localList[idx] = { ...localList[idx], ...mergedItem };
@@ -96,8 +105,10 @@ function handleCloudRecordUpdate(localCollection, id, data) {
   if (window.renderClassManagement && (localCollection === "students" || localCollection === "users" || localCollection === "roster")) {
     window.renderClassManagement();
   }
-  if (window.renderSubmissionsList && (localCollection === "submissions")) {
-    window.renderSubmissionsList();
+  if (localCollection === "submissions") {
+    if (typeof window.renderSubmissionsList === 'function') window.renderSubmissionsList();
+    if (typeof window.renderTeacherDashboard === 'function') window.renderTeacherDashboard();
+    if (typeof window.renderPeriksaLKPDSection === 'function') window.renderPeriksaLKPDSection();
   }
 }
 
@@ -261,6 +272,21 @@ async function fetchRosterFromCloud() {
       });
     }
 
+    // 5. Fetch vlab_lkpd_submissions (Student LKPD Answers)
+    try {
+      const subsSnap = await firestore.collection("vlab_lkpd_submissions").get();
+      if (!subsSnap.empty) {
+        let subsCount = 0;
+        subsSnap.forEach(doc => {
+          handleCloudRecordUpdate("submissions", doc.id, doc.data());
+          subsCount++;
+        });
+        console.log(`[Firebase Sync] Berhasil memuat ${subsCount} jawaban LKPD siswa dari Cloud!`);
+      }
+    } catch (errSubs) {
+      console.warn("[Firebase Sync] Gagal memuat submissions LKPD dari cloud:", errSubs);
+    }
+
     console.log(`[Firebase Sync] Berhasil memuat ${count} data siswa dari Cloud!`);
     return { success: true, count };
   } catch (err) {
@@ -322,6 +348,15 @@ async function syncAllRosterToCloud() {
       }
     }
 
+    // 5. Upload LKPD Submissions
+    const submissions = (window.db && window.db.getTable("submissions")) || [];
+    for (const sub of submissions) {
+      if (sub && (sub.id || sub.studentId)) {
+        const docId = String(sub.id || `sub_${sub.studentId}_${sub.labId}`);
+        await firestore.collection("vlab_lkpd_submissions").doc(docId).set(JSON.parse(JSON.stringify(sub)), { merge: true });
+      }
+    }
+
     return { success: true, count: uploaded };
   } catch (err) {
     console.error("[Firebase Sync] Gagal mengunggah seluruh roster ke cloud:", err);
@@ -335,14 +370,46 @@ async function syncAllRosterToCloud() {
 async function backfillLocalToCloud() {
   if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) return;
 
-  const collections = ["students", "classes", "users"];
+  const collections = ["students", "classes", "users", "submissions"];
   for (const col of collections) {
     const items = (typeof db !== "undefined" && db.getTable) ? (db.getTable(col) || []) : [];
     for (const item of items) {
-      if (item && item.id) {
-        await syncLocalChangeToCloud(col, item);
+      if (item && (item.id || item.studentId)) {
+        const syncItem = { ...item, id: item.id || `sub_${item.studentId}_${item.labId}` };
+        await syncLocalChangeToCloud(col, syncItem);
       }
     }
+  }
+}
+
+/**
+ * Explicit helper to fetch LKPD submissions on demand
+ */
+async function fetchLKPDSubmissionsFromCloud() {
+  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
+    if (window.showToast) window.showToast("Memuat dari database lokal (Firebase belum terhubung).", "info");
+    if (window.renderTeacherDashboard) window.renderTeacherDashboard();
+    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
+    return false;
+  }
+  try {
+    const firestore = window.FIVIA_FIREBASE.db;
+    const subsSnap = await firestore.collection("vlab_lkpd_submissions").get();
+    let count = 0;
+    if (!subsSnap.empty) {
+      subsSnap.forEach(doc => {
+        handleCloudRecordUpdate("submissions", doc.id, doc.data());
+        count++;
+      });
+    }
+    if (window.showToast) window.showToast(`Berhasil menyinkronkan ${count} lembar kerja LKPD dari Cloud!`, "success");
+    if (window.renderTeacherDashboard) window.renderTeacherDashboard();
+    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
+    return true;
+  } catch (err) {
+    console.warn("Gagal menyinkronkan LKPD dari Cloud:", err);
+    if (window.showToast) window.showToast("Gagal menarik data dari Cloud: " + err.message, "danger");
+    return false;
   }
 }
 
@@ -353,3 +420,4 @@ window.syncLocalDeleteToCloud = syncLocalDeleteToCloud;
 window.backfillLocalToCloud = backfillLocalToCloud;
 window.fetchRosterFromCloud = fetchRosterFromCloud;
 window.syncAllRosterToCloud = syncAllRosterToCloud;
+window.fetchLKPDSubmissionsFromCloud = fetchLKPDSubmissionsFromCloud;

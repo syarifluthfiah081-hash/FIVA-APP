@@ -256,13 +256,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = window.db.gradeSubmission(studentId, labId, score, feedback);
       if (res) {
         window.closeAllModals();
-        window.showToast("Berhasil mengirimkan penilaian dan feedback!");
+        window.showToast("Berhasil menyimpan penilaian dan umpan balik LKPD siswa!");
         renderTeacherDashboard();
+        if (typeof window.renderPeriksaLKPDSection === 'function') {
+          window.renderPeriksaLKPDSection();
+        }
       } else {
-        window.showToast("Gagal melakukan grading submission.", "danger");
+        window.showToast("Gagal menyimpan penilaian LKPD.", "danger");
       }
     });
   }
+
+  // Initialize helpers for LKPD grading modal & periksa filters
+  initGradingModalHelpers();
+  initPeriksaLKPDFilters();
 
   // Print trigger
   const printReportBtn = document.getElementById("btn-print-reports");
@@ -1468,7 +1475,7 @@ function renderTeacherDashboard() {
 
   const classCount = Math.max(teacherClasses.length, 2);
   const submissions = (window.db && typeof window.db.getPendingSubmissions === 'function') ? window.db.getPendingSubmissions(user.id) || [] : [];
-  const pendingCount = submissions.filter(s => s.status === "pending").length;
+  const pendingCount = submissions.filter(s => s.status !== "graded").length;
   const totalStudentsCount = getCombinedStudentsCount();
 
   const elClasses = document.getElementById("teacher-stat-classes");
@@ -1484,13 +1491,14 @@ function renderTeacherDashboard() {
   tableBody.innerHTML = "";
 
   if (submissions.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">Belum ada pengumpulan LKPD dari siswa.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 20px;">Belum ada pengumpulan LKPD dari siswa.</td></tr>`;
     return;
   }
 
   submissions.forEach(sub => {
     const row = document.createElement("tr");
     const formattedDate = new Date(sub.timestamp).toLocaleDateString("id-ID", { hour: '2-digit', minute: '2-digit' });
+    const isGraded = sub.status === "graded";
     
     row.innerHTML = `
       <td style="font-weight: 600;">${sub.studentName}</td>
@@ -1498,15 +1506,15 @@ function renderTeacherDashboard() {
       <td>${sub.labName}</td>
       <td>${formattedDate}</td>
       <td>
-        <span class="badge ${sub.status === "graded" ? "badge-success" : "badge-warning"}">
-          ${sub.status === "graded" ? "Dinilai" : "Butuh Dinilai"}
+        <span class="badge ${isGraded ? "badge-success" : "badge-warning"}">
+          ${isGraded ? "Dinilai" : "Butuh Dinilai"}
         </span>
       </td>
-      <td style="font-weight: 700; font-family: monospace;">${sub.score !== undefined ? sub.score : "-"}</td>
+      <td style="font-weight: 700; font-family: monospace;">${(sub.score !== undefined && sub.score !== null) ? sub.score : "-"}</td>
       <td>
         <button class="btn btn-primary btn-grade" style="padding: 6px 12px; font-size: 0.8rem;" 
                 data-student="${sub.studentId}" data-lab="${sub.labId}">
-          ${sub.status === "graded" ? "Edit Nilai" : "Koreksi"}
+          ${isGraded ? "Edit Nilai" : "Koreksi"}
         </button>
       </td>
     `;
@@ -1525,157 +1533,201 @@ function renderTeacherDashboard() {
 
 function openGradingModal(studentId, labId) {
   const sub = window.db.getLKPDSubmission(studentId, labId);
-  const students = window.db.getTable("students");
-  const student = students.find(s => s.id === studentId);
-  const lab = window.db.getTable("labs").find(l => l.id === parseInt(labId));
-  
-  if (!sub || !student || !lab) return;
+  if (!sub) {
+    if (window.showToast) window.showToast("Data LKPD siswa tidak ditemukan.", "warning");
+    return;
+  }
 
-  document.getElementById("grade-student-id").value = studentId;
-  document.getElementById("grade-lab-id").value = labId;
-  document.getElementById("grading-score").value = sub.score !== undefined ? sub.score : "";
+  const sId = String(studentId || sub.studentId || "");
+  const students = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("students") || [] : [];
+  const users = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("users") || [] : [];
+  let student = students.find(s => String(s.id) === sId || (s.nis && String(s.nis) === sId)) ||
+                users.find(u => String(u.id) === sId || (u.nis && String(u.nis) === sId));
+  
+  if (!student) {
+    let roster = [];
+    try { roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]"); } catch(e) {}
+    student = roster.find(r => String(r.id || r.studentId) === sId || (r.nis && String(r.nis) === sId));
+  }
+
+  const studentName = sub.studentName || student?.name || student?.displayName || `Siswa (${sId})`;
+  const studentNis = sub.studentNis || student?.nis || "-";
+  const studentClass = sub.className || student?.className || student?.classId || "Kelas X-1";
+
+  const labs = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("labs") || [] : [];
+  let lab = labs.find(l => String(l.id) === String(labId) || parseInt(l.id) === parseInt(labId));
+  const LAB_TITLES = {
+    1: "Metode Ilmiah & Keselamatan Kerja Lab",
+    2: "Pengukuran Dasar Fisika (Jangka Sorong & Mikrometer)",
+    3: "Hukum Kekekalan Energi & Skate Park",
+    4: "Energi Terbarukan: Turbin Angin & Sel Surya",
+    5: "Termodinamika & Efek Rumah Kaca Global"
+  };
+  const labName = sub.labName || (lab ? lab.name : (LAB_TITLES[labId] || `Laboratorium Fisika #${labId}`));
+
+  document.getElementById("grade-student-id").value = sub.studentId || sId;
+  document.getElementById("grade-lab-id").value = sub.labId || labId;
+  document.getElementById("grading-score").value = (sub.score !== undefined && sub.score !== null) ? sub.score : "";
   document.getElementById("grading-feedback").value = sub.feedback || "";
 
   document.getElementById("grading-meta-info").innerHTML = `
-    <strong>Siswa:</strong> ${student.name} | <strong>Eksperimen:</strong> ${lab.name}<br>
-    <strong>Waktu Kirim:</strong> ${new Date(sub.timestamp).toLocaleString("id-ID")}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+      <div><strong>Siswa:</strong> ${studentName} ${studentNis !== '-' ? `(NIS: ${studentNis})` : ''}</div>
+      <div><strong>Kelas:</strong> ${studentClass}</div>
+      <div><strong>Eksperimen:</strong> ${labName}</div>
+      <div><strong>Waktu Kirim:</strong> ${new Date(sub.timestamp).toLocaleString("id-ID")}</div>
+    </div>
   `;
 
   // Render questions and student answers
   const previewContainer = document.getElementById("grading-answers-preview");
   previewContainer.innerHTML = "";
 
-  if (parseInt(labId) === 2) {
-    const progress = sub.answers;
-    let html = `
-      <div class="glass-panel" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid var(--brand-orange);">
-        <h5 style="color: var(--brand-orange); margin-bottom: 8px;"><i class="fas fa-search"></i> Misi 4: Hasil Pengukuran FIVIA Virtual Lab</h5>
+  // 1. Observations Table
+  if (sub.observations && Array.isArray(sub.observations) && sub.observations.length > 0) {
+    let obsHtml = `
+      <div style="margin-bottom: 20px;">
+        <h5 style="margin-bottom: 8px; color: var(--brand-blue); font-size: 0.95rem;">
+          <i class="fas fa-table"></i> Data Hasil Pengukuran & Pengamatan Siswa:
+        </h5>
+        <div style="overflow-x: auto; border: 1px solid var(--glass-border); border-radius: 8px;">
+          <table class="lkpd-obs-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="background: rgba(0,0,0,0.03); text-align: left;">
     `;
-    if (progress.dataMisi4 && progress.dataMisi4.length > 0) {
-      html += `
-        <table class="lkpd-obs-table" style="margin-bottom: 12px; width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: rgba(0,0,0,0.02); text-align: left;">
-              <th style="padding: 8px; font-size: 0.8rem;">Alat Ukur</th>
-              <th style="padding: 8px; font-size: 0.8rem;">Nilai Target</th>
-              <th style="padding: 8px; font-size: 0.8rem;">Hasil Siswa</th>
-              <th style="padding: 8px; font-size: 0.8rem;">Evaluasi</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-      progress.dataMisi4.forEach(row => {
-        html += `
-          <tr style="border-bottom: 1px solid var(--glass-border);">
-            <td style="padding: 8px; font-size: 0.85rem;"><strong>${row.alat}</strong></td>
-            <td style="padding: 8px; font-size: 0.85rem; font-family: monospace;">${row.target}</td>
-            <td style="padding: 8px; font-size: 0.85rem; font-family: monospace;">${row.siswa}</td>
-            <td style="padding: 8px; font-size: 0.85rem;"><span class="badge ${row.status === 'Benar' ? 'badge-success' : 'badge-danger'}">${row.status === 'Benar' ? 'BENAR' : 'SALAH'}</span></td>
-          </tr>
-        `;
-      });
-      html += `</tbody></table>`;
-    } else {
-      html += `<p style="font-style: italic;">Belum ada data Misi 4.</p>`;
-    }
-    
-    html += `
-      </div>
-      <div class="glass-panel" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid var(--brand-blue);">
-        <h5 style="color: var(--brand-blue); margin-bottom: 8px;"><i class="fas fa-vial"></i> Misi 7: Analisis Pengukuran Terpadu (Balok Kuningan)</h5>
-    `;
-    if (progress.dataMisi7 && progress.dataMisi7.panjang) {
-      const d7 = progress.dataMisi7;
-      html += `
-        <ul style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 12px; padding-left: 20px;">
-          <li>Panjang (Mistar) = <strong>${d7.panjang} cm</strong></li>
-          <li>Lebar (Jangka Sorong) = <strong>${d7.lebar} cm</strong></li>
-          <li>Tebal (Mikrometer Sekrup) = <strong>${d7.tebal} cm</strong></li>
-          <li>Massa Balok = <strong>${d7.massa} gram</strong></li>
-          <li>Volume Balok = <strong>${d7.volume} cm³</strong></li>
-          <li>Massa Jenis Balok = <strong>${d7.massJenis} g/cm³</strong></li>
-        </ul>
-      `;
-    } else {
-      html += `<p style="font-style: italic;">Belum ada data Misi 7.</p>`;
-    }
-    html += `</div>`;
-    
-    html += `
-      <div style="margin-bottom: 16px;">
-        <h5 style="color: var(--brand-orange); margin-bottom: 4px;">Hipotesis Siswa:</h5>
-        <p style="font-style: italic; background-color: var(--bg-primary); padding: 10px; border-radius: 6px; margin: 0;">${progress.hipotesis || "Tidak ada hipotesis."}</p>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <h5 style="color: var(--brand-blue); margin-bottom: 4px;">Analisis & Kesimpulan Siswa:</h5>
-        <p style="font-style: italic; background-color: var(--bg-primary); padding: 10px; border-radius: 6px; margin: 0;">${progress.kesimpulan || "Tidak ada kesimpulan."}</p>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <h5 style="color: var(--brand-orange); margin-bottom: 4px;">Refleksi Siswa:</h5>
-        <p style="font-style: italic; background-color: var(--bg-primary); padding: 10px; border-radius: 6px; margin: 0;">${progress.refleksi || "Tidak ada refleksi."}</p>
-      </div>
-    `;
-    
-    previewContainer.innerHTML = html;
-    window.openModal("grade-lkpd-modal");
-    return;
-  }
-
-  // Render observations first if any
-  if (sub.observations && sub.observations.length > 0) {
-    let obsHtml = `<h5 style="margin-bottom: 8px; color: var(--brand-blue);">Tabel Hasil Pengukuran Siswa:</h5>
-      <table class="lkpd-obs-table" style="margin-bottom: 20px;">
-        <thead>
-          <tr>`;
-    // headers
-    Object.keys(sub.observations[0]).forEach(k => {
-      obsHtml += `<th>${k}</th>`;
+    const headers = Object.keys(sub.observations[0]);
+    headers.forEach(k => {
+      obsHtml += `<th style="padding: 8px 12px; border-bottom: 1px solid var(--glass-border);">${k}</th>`;
     });
     obsHtml += `</tr></thead><tbody>`;
-    // rows
     sub.observations.forEach(row => {
-      obsHtml += `<tr>`;
-      Object.values(row).forEach(val => {
-        obsHtml += `<td>${val}</td>`;
+      obsHtml += `<tr style="border-bottom: 1px solid var(--glass-border);">`;
+      headers.forEach(k => {
+        obsHtml += `<td style="padding: 8px 12px;">${row[k] !== undefined ? row[k] : "-"}</td>`;
       });
       obsHtml += `</tr>`;
     });
-    obsHtml += `</tbody></table>`;
+    obsHtml += `</tbody></table></div></div>`;
     previewContainer.innerHTML += obsHtml;
   }
 
-  // Hypothesis
-  previewContainer.innerHTML += `
-    <div style="margin-bottom: 16px;">
-      <h5 style="color: var(--brand-orange); margin-bottom: 4px;">Hipotesis Siswa:</h5>
-      <p style="font-style: italic; background-color: var(--bg-primary); padding: 10px; border-radius: 6px;">${sub.hypothesis || "Tidak ada hipotesis."}</p>
-    </div>
-  `;
+  // 2. Detective / Lab 2 Mission 4 & 7 Data if present
+  if (sub.answers && typeof sub.answers === 'object') {
+    if (sub.answers.dataMisi4 && Array.isArray(sub.answers.dataMisi4) && sub.answers.dataMisi4.length > 0) {
+      let m4Html = `
+        <div class="glass-panel" style="padding: 14px; margin-bottom: 16px; border-left: 4px solid var(--brand-orange);">
+          <h5 style="color: var(--brand-orange); margin-bottom: 8px;"><i class="fas fa-search"></i> Misi 4: Hasil Pengukuran Virtual Lab</h5>
+          <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+            <thead>
+              <tr style="text-align: left; background: rgba(0,0,0,0.02);">
+                <th style="padding: 6px;">Alat Ukur</th>
+                <th style="padding: 6px;">Nilai Target</th>
+                <th style="padding: 6px;">Hasil Siswa</th>
+                <th style="padding: 6px;">Evaluasi</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      sub.answers.dataMisi4.forEach(row => {
+        m4Html += `
+          <tr style="border-bottom: 1px solid var(--glass-border);">
+            <td style="padding: 6px;"><strong>${row.alat}</strong></td>
+            <td style="padding: 6px; font-family: monospace;">${row.target}</td>
+            <td style="padding: 6px; font-family: monospace;">${row.siswa}</td>
+            <td style="padding: 6px;"><span class="badge ${row.status === 'Benar' ? 'badge-success' : 'badge-danger'}">${row.status || 'Tercatat'}</span></td>
+          </tr>
+        `;
+      });
+      m4Html += `</tbody></table></div>`;
+      previewContainer.innerHTML += m4Html;
+    }
 
-  // Questions
-  const lkpdObj = window.db.getLKPDForLab(labId);
-  let qHtml = `<h5 style="color: var(--brand-blue); margin-bottom: 8px;">Tanya Jawab LKPD:</h5>`;
-  lkpdObj.pertanyaan.forEach(q => {
-    const ans = sub.answers.find(a => a.questionId === q.id);
-    qHtml += `
-      <div style="margin-bottom: 12px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">
-        <span style="font-weight: 600; font-size: 0.85rem; display: block;">Pertanyaan: ${q.text}</span>
-        <span style="font-size: 0.9rem; display: block; margin-top: 4px; padding-left: 8px; border-left: 3px solid var(--brand-orange);">
-          ${ans ? ans.answerText : "<i>Belum dijawab.</i>"}
-        </span>
+    if (sub.answers.dataMisi7 && sub.answers.dataMisi7.panjang) {
+      const d7 = sub.answers.dataMisi7;
+      previewContainer.innerHTML += `
+        <div class="glass-panel" style="padding: 14px; margin-bottom: 16px; border-left: 4px solid var(--brand-blue);">
+          <h5 style="color: var(--brand-blue); margin-bottom: 8px;"><i class="fas fa-vial"></i> Misi 7: Analisis Pengukuran Balok Kuningan</h5>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.85rem;">
+            <div>Panjang: <strong>${d7.panjang} cm</strong></div>
+            <div>Lebar: <strong>${d7.lebar} cm</strong></div>
+            <div>Tebal: <strong>${d7.tebal} cm</strong></div>
+            <div>Massa: <strong>${d7.massa} g</strong></div>
+            <div>Volume: <strong>${d7.volume} cm³</strong></div>
+            <div>Massa Jenis: <strong>${d7.massJenis} g/cm³</strong></div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // 3. Hypothesis
+  const hypText = sub.hypothesis || (sub.answers && typeof sub.answers === 'object' && sub.answers.hipotesis) || "";
+  if (hypText) {
+    previewContainer.innerHTML += `
+      <div style="margin-bottom: 16px;">
+        <h5 style="color: var(--brand-orange); margin-bottom: 4px;"><i class="fas fa-lightbulb"></i> Hipotesis Siswa:</h5>
+        <div style="font-style: italic; background-color: var(--bg-primary); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--brand-orange); font-size: 0.9rem;">
+          ${hypText}
+        </div>
       </div>
     `;
-  });
+  }
 
-  // Conclusion
-  qHtml += `
-    <div style="margin-top: 16px;">
-      <h5 style="color: var(--brand-orange); margin-bottom: 4px;">Kesimpulan Siswa:</h5>
-      <p style="font-style: italic; background-color: var(--bg-primary); padding: 10px; border-radius: 6px;">${sub.conclusion || "Tidak ada kesimpulan."}</p>
-    </div>
-  `;
+  // 4. Questions & Answers
+  const lkpdObj = (window.db && typeof window.db.getLKPDForLab === 'function') ? window.db.getLKPDForLab(labId) : null;
+  if (lkpdObj && Array.isArray(lkpdObj.pertanyaan) && lkpdObj.pertanyaan.length > 0) {
+    let qHtml = `
+      <div style="margin-bottom: 16px;">
+        <h5 style="color: var(--brand-blue); margin-bottom: 8px;"><i class="fas fa-question-circle"></i> Tanya Jawab & Analisis LKPD Siswa:</h5>
+    `;
+    lkpdObj.pertanyaan.forEach((q, idx) => {
+      let ansText = "<i>Belum dijawab oleh siswa.</i>";
+      if (Array.isArray(sub.answers)) {
+        const found = sub.answers.find(a => a && (a.questionId === q.id || a.questionId === String(q.id) || a.questionId === `q${idx+1}`));
+        if (found && found.answerText) ansText = found.answerText;
+      } else if (sub.answers && typeof sub.answers === 'object') {
+        ansText = sub.answers[q.id] || sub.answers[String(q.id)] || sub.answers[q.id.replace('q', '')] || sub.answers[`q${idx+1}`] || "<i>Belum dijawab oleh siswa.</i>";
+      }
 
-  previewContainer.innerHTML += qHtml;
+      qHtml += `
+        <div style="margin-bottom: 12px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">
+          <span style="font-weight: 600; font-size: 0.85rem; display: block; color: var(--text-primary);"><i class="fas fa-arrow-right" style="color: var(--brand-blue); font-size: 0.75rem;"></i> Pertanyaan: ${q.text}</span>
+          <div style="font-size: 0.9rem; margin-top: 6px; padding: 8px 12px; background: rgba(0,0,0,0.03); border-radius: 6px; border-left: 3px solid var(--brand-orange); color: var(--text-primary);">
+            ${ansText}
+          </div>
+        </div>
+      `;
+    });
+    qHtml += `</div>`;
+    previewContainer.innerHTML += qHtml;
+  }
+
+  // 5. Conclusion
+  const concText = sub.conclusion || (sub.answers && typeof sub.answers === 'object' && sub.answers.kesimpulan) || "";
+  if (concText) {
+    previewContainer.innerHTML += `
+      <div style="margin-top: 16px;">
+        <h5 style="color: var(--brand-blue); margin-bottom: 4px;"><i class="fas fa-check-circle"></i> Kesimpulan Siswa:</h5>
+        <div style="font-style: italic; background-color: var(--bg-primary); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--brand-blue); font-size: 0.9rem;">
+          ${concText}
+        </div>
+      </div>
+    `;
+  }
+
+  // 6. Reflection
+  const refText = (sub.answers && typeof sub.answers === 'object' && sub.answers.refleksi) || sub.reflection || "";
+  if (refText) {
+    previewContainer.innerHTML += `
+      <div style="margin-top: 14px;">
+        <h5 style="color: var(--brand-orange); margin-bottom: 4px;"><i class="fas fa-comment-alt"></i> Refleksi Siswa:</h5>
+        <div style="font-style: italic; background-color: var(--bg-primary); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--brand-orange); font-size: 0.9rem;">
+          ${refText}
+        </div>
+      </div>
+    `;
+  }
+
   window.openModal("grade-lkpd-modal");
 }
 
@@ -2521,20 +2573,271 @@ function renderTeacherManagement() {
   });
 }
 
-function deleteTeacher(teacherId, teacherName) {
-  if (confirm(`Apakah Anda yakin ingin menghapus akun guru "${teacherName}"?`)) {
-    let users = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("users") || [] : [];
-    users = users.filter(u => u.id !== teacherId);
-    window.db.saveTable("users", users);
+// ==========================================
+// 3B. PERIKSA LKPD SISWA MENU & EVALUASI GURU
+// ==========================================
+function renderPeriksaLKPDSection() {
+  const user = window.auth ? window.auth.getCurrentUser() : null;
+  if (!user || (user.role !== "guru" && user.role !== "admin")) return;
 
-    if (window.showToast) window.showToast(`Akun guru "${teacherName}" berhasil dihapus.`, "success");
-    renderTeacherManagement();
+  const rawSubmissions = (window.db && typeof window.db.getPendingSubmissions === 'function') 
+    ? window.db.getPendingSubmissions(user.id) || [] 
+    : [];
+
+  // Update Stat Cards
+  const totalCount = rawSubmissions.length;
+  const pendingCount = rawSubmissions.filter(s => s.status !== "graded").length;
+  const gradedCount = rawSubmissions.filter(s => s.status === "graded").length;
+  
+  const gradedScores = rawSubmissions
+    .filter(s => s.status === "graded" && s.score !== undefined && s.score !== null)
+    .map(s => Number(s.score));
+  const avgScore = gradedScores.length > 0 
+    ? Math.round((gradedScores.reduce((a, b) => a + b, 0) / gradedScores.length) * 10) / 10 
+    : "-";
+
+  const elTotal = document.getElementById("periksa-stat-total");
+  if (elTotal) elTotal.textContent = totalCount;
+  const elPending = document.getElementById("periksa-stat-pending");
+  if (elPending) elPending.textContent = pendingCount;
+  const elGraded = document.getElementById("periksa-stat-graded");
+  if (elGraded) elGraded.textContent = gradedCount;
+  const elAvg = document.getElementById("periksa-stat-avg");
+  if (elAvg) elAvg.textContent = avgScore;
+
+  // Populate Classes filter dropdown
+  const classSelect = document.getElementById("periksa-filter-class");
+  if (classSelect) {
+    const currentVal = classSelect.value;
+    const uniqueClasses = new Set();
+    rawSubmissions.forEach(s => { if (s.className) uniqueClasses.add(s.className); });
+    
+    // Also include classes from DB
+    const dbClasses = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("classes") || [] : [];
+    dbClasses.forEach(c => uniqueClasses.add(c.name || c.id));
+    
+    classSelect.innerHTML = `<option value="">Semua Kelas</option>`;
+    Array.from(uniqueClasses).sort().forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls;
+      opt.textContent = cls;
+      if (cls === currentVal) opt.selected = true;
+      classSelect.appendChild(opt);
+    });
+  }
+
+  // Read current filters
+  const selectedClass = (document.getElementById("periksa-filter-class")?.value || "").toLowerCase().trim();
+  const selectedLab = (document.getElementById("periksa-filter-lab")?.value || "").trim();
+  const selectedStatus = (document.getElementById("periksa-filter-status")?.value || "").trim();
+  const searchQuery = (document.getElementById("periksa-filter-search")?.value || "").toLowerCase().trim();
+
+  // Apply filtering
+  const filtered = rawSubmissions.filter(sub => {
+    if (selectedClass) {
+      const cName = (sub.className || "").toLowerCase();
+      if (!cName.includes(selectedClass)) return false;
+    }
+    if (selectedLab) {
+      if (String(sub.labId) !== selectedLab) return false;
+    }
+    if (selectedStatus) {
+      if (selectedStatus === "graded" && sub.status !== "graded") return false;
+      if (selectedStatus === "pending" && sub.status === "graded") return false;
+    }
+    if (searchQuery) {
+      const sName = (sub.studentName || "").toLowerCase();
+      const sNis = (sub.studentNis || "").toLowerCase();
+      const sCode = (sub.studentCode || "").toLowerCase();
+      if (!sName.includes(searchQuery) && !sNis.includes(searchQuery) && !sCode.includes(searchQuery)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Badge count
+  const badge = document.getElementById("periksa-table-count-badge");
+  if (badge) badge.textContent = `${filtered.length} Data Ditemukan`;
+
+  // Render Table
+  const tbody = document.querySelector("#periksa-lkpd-full-table tbody");
+  const emptyState = document.getElementById("periksa-empty-state");
+  const fullTable = document.getElementById("periksa-lkpd-full-table");
+
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (filtered.length === 0) {
+    if (emptyState) emptyState.style.display = "block";
+    if (fullTable) fullTable.style.display = "none";
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = "none";
+  if (fullTable) fullTable.style.display = "table";
+
+  filtered.forEach((sub, idx) => {
+    const row = document.createElement("tr");
+    const formattedDate = new Date(sub.timestamp).toLocaleDateString("id-ID", { 
+      day: 'numeric', 
+      month: 'short', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    const isGraded = sub.status === "graded";
+
+    row.innerHTML = `
+      <td style="text-align: center; color: var(--text-secondary); font-family: monospace;">${idx + 1}</td>
+      <td>
+        <div style="font-weight: 700; color: var(--text-primary);">${sub.studentName}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: monospace;">
+          ${sub.studentNis && sub.studentNis !== '-' ? 'NIS: ' + sub.studentNis : (sub.studentCode || '')}
+        </div>
+      </td>
+      <td><span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">${sub.className}</span></td>
+      <td>
+        <div style="font-weight: 600; font-size: 0.88rem;">${sub.labName}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Praktikum Lab Fisika</div>
+      </td>
+      <td style="font-size: 0.85rem; color: var(--text-secondary);">${formattedDate}</td>
+      <td>
+        <span class="badge ${isGraded ? "badge-success" : "badge-warning"}">
+          ${isGraded ? `<i class="fas fa-check-circle"></i> Selesai Dinilai` : `<i class="fas fa-clock"></i> Butuh Koreksi`}
+        </span>
+      </td>
+      <td style="text-align: center; font-weight: 800; font-size: 1.1rem; font-family: monospace; color: ${isGraded ? '#10b981' : 'var(--text-secondary)'};">
+        ${isGraded ? sub.score : "-"}
+      </td>
+      <td style="text-align: center;">
+        <button class="btn ${isGraded ? 'btn-outline' : 'btn-primary'} btn-grade-periksa" 
+                style="padding: 7px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px;"
+                data-student="${sub.studentId}" data-lab="${sub.labId}">
+          ${isGraded ? `<i class="fas fa-edit"></i> Edit Nilai` : `<i class="fas fa-pen-nib"></i> Periksa & Beri Nilai`}
+        </button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Bind Grade Buttons
+  tbody.querySelectorAll(".btn-grade-periksa").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const studentId = btn.getAttribute("data-student");
+      const labId = btn.getAttribute("data-lab");
+      openGradingModal(studentId, labId);
+    });
+  });
+}
+
+function initPeriksaLKPDFilters() {
+  const searchInput = document.getElementById("periksa-filter-search");
+  const classSelect = document.getElementById("periksa-filter-class");
+  const labSelect = document.getElementById("periksa-filter-lab");
+  const statusSelect = document.getElementById("periksa-filter-status");
+
+  if (searchInput) searchInput.addEventListener("input", () => renderPeriksaLKPDSection());
+  if (classSelect) classSelect.addEventListener("change", () => renderPeriksaLKPDSection());
+  if (labSelect) labSelect.addEventListener("change", () => renderPeriksaLKPDSection());
+  if (statusSelect) statusSelect.addEventListener("change", () => renderPeriksaLKPDSection());
+}
+
+function initGradingModalHelpers() {
+  // Quick score buttons
+  document.querySelectorAll(".btn-quick-score").forEach(btn => {
+    btn.onclick = () => {
+      const score = btn.getAttribute("data-score");
+      const inp = document.getElementById("grading-score");
+      if (inp && score) inp.value = score;
+    };
+  });
+
+  // Quick feedback chips
+  document.querySelectorAll(".btn-quick-feedback").forEach(btn => {
+    btn.onclick = () => {
+      const text = btn.getAttribute("data-text");
+      const txt = document.getElementById("grading-feedback");
+      if (txt && text) {
+        if (txt.value.trim()) {
+          txt.value = txt.value.trim() + " " + text;
+        } else {
+          txt.value = text;
+        }
+      }
+    };
+  });
+
+  // Rubric calculator
+  const rubricBtn = document.getElementById("btn-apply-rubric");
+  if (rubricBtn) {
+    rubricBtn.onclick = () => {
+      const h = Number(document.getElementById("rubric-hyp")?.value || 0);
+      const d = Number(document.getElementById("rubric-data")?.value || 0);
+      const a = Number(document.getElementById("rubric-analysis")?.value || 0);
+      const c = Number(document.getElementById("rubric-conc")?.value || 0);
+      const total = Math.min(100, Math.max(0, h + d + a + c));
+      const inp = document.getElementById("grading-score");
+      if (inp) inp.value = total;
+      if (window.showToast) window.showToast(`Total nilai rubrik (${total}) diterapkan.`);
+    };
   }
 }
+
+window.exportLKPDGradesCSV = function() {
+  const user = window.auth ? window.auth.getCurrentUser() : null;
+  const submissions = (window.db && typeof window.db.getPendingSubmissions === 'function') 
+    ? window.db.getPendingSubmissions(user ? user.id : null) || [] 
+    : [];
+
+  if (submissions.length === 0) {
+    if (window.showToast) window.showToast("Belum ada data nilai LKPD untuk diekspor.", "warning");
+    return;
+  }
+
+  let csv = "No,Nama Siswa,NIS,Kode Siswa,Kelas,Eksperimen / Lab,Waktu Pengiriman,Status,Nilai,Umpan Balik Guru\n";
+  submissions.forEach((s, idx) => {
+    const cleanFeedback = (s.feedback || "").replace(/"/g, '""');
+    const cleanStudent = (s.studentName || "").replace(/"/g, '""');
+    const cleanLab = (s.labName || "").replace(/"/g, '""');
+    const statusText = s.status === "graded" ? "Sudah Dinilai" : "Butuh Koreksi";
+    const scoreVal = s.score !== undefined && s.score !== null ? s.score : "-";
+    const dateText = new Date(s.timestamp).toLocaleString("id-ID");
+
+    csv += `${idx + 1},"${cleanStudent}","${s.studentNis || '-'}","${s.studentCode || '-'}","${s.className}","${cleanLab}","${dateText}","${statusText}",${scoreVal},"${cleanFeedback}"\n`;
+  });
+
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `rekap_nilai_lkpd_fisika_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (window.showToast) window.showToast("Rekap nilai LKPD berhasil diunduh dalam format CSV!", "success");
+};
+
+window.resetPeriksaLKPDFilters = function() {
+  const searchInput = document.getElementById("periksa-filter-search");
+  const classSelect = document.getElementById("periksa-filter-class");
+  const labSelect = document.getElementById("periksa-filter-lab");
+  const statusSelect = document.getElementById("periksa-filter-status");
+
+  if (searchInput) searchInput.value = "";
+  if (classSelect) classSelect.value = "";
+  if (labSelect) labSelect.value = "";
+  if (statusSelect) statusSelect.value = "";
+
+  renderPeriksaLKPDSection();
+};
 
 // Map globals
 window.renderStudentDashboard = renderStudentDashboard;
 window.renderTeacherDashboard = renderTeacherDashboard;
+window.renderPeriksaLKPDSection = renderPeriksaLKPDSection;
+window.initPeriksaLKPDFilters = initPeriksaLKPDFilters;
+window.initGradingModalHelpers = initGradingModalHelpers;
 window.renderClassManagement = renderClassManagement;
 window.renderTeacherReports = renderTeacherReports;
 window.renderTeacherManagement = renderTeacherManagement;

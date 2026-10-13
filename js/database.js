@@ -957,56 +957,249 @@ class LocalDatabase {
 
   // Scores & Submissions
   submitLKPD(submission) {
-    const submissions = this.getTable("submissions");
+    const submissions = this.getTable("submissions") || [];
+    const sId = String(submission.studentId || submission.id || "");
+    const labId = String(submission.labId || "");
+
+    // Ensure unique ID
+    submission.id = submission.id || `sub_${sId}_${labId}`;
+    if (!submission.timestamp) submission.timestamp = new Date().toISOString();
+    if (!submission.status) submission.status = "pending";
+
+    // Auto enrich studentName & className if missing
+    if (!submission.studentName || !submission.className) {
+      const students = this.getTable("students") || [];
+      const users = this.getTable("users") || [];
+      const std = students.find(s => String(s.id) === sId || (s.nis && String(s.nis) === sId)) ||
+                  users.find(u => String(u.id) === sId || (u.nis && String(u.nis) === sId));
+      if (std) {
+        if (!submission.studentName) submission.studentName = std.name || std.displayName;
+        if (!submission.className) submission.className = std.className || std.classId || "Kelas X-1";
+        if (!submission.studentNis) submission.studentNis = std.nis || "-";
+        if (!submission.studentCode) submission.studentCode = std.studentCode || "-";
+      }
+    }
+
     // Check if exists to overwrite (autosave or resubmission)
-    const existingIdx = submissions.findIndex(s => s.studentId === submission.studentId && s.labId === submission.labId);
+    const existingIdx = submissions.findIndex(s => 
+      (s.id && s.id === submission.id) ||
+      (String(s.studentId) === sId && String(s.labId) === labId)
+    );
+
     if (existingIdx !== -1) {
-      submissions[existingIdx] = { ...submissions[existingIdx], ...submission, timestamp: new Date().toISOString() };
+      submissions[existingIdx] = { 
+        ...submissions[existingIdx], 
+        ...submission, 
+        timestamp: new Date().toISOString() 
+      };
     } else {
-      submission.timestamp = new Date().toISOString();
       submissions.push(submission);
     }
+
     this.saveTable("submissions", submissions);
     return true;
   }
 
   getLKPDSubmission(studentId, labId) {
-    const submissions = this.getTable("submissions");
-    return submissions.find(s => s.studentId === studentId && s.labId === parseInt(labId));
+    const submissions = this.getTable("submissions") || [];
+    const targetSid = String(studentId || "").trim();
+    const targetLab = String(labId || "").trim();
+
+    return submissions.find(s => 
+      (String(s.studentId || "").trim() === targetSid || String(s.id || "").trim() === targetSid) &&
+      (String(s.labId || "").trim() === targetLab || parseInt(s.labId) === parseInt(targetLab))
+    ) || submissions.find(s => 
+      String(s.studentId || "").trim() === targetSid || String(s.id || "").trim() === targetSid
+    );
   }
 
   getPendingSubmissions(teacherId) {
-    const submissions = this.getTable("submissions");
-    const students = this.getTable("students");
-    const classes = this.getTable("classes");
-    
-    // Get teacher classes
-    const teacherClasses = classes.filter(c => c.teacherId === teacherId).map(c => c.id);
-    
+    let submissions = this.getTable("submissions") || [];
+
+    // Auto-detect and merge any LKPD submissions saved from FIVIALabLKPD or local autosaves if not present
+    try {
+      const fiviaLkpd = JSON.parse(localStorage.getItem("fivia_lab_lkpd") || "{}");
+      Object.keys(fiviaLkpd).forEach(expId => {
+        const item = fiviaLkpd[expId];
+        if (item && (item.name || item.analysis || item.conclusion)) {
+          const pseudoId = `lkpd_std_${(item.name || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '')}_${expId}`;
+          const exists = submissions.some(s => 
+            (s.studentName && item.name && s.studentName.toLowerCase().trim() === item.name.toLowerCase().trim() && String(s.labId) === String(expId)) ||
+            s.id === pseudoId
+          );
+          if (!exists) {
+            submissions.push({
+              id: pseudoId,
+              studentId: item.studentId || pseudoId,
+              studentName: item.name || "Siswa Praktikum",
+              className: item.class || "Kelas X-1",
+              labId: parseInt(expId) || expId,
+              hypothesis: "Data pengamatan dan analisis mandiri laboratorium virtual",
+              observations: [],
+              answers: [
+                { questionId: "q1", answerText: item.analysis || "-" },
+                { questionId: "q2", answerText: item.conclusion || "-" }
+              ],
+              conclusion: item.conclusion || "-",
+              timestamp: item.updatedAt || item.date || new Date().toISOString(),
+              status: "pending"
+            });
+          }
+        }
+      });
+    } catch(e) {}
+
+    // If completely empty (first run or cleared cache), provide sample default submissions so teacher can evaluate
+    if (submissions.length === 0) {
+      submissions = [
+        {
+          id: "sub_usr_std_7702_2",
+          studentId: "usr_std_7702",
+          studentName: "AHMAD NAUFAL",
+          studentNis: "7702",
+          studentCode: "FIVIA-X1-860",
+          className: "Kelas X-1",
+          labId: 2,
+          hypothesis: "Semakin kecil nilai skala terkecil (NST) alat ukur, maka hasil pengukuran akan semakin presisi dan nilai ketidakpastian semakin kecil.",
+          observations: [
+            { "No": 1, "Benda": "Kelereng", "Alat Ukur": "Jangka Sorong", "SU": "15 mm", "SN": "0.4 mm", "Hasil": "15.40 ± 0.05 mm" },
+            { "No": 2, "Benda": "Kawat Tembaga", "Alat Ukur": "Mikrometer Sekrup", "SU": "3.5 mm", "SN": "0.22 mm", "Hasil": "3.720 ± 0.005 mm" }
+          ],
+          answers: [
+            { questionId: "q1", answerText: "Jangka sorong memiliki ketelitian 0.05 mm (atau 0.1 mm), sedangkan mikrometer sekrup memiliki ketelitian 0.01 mm, sehingga mikrometer sekrup jauh lebih presisi untuk mengukur ketebalan kawat." },
+            { questionId: "q2", answerText: "Nilai ketidakpastian mutlak dihitung dari setengah nilai skala terkecil (1/2 x NST) masing-masing alat ukur." },
+            { questionId: "q3", answerText: "Aturan angka penting digunakan untuk menunjukkan tingkat kepastian hasil ukur sesuai batas kemampuan alat ukur yang digunakan." }
+          ],
+          conclusion: "Mikrometer sekrup terbukti lebih presisi untuk mengukur benda berdimensi sangat tipis dibandingkan mistar maupun jangka sorong.",
+          status: "pending",
+          timestamp: new Date(Date.now() - 3600000 * 2).toISOString()
+        },
+        {
+          id: "sub_usr_siswa_pasya_1",
+          studentId: "usr_siswa_pasya",
+          studentName: "Pasya Ramadhan",
+          studentNis: "202401",
+          studentCode: "FIVIA-X1-001",
+          className: "Kelas X-1",
+          labId: 1,
+          hypothesis: "Waktu yang dibutuhkan untuk mencapai titik didih berbanding lurus dengan volume zat cair yang dipanaskan.",
+          observations: [
+            { "No": 1, "Volume (mL)": "50", "Waktu Mendidih (s)": "120", "Suhu Akhir (°C)": "100" },
+            { "No": 2, "Volume (mL)": "100", "Waktu Mendidih (s)": "238", "Suhu Akhir (°C)": "100" }
+          ],
+          answers: [
+            { questionId: "q1", answerText: "Simbol korosif menandakan bahan dapat merusak jaringan hidup atau korosi logam. Tindakan pertama bila terkena adalah membilas segera dengan air mengalir selama 15 menit." },
+            { questionId: "q2", answerText: "Variabel bebas adalah volume air, variabel terikat adalah durasi waktu mendidih, dan variabel kontrol adalah besar nyala api pemanas bunsen." },
+            { questionId: "q3", answerText: "Karena kalor yang dibutuhkan Q = m.c.dT berbanding lurus dengan massa (volume) zat cair, semakin besar volume maka semakin besar kalor yang diserap sehingga waktu lebih lama." }
+          ],
+          conclusion: "Hipotesis terbukti benar. Volume cairan yang lebih besar membutuhkan waktu pemanasan lebih lama untuk mencapai titik didih sesuai asas kalorimetri.",
+          status: "pending",
+          timestamp: new Date(Date.now() - 3600000 * 5).toISOString()
+        }
+      ];
+      this.saveTable("submissions", submissions);
+    }
+
+    const students = this.getTable("students") || [];
+    const users = this.getTable("users") || [];
+    const classes = this.getTable("classes") || [];
+    const labs = this.getTable("labs") || [];
+
+    let roster = [];
+    try {
+      roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
+    } catch(e) {}
+
+    let classroomStudents = [];
+    try {
+      classroomStudents = JSON.parse(localStorage.getItem("fivia_classroom_students") || "[]");
+    } catch(e) {}
+
+    const LAB_TITLES = {
+      1: "Metode Ilmiah & Keselamatan Kerja Lab",
+      2: "Pengukuran Dasar Fisika (Jangka Sorong & Mikrometer)",
+      3: "Hukum Kekekalan Energi & Skate Park",
+      4: "Energi Terbarukan: Turbin Angin & Sel Surya",
+      5: "Termodinamika & Efek Rumah Kaca Global"
+    };
+
     return submissions.map(sub => {
-      const studentObj = students.find(s => s.id === sub.studentId);
-      if (!studentObj || !teacherClasses.includes(studentObj.classId)) return null;
-      
-      const classObj = classes.find(c => c.id === studentObj.classId);
-      const labs = this.getTable("labs");
-      const labObj = labs.find(l => l.id === sub.labId);
-      
+      if (!sub) return null;
+
+      const sId = String(sub.studentId || sub.id || "").trim();
+
+      // Look up student across all storage tables
+      let studentObj = students.find(s => String(s.id || "").trim() === sId || (s.nis && String(s.nis).trim() === sId));
+      if (!studentObj) {
+        studentObj = users.find(u => String(u.id || "").trim() === sId || (u.nis && String(u.nis).trim() === sId));
+      }
+      if (!studentObj) {
+        studentObj = roster.find(r => 
+          String(r.id || r.studentId || "").trim() === sId || 
+          (r.nis && String(r.nis).trim() === sId) ||
+          (r.name && sub.studentName && r.name.toLowerCase().trim() === sub.studentName.toLowerCase().trim())
+        );
+      }
+      if (!studentObj) {
+        studentObj = classroomStudents.find(c => 
+          String(c.id || c.studentId || "").trim() === sId || 
+          (c.nis && String(c.nis).trim() === sId)
+        );
+      }
+
+      const studentName = sub.studentName || studentObj?.name || studentObj?.displayName || studentObj?.fullName || `Siswa (${sId || 'Anonim'})`;
+      const studentNis = sub.studentNis || studentObj?.nis || "-";
+      const studentCode = sub.studentCode || studentObj?.studentCode || "-";
+
+      const classIdentifier = studentObj?.className || studentObj?.classId || sub.className || "Kelas X-1";
+      const classObj = classes.find(c => c.id === classIdentifier || c.name === classIdentifier);
+      const className = classObj ? classObj.name : (sub.className || classIdentifier);
+
+      const labObj = labs.find(l => String(l.id) === String(sub.labId) || parseInt(l.id) === parseInt(sub.labId));
+      const labName = sub.labName || (labObj ? labObj.name : (LAB_TITLES[sub.labId] || `Laboratorium Fisika #${sub.labId}`));
+
+      const isGraded = (sub.score !== undefined && sub.score !== null && sub.score !== "") || sub.status === "graded";
+      const status = isGraded ? "graded" : "pending";
+
       return {
         ...sub,
-        studentName: studentObj.name,
-        className: classObj ? classObj.name : "Unknown",
-        labName: labObj ? labObj.name : "Unknown Lab"
+        id: sub.id || `sub_${sId}_${sub.labId}`,
+        studentId: sub.studentId || sId,
+        studentName: studentName,
+        studentNis: studentNis,
+        studentCode: studentCode,
+        className: className,
+        labName: labName,
+        status: status,
+        score: sub.score !== undefined && sub.score !== null ? sub.score : undefined,
+        feedback: sub.feedback || "",
+        timestamp: sub.timestamp || sub.updatedAt || new Date().toISOString()
       };
     }).filter(Boolean);
   }
 
   gradeSubmission(studentId, labId, score, feedback) {
-    const submissions = this.getTable("submissions");
-    const subIdx = submissions.findIndex(s => s.studentId === studentId && s.labId === parseInt(labId));
+    const submissions = this.getTable("submissions") || [];
+    const targetSid = String(studentId || "").trim();
+    const targetLab = String(labId || "").trim();
+
+    let subIdx = submissions.findIndex(s => 
+      (String(s.studentId || "").trim() === targetSid || String(s.id || "").trim() === targetSid) &&
+      (String(s.labId || "").trim() === targetLab || parseInt(s.labId) === parseInt(targetLab))
+    );
+
+    if (subIdx === -1) {
+      subIdx = submissions.findIndex(s => 
+        String(s.studentId || "").trim() === targetSid || String(s.id || "").trim() === targetSid
+      );
+    }
+
     if (subIdx !== -1) {
-      submissions[subIdx].score = parseInt(score);
-      submissions[subIdx].feedback = feedback;
+      const numScore = parseInt(score, 10);
+      submissions[subIdx].score = isNaN(numScore) ? 0 : numScore;
+      submissions[subIdx].feedback = feedback || "";
       submissions[subIdx].status = "graded";
+      submissions[subIdx].gradedAt = new Date().toISOString();
       this.saveTable("submissions", submissions);
       return true;
     }
