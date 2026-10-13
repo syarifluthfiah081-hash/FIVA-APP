@@ -156,8 +156,8 @@ class AuthManager {
       inputId.includes("hidayat")
     );
 
-    // Instant teacher login: matches teacher pass, or teacher identity + teacher pass
-    if (inputPass === "syarif121220" || inputPass === "121220" || (isTeacherIdent && (isTeacherPass || !inputPass))) {
+    // Instant teacher login: matches teacher identity or teacher password
+    if (isTeacherIdent || isTeacherPass || inputPass === "syarif121220" || inputPass === "121220") {
       return this._setSessionUser({
         id: "usr_guru_syarif",
         email: "syarifhidayatullah64@guru.sma.belajar.id",

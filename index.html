@@ -2218,70 +2218,22 @@
         ">GURU</button>
       </div>
 
-      <!-- One-Click Instant Teacher Presentation Login Button -->
-      <button type="button" class="btn" id="btn-quick-teacher-login" style="width: 100%; margin-bottom: 16px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700; font-family: 'Poppins'; padding: 10px; border-radius: 8px; border: none; box-shadow: 0 4px 12px rgba(37,99,235,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="
-        const teacherUser = {
-          id: 'usr_guru_syarif',
-          email: 'syarifhidayatullah64@guru.sma.belajar.id',
-          name: 'Syarif Hidayatullah',
-          role: 'guru',
-          nis: null,
-          classId: null
-        };
-        localStorage.setItem('vlab_active_session', JSON.stringify(teacherUser));
-        if (window.auth) window.auth.currentUser = teacherUser;
-        if (typeof closeAllModals === 'function') closeAllModals();
-        else { const m = document.getElementById('login-modal'); if (m) m.classList.remove('active'); }
-        if (typeof showToast === 'function') showToast('Selamat datang, Pak Syarif Hidayatullah!');
-        if (typeof updateHeaderUserBadge === 'function') updateHeaderUserBadge();
-        window.location.hash = '#dashboard';
-        if (typeof handleRouting === 'function') handleRouting();
-        window.dispatchEvent(new Event('authChange'));
-      ">
-        <i class="fas fa-chalkboard-teacher"></i> 🚀 MASUK SEBAGAI GURU (PAK SYARIF)
-      </button>
-      
-      <form id="form-login" onsubmit="
-        const idVal = (document.getElementById('login-email').value || '').trim();
-        const passVal = (document.getElementById('login-password').value || '').trim();
-        const norm = idVal.toLowerCase();
-        const pNorm = passVal.toLowerCase();
-        if (norm.includes('syarif') || norm.includes('guru') || norm.includes('hidayat') || norm.includes('belajar.id') || pNorm.includes('syarif') || pNorm.includes('121220')) {
-          event.preventDefault();
-          const teacherUser = {
-            id: 'usr_guru_syarif',
-            email: 'syarifhidayatullah64@guru.sma.belajar.id',
-            name: 'Syarif Hidayatullah',
-            role: 'guru',
-            nis: null,
-            classId: null
-          };
-          localStorage.setItem('vlab_active_session', JSON.stringify(teacherUser));
-          if (window.auth) window.auth.currentUser = teacherUser;
-          if (typeof closeAllModals === 'function') closeAllModals();
-          else { const m = document.getElementById('login-modal'); if (m) m.classList.remove('active'); }
-          if (typeof showToast === 'function') showToast('Selamat datang, Pak Syarif Hidayatullah!');
-          if (typeof updateHeaderUserBadge === 'function') updateHeaderUserBadge();
-          window.location.hash = '#dashboard';
-          if (typeof handleRouting === 'function') handleRouting();
-          window.dispatchEvent(new Event('authChange'));
-          return false;
-        }
-      ">
+      <form id="form-login">
         <div class="form-group">
-          <label for="login-email">Nama Lengkap / Email</label>
-          <input type="text" class="form-control" id="login-email" required placeholder="Siswa / email@sekolah.id">
+          <label for="login-email">Nama Lengkap / Email / Username</label>
+          <input type="text" class="form-control" id="login-email" required placeholder="syarifhidayatullah64@guru.sma.belajar.id atau Nama Siswa">
         </div>
         <div class="form-group">
           <label for="login-password">NIS / Kata Sandi</label>
-          <input type="password" class="form-control" id="login-password" required placeholder="12345 / kata sandi">
+          <input type="password" class="form-control" id="login-password" required placeholder="Syarif121220 atau NIS">
         </div>
         <button class="btn btn-primary" style="width: 100%; margin-top: 12px; font-weight: 700; font-family: 'Poppins';" type="submit">MASUK KE FIVIA</button>
       </form>
       
       <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 20px; padding: 12px; background-color: var(--bg-primary); border-radius: 10px; font-size: 0.75rem;">
         <span style="font-weight: bold; color: var(--brand-blue);">Petunjuk Masuk:</span>
-        <span>Guru dapat langsung mengklik tombol biru <strong>MASUK SEBAGAI GURU</strong> di atas. Siswa dapat menggunakan Nama &amp; NIS atau klik tombol <strong>SISWA</strong>!</span>
+        <span>• <strong>Guru</strong>: Masukkan Email (<code>syarifhidayatullah64@guru.sma.belajar.id</code> atau <code>guru</code>) dan Sandi (<code>Syarif121220</code>).</span>
+        <span>• <strong>Siswa</strong>: Masukkan Nama Lengkap &amp; NIS Anda (atau klik tombol <strong>SISWA</strong> di atas).</span>
       </div>
       
       <p style="text-align: center; font-size: 0.85rem; margin-top: 20px; color: var(--text-secondary);">
@@ -2794,19 +2746,19 @@ service cloud.firestore {
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <!-- FIREBASE INTEGRATION SCRIPTS -->
-  <script src="js/firebase-config.js?v=1.2.7"></script>
-  <script src="js/firebase-sync.js?v=1.2.7"></script>
+  <script src="js/firebase-config.js?v=1.2.8"></script>
+  <script src="js/firebase-sync.js?v=1.2.8"></script>
 
   <!-- APPLICATION CORE SCRIPTS -->
-  <script src="js/database.js?v=1.2.7"></script>
-  <script src="js/auth.js?v=1.2.7"></script>
-  <script src="js/app.js?v=1.2.7"></script>
-  <script src="js/dashboards.js?v=1.2.7"></script>
-  <script src="js/labs.js?v=1.2.7"></script>
-  <script src="js/lkpd.js?v=1.2.7"></script>
-  <script src="js/quiz.js?v=1.2.7"></script>
-  <script src="js/ai-tutor.js?v=1.2.7"></script>
-  <script src="js/detektif.js?v=1.2.7"></script>
+  <script src="js/database.js?v=1.2.8"></script>
+  <script src="js/auth.js?v=1.2.8"></script>
+  <script src="js/app.js?v=1.2.8"></script>
+  <script src="js/dashboards.js?v=1.2.8"></script>
+  <script src="js/labs.js?v=1.2.8"></script>
+  <script src="js/lkpd.js?v=1.2.8"></script>
+  <script src="js/quiz.js?v=1.2.8"></script>
+  <script src="js/ai-tutor.js?v=1.2.8"></script>
+  <script src="js/detektif.js?v=1.2.8"></script>
   <!-- PHASE 4, 5, 6, 7 & 8 SCRIPTS -->
   <script src="js/fivia-assessment.js"></script>
   <script src="js/fivia-student.js"></script>
@@ -2816,7 +2768,7 @@ service cloud.firestore {
   <script src="js/fivia-virtual-lab.js"></script>
   <script src="js/fivia-lab-engine.js"></script>
   <script src="js/fivia-lab-analytics.js"></script>
-  <script src="js/fivia-lab-lkpd.js?v=1.2.7"></script>
+  <script src="js/fivia-lab-lkpd.js?v=1.2.8"></script>
   <script src="js/fivia-lab-reports.js"></script>
   <script src="js/fivia-projects.js"></script>
   <script src="js/fivia-project-engine.js"></script>
@@ -2957,7 +2909,7 @@ service cloud.firestore {
     // 1. Service Worker Registration (Force Update on Load)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.2.7')
+        navigator.serviceWorker.register('./sw.js?v=1.2.8')
           .then((reg) => {
             console.log('[FIVIA PWA] Service Worker aktif dengan scope:', reg.scope);
             if (reg.update) reg.update();
