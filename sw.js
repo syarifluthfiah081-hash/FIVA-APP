@@ -3,12 +3,15 @@
  * Enables offline access to all physics virtual labs, games, and quizzes.
  */
 
-const CACHE_NAME = "fivia-vlab-cache-v1.3.2";
+const CACHE_NAME = "fivia-vlab-cache-v1.3.3";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./icons/apple-touch-icon.png",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
   "./icons/icon-192.svg",
   "./icons/icon-512.svg",
   "./css/main.css",

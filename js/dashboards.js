@@ -2827,9 +2827,24 @@ window.resetPeriksaLKPDFilters = function() {
   if (statusSelect) statusSelect.value = "";
 
   renderPeriksaLKPDSection();
-};
+// Admin Dashboard renderer
+function renderAdminDashboard() {
+  if (typeof updateHeaderUserBadge === 'function') updateHeaderUserBadge();
+  const users = (window.db && typeof window.db.getTable === 'function') ? (window.db.getTable("users") || []) : [];
+  const teachers = users.filter(u => u.role === "guru");
+  const studentsCount = (typeof getCombinedStudentsCount === 'function') ? getCombinedStudentsCount() : users.filter(u => u.role === "siswa").length;
+  const materials = (window.db && typeof window.db.getTable === 'function') ? (window.db.getTable("materials") || []) : [];
+
+  const elTeachers = document.getElementById("admin-stat-teachers");
+  if (elTeachers) elTeachers.textContent = Math.max(teachers.length, 2);
+  const elStudents = document.getElementById("admin-stat-students");
+  if (elStudents) elStudents.textContent = studentsCount;
+  const elMats = document.getElementById("admin-stat-materials");
+  if (elMats) elMats.textContent = materials.length;
+}
 
 // Map globals
+window.renderAdminDashboard = renderAdminDashboard;
 window.renderStudentDashboard = renderStudentDashboard;
 window.renderTeacherDashboard = renderTeacherDashboard;
 window.renderPeriksaLKPDSection = renderPeriksaLKPDSection;

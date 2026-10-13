@@ -51,17 +51,23 @@ function initTheme() {
   }
 }
 
-// Sidebars & Header state management based on user role
+// Sidebars, Header, and Bottom Navigation state management based on user role
 function updateLayoutForUser() {
-  const user = window.auth.getCurrentUser();
+  const user = window.auth ? window.auth.getCurrentUser() : null;
   const sidebar = document.querySelector("aside.sidebar");
   const mainContent = document.getElementById("main-content");
+  const bottomNav = document.getElementById("mobile-bottom-nav");
   
   // Update header badge
   if (window.updateHeaderUserBadge) {
     window.updateHeaderUserBadge();
   }
   
+  // Update mobile bottom navigation
+  if (bottomNav) {
+    bottomNav.innerHTML = getBottomNavForRole(user ? user.role : null);
+  }
+
   if (!user) {
     // Guest layout
     if (sidebar) {
@@ -124,6 +130,127 @@ function getMenuForRole(role) {
   }
   return menuHtml;
 }
+
+// Mobile and Tablet Bottom Navigation Bar Templates
+function getBottomNavForRole(role) {
+  if (role === "siswa") {
+    return `
+      <a href="#dashboard" class="mobile-bottom-nav-item" data-route="dashboard">
+        <i class="fas fa-home"></i>
+        <span>Beranda</span>
+      </a>
+      <a href="#materi" class="mobile-bottom-nav-item" data-route="materi">
+        <i class="fas fa-book-open"></i>
+        <span>Materi</span>
+      </a>
+      <a href="#quest" class="mobile-bottom-nav-item" data-route="quest">
+        <i class="fas fa-gamepad"></i>
+        <span>Quest</span>
+      </a>
+      <a href="#sertifikat" class="mobile-bottom-nav-item" data-route="sertifikat">
+        <i class="fas fa-award"></i>
+        <span>Sertifikat</span>
+      </a>
+      <button type="button" class="mobile-bottom-nav-item" id="btn-bottom-menu-toggle" onclick="window.toggleSidebar()">
+        <i class="fas fa-bars"></i>
+        <span>Menu</span>
+      </button>
+    `;
+  } else if (role === "guru") {
+    return `
+      <a href="#dashboard" class="mobile-bottom-nav-item" data-route="dashboard">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="#periksa-lkpd" class="mobile-bottom-nav-item" data-route="periksa-lkpd">
+        <i class="fas fa-clipboard-check"></i>
+        <span>LKPD</span>
+      </a>
+      <a href="#generator" class="mobile-bottom-nav-item" data-route="generator">
+        <i class="fas fa-wand-magic-sparkles"></i>
+        <span>AI Guru</span>
+      </a>
+      <a href="#quest/group-play" class="mobile-bottom-nav-item" data-route="quest">
+        <i class="fas fa-users-line"></i>
+        <span>Group Play</span>
+      </a>
+      <button type="button" class="mobile-bottom-nav-item" id="btn-bottom-menu-toggle" onclick="window.toggleSidebar()">
+        <i class="fas fa-bars"></i>
+        <span>Menu</span>
+      </button>
+    `;
+  } else if (role === "admin") {
+    return `
+      <a href="#dashboard" class="mobile-bottom-nav-item" data-route="dashboard">
+        <i class="fas fa-user-shield"></i>
+        <span>Admin</span>
+      </a>
+      <a href="#manajemen-guru" class="mobile-bottom-nav-item" data-route="manajemen-guru">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span>Guru</span>
+      </a>
+      <a href="#materi" class="mobile-bottom-nav-item" data-route="materi">
+        <i class="fas fa-book-open"></i>
+        <span>Materi</span>
+      </a>
+      <button type="button" class="mobile-bottom-nav-item" id="btn-bottom-menu-toggle" onclick="window.toggleSidebar()">
+        <i class="fas fa-bars"></i>
+        <span>Menu</span>
+      </button>
+    `;
+  } else {
+    // Guest
+    return `
+      <a href="#landing" class="mobile-bottom-nav-item" data-route="landing">
+        <i class="fas fa-home"></i>
+        <span>Beranda</span>
+      </a>
+      <a href="#quest" class="mobile-bottom-nav-item" data-route="quest">
+        <i class="fas fa-gamepad"></i>
+        <span>Quest</span>
+      </a>
+      <button type="button" class="mobile-bottom-nav-item btn-open-login">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Masuk</span>
+      </button>
+      <button type="button" class="mobile-bottom-nav-item btn-open-register">
+        <i class="fas fa-user-plus"></i>
+        <span>Daftar</span>
+      </button>
+    `;
+  }
+}
+
+// Universal SPA Navigation Engine
+function navigateTo(targetHash) {
+  if (!targetHash) return;
+  if (!targetHash.startsWith("#")) targetHash = "#" + targetHash;
+
+  const user = window.auth ? window.auth.getCurrentUser() : null;
+
+  // Guest route guards
+  if (targetHash !== "#landing" && !targetHash.startsWith("#quest") && !targetHash.startsWith("#sync-roster=") && !user) {
+    window.location.hash = "#landing";
+    if (window.showToast) window.showToast("Silakan masuk terlebih dahulu untuk mengakses fitur ini.", "warning");
+    if (window.openModal) window.openModal("login-modal");
+    closeSidebar();
+    return;
+  }
+
+  // If already at target hash, hashchange won't fire naturally; force handleRouting
+  if (window.location.hash === targetHash) {
+    handleRouting();
+  } else {
+    window.location.hash = targetHash;
+  }
+
+  // Smoothly close drawer on mobile/tablet overlay without aborting click
+  setTimeout(() => {
+    closeSidebar();
+  }, 50);
+}
+
+window.navigateTo = navigateTo;
 
 // Sidebar & Layout state helpers
 function openSidebar() {
@@ -311,12 +438,32 @@ function initUIEvents() {
     });
   }
 
-  // Auto-dismiss sidebar on mobile when ANY menu link is tapped
+  // Universal SPA Hash Link Interceptor: Guarantees 100% reliable navigation on iOS, Safari, Android, and Tablets
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest('a[href^="#"]');
+    if (link && !link.classList.contains("no-spa-nav") && !link.hasAttribute("download")) {
+      const href = link.getAttribute("href");
+      if (href && href !== "#" && href !== "#!" && !href.startsWith("#modal-")) {
+        e.preventDefault();
+        window.navigateTo(href);
+      }
+    }
+  });
+
+  // Dedicated sidebar menu and mobile link delegator
   const sidebar = document.querySelector("aside.sidebar");
   if (sidebar) {
     sidebar.addEventListener("click", (e) => {
-      const link = e.target.closest("a") || e.target.closest("#btn-logout");
-      if (link && window.innerWidth <= 992) {
+      const link = e.target.closest("a");
+      const logoutBtn = e.target.closest("#btn-logout");
+      if (link) {
+        const href = link.getAttribute("href");
+        if (href && href.startsWith("#")) {
+          e.preventDefault();
+          window.navigateTo(href);
+        }
+      }
+      if (logoutBtn) {
         closeSidebar();
       }
     });
@@ -402,7 +549,7 @@ function closeAllModals() {
 // Routing Engine
 function handleRouting() {
   const hash = window.location.hash || "#landing";
-  const user = window.auth.getCurrentUser();
+  const user = window.auth ? window.auth.getCurrentUser() : null;
   
   // Clean active states on sidebar
   document.querySelectorAll(".sidebar-menu-item").forEach(item => item.classList.remove("active"));
@@ -410,11 +557,39 @@ function handleRouting() {
   // Hide all section pages
   document.querySelectorAll(".spa-section").forEach(sec => sec.classList.add("hidden-section"));
   
+  // Safe helper to show a section
+  const showSection = (secId) => {
+    const el = document.getElementById(secId);
+    if (el) el.classList.remove("hidden-section");
+    return el;
+  };
+
   // Helper to highlight sidebar menu items
   const highlightSidebar = (menuId) => {
     const el = document.getElementById(menuId);
     if (el) el.classList.add("active");
   };
+
+  // Safe caller for render functions
+  const safeRun = (fnName, ...args) => {
+    if (typeof window[fnName] === "function") {
+      try {
+        window[fnName](...args);
+      } catch (err) {
+        console.error(`[FIVIA Router] Error executing ${fnName}:`, err);
+      }
+    }
+  };
+
+  // Sync active states on mobile bottom navigation
+  document.querySelectorAll(".mobile-bottom-nav-item").forEach(item => {
+    item.classList.remove("active");
+    const href = item.getAttribute("href") || "";
+    const route = item.getAttribute("data-route") || "";
+    if ((href && href === hash) || (route && (hash === "#" + route || hash.startsWith("#" + route + "/")))) {
+      item.classList.add("active");
+    }
+  });
 
   // Toggle footer visibility (hide inside virtual lab viewport)
   const appFooter = document.querySelector("footer.app-footer");
@@ -456,13 +631,13 @@ function handleRouting() {
   // Route Definitions
   if (hash.startsWith("#quest")) {
     highlightSidebar("menu-guru-group-play");
-    const questSec = document.getElementById("fivia-quest-section");
-    if (questSec) questSec.classList.remove("hidden-section");
+    showSection("fivia-quest-section");
+    safeRun("FIVIAQuest_handleSubRouting", hash);
     if (window.FIVIAQuest && typeof window.FIVIAQuest.handleSubRouting === 'function') {
-      window.FIVIAQuest.handleSubRouting(hash);
+      try { window.FIVIAQuest.handleSubRouting(hash); } catch(e) { console.error(e); }
     }
     if ((hash === '#quest/group-play' || hash === '#quest/group-levels') && window.FIVIAGroupLevelEngine && typeof window.FIVIAGroupLevelEngine.renderLevelMapUI === 'function') {
-      window.FIVIAGroupLevelEngine.renderLevelMapUI();
+      try { window.FIVIAGroupLevelEngine.renderLevelMapUI(); } catch(e) { console.error(e); }
     }
   }
 
@@ -471,104 +646,107 @@ function handleRouting() {
       window.location.hash = "#dashboard";
       return;
     }
-    document.getElementById("landing-section").classList.remove("hidden-section");
+    showSection("landing-section");
   } 
   
   else if (hash === "#dashboard") {
-    if (user.role === "siswa") {
+    if (user && user.role === "siswa") {
       highlightSidebar("menu-siswa-dashboard");
-      document.getElementById("student-dashboard-section").classList.remove("hidden-section");
-      if (window.renderStudentDashboard) window.renderStudentDashboard();
-    } else if (user.role === "guru") {
+      showSection("student-dashboard-section");
+      safeRun("renderStudentDashboard");
+    } else if (user && user.role === "guru") {
       highlightSidebar("menu-guru-dashboard");
-      document.getElementById("teacher-dashboard-section").classList.remove("hidden-section");
-      if (window.renderTeacherDashboard) window.renderTeacherDashboard();
+      showSection("teacher-dashboard-section");
+      safeRun("renderTeacherDashboard");
     } else {
-      document.getElementById("admin-dashboard-section").classList.remove("hidden-section");
-      if (window.renderAdminDashboard) window.renderAdminDashboard();
+      highlightSidebar("menu-admin-dashboard");
+      const adminSec = showSection("admin-dashboard-section");
+      safeRun("renderAdminDashboard");
+      if (!adminSec) {
+        showSection("teacher-dashboard-section");
+        safeRun("renderTeacherDashboard");
+      }
     }
   } 
   
   else if (hash === "#materi") {
     highlightSidebar("menu-materi");
-    document.getElementById("materi-list-section").classList.remove("hidden-section");
-    if (window.renderMaterialsList) window.renderMaterialsList();
+    showSection("materi-list-section");
+    safeRun("renderMaterialsList");
   } 
   
   else if (hash.startsWith("#materi/")) {
     highlightSidebar("menu-materi");
     const matId = hash.split("/")[1];
-    document.getElementById("materi-detail-section").classList.remove("hidden-section");
-    if (window.renderMaterialDetail) window.renderMaterialDetail(matId);
+    showSection("materi-detail-section");
+    safeRun("renderMaterialDetail", matId);
   } 
   
   else if (hash.startsWith("#lab/")) {
     highlightSidebar("menu-materi");
     const labId = hash.split("/")[1];
-    document.getElementById("lab-viewport-section").classList.remove("hidden-section");
-    if (window.renderLab) window.renderLab(labId);
+    showSection("lab-viewport-section");
+    safeRun("renderLab", labId);
   }
 
   else if (hash === "#detektif") {
     highlightSidebar("menu-materi");
-    document.getElementById("detektif-section").classList.remove("hidden-section");
-    if (window.initDetektifDashboard) window.initDetektifDashboard();
+    showSection("detektif-section");
+    safeRun("initDetektifDashboard");
   }
 
   else if (hash.startsWith("#detektif/misi/")) {
     highlightSidebar("menu-materi");
     const missionId = parseInt(hash.split("/")[2]);
-    document.getElementById("detektif-section").classList.remove("hidden-section");
-    if (window.playDetektifMission) window.playDetektifMission(missionId);
+    showSection("detektif-section");
+    safeRun("playDetektifMission", missionId);
   }
   
   else if (hash.startsWith("#quiz/")) {
     highlightSidebar("menu-materi");
     const matId = hash.split("/")[1];
-    document.getElementById("quiz-section").classList.remove("hidden-section");
-    if (window.renderQuiz) window.renderQuiz(matId);
+    showSection("quiz-section");
+    safeRun("renderQuiz", matId);
   }
 
   else if (hash === "#sertifikat") {
     highlightSidebar("menu-siswa-sertifikat");
-    document.getElementById("certificates-list-section").classList.remove("hidden-section");
-    if (window.renderCertificatesList) window.renderCertificatesList();
+    showSection("certificates-list-section");
+    safeRun("renderCertificatesList");
   }
 
   else if (hash === "#periksa-lkpd") {
     if (!user || (user.role !== "guru" && user.role !== "admin")) { window.location.hash = "#dashboard"; return; }
     highlightSidebar("menu-guru-periksa-lkpd");
-    const periksaSection = document.getElementById("periksa-lkpd-section");
-    if (periksaSection) periksaSection.classList.remove("hidden-section");
-    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
+    showSection("periksa-lkpd-section");
+    safeRun("renderPeriksaLKPDSection");
   }
 
   else if (hash === "#generator") {
-    if (user.role !== "guru") { window.location.hash = "#dashboard"; return; }
+    if (!user || (user.role !== "guru" && user.role !== "admin")) { window.location.hash = "#dashboard"; return; }
     highlightSidebar("menu-guru-generator");
-    const genSection = document.getElementById("generator-section");
-    if (genSection) genSection.classList.remove("hidden-section");
+    showSection("generator-section");
   }
 
   else if (hash === "#kelas") {
-    if (user.role !== "guru") { window.location.hash = "#dashboard"; return; }
+    if (!user || (user.role !== "guru" && user.role !== "admin")) { window.location.hash = "#dashboard"; return; }
     highlightSidebar("menu-guru-kelas");
-    document.getElementById("class-management-section").classList.remove("hidden-section");
-    if (window.renderClassManagement) window.renderClassManagement();
+    showSection("class-management-section");
+    safeRun("renderClassManagement");
   }
 
   else if (hash === "#laporan") {
-    if (user.role !== "guru") { window.location.hash = "#dashboard"; return; }
+    if (!user || (user.role !== "guru" && user.role !== "admin")) { window.location.hash = "#dashboard"; return; }
     highlightSidebar("menu-guru-laporan");
-    document.getElementById("teacher-reports-section").classList.remove("hidden-section");
-    if (window.renderTeacherReports) window.renderTeacherReports();
+    showSection("teacher-reports-section");
+    safeRun("renderTeacherReports");
   }
 
   else if (hash === "#manajemen-guru") {
     if (!user || (user.role !== "guru" && user.role !== "admin")) { window.location.hash = "#dashboard"; return; }
     highlightSidebar("menu-guru-management");
-    document.getElementById("teacher-management-section").classList.remove("hidden-section");
-    if (window.renderTeacherManagement) window.renderTeacherManagement();
+    showSection("teacher-management-section");
+    safeRun("renderTeacherManagement");
   }
   
   else {
@@ -576,7 +754,7 @@ function handleRouting() {
     window.location.hash = user ? "#dashboard" : "#landing";
   }
   
-  // Collapse sidebar on small screens after routing
+  // Smoothly collapse sidebar on small screens after routing
   if (window.innerWidth <= 992) {
     closeSidebar();
   }

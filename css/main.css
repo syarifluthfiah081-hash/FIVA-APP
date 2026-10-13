@@ -1012,3 +1012,163 @@ body.fq-fullscreen-active .fivia-measurement-lab-container,
     flex-direction: column !important;
   }
 }
+
+/* =========================================================
+   MOBILE & TABLET BOTTOM NAVIGATION BAR (iOS & Android)
+   ========================================================= */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(10, 19, 41, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.45);
+  z-index: 920;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  align-items: center;
+  justify-content: space-around;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 992px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  
+  /* Give bottom spacing so content is never hidden behind the bottom nav */
+  body:not(.fivia-fullscreen-active):not(.fq-fullscreen-active) .dashboard-container,
+  body:not(.fivia-fullscreen-active):not(.fq-fullscreen-active) .hero-section,
+  body:not(.fivia-fullscreen-active):not(.fq-fullscreen-active) .course-detail-container {
+    padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Hide bottom nav during immersive fullscreen */
+body.fivia-fullscreen-active .mobile-bottom-nav,
+body.fq-fullscreen-active .mobile-bottom-nav,
+:fullscreen .mobile-bottom-nav {
+  display: none !important;
+}
+
+.mobile-bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 600;
+  gap: 3px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px 2px;
+}
+
+.mobile-bottom-nav-item i {
+  font-size: 1.18rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.mobile-bottom-nav-item:hover,
+.mobile-bottom-nav-item:active {
+  color: #e2e8f0;
+}
+
+.mobile-bottom-nav-item.active {
+  color: var(--brand-orange, #f97316);
+  font-weight: 700;
+}
+
+.mobile-bottom-nav-item.active i {
+  color: var(--brand-orange, #f97316);
+  transform: translateY(-2px) scale(1.1);
+  filter: drop-shadow(0 2px 8px rgba(249, 115, 22, 0.5));
+}
+
+/* =========================================================
+   iOS SAFARI PWA INSTALLATION MODAL & SMART BANNER
+   ========================================================= */
+.ios-share-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.ios-step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.ios-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ios-smart-banner {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  left: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 910;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  animation: slideUpBanner 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpBanner {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (min-width: 993px) {
+  .ios-smart-banner {
+    bottom: 24px;
+    max-width: 480px;
+    left: auto;
+    right: 24px;
+  }
+}
+

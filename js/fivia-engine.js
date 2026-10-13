@@ -1345,8 +1345,7 @@ window.FIVIAQuest = (function() {
   function closeHintModal() { const modal = document.getElementById('fq-hint-modal'); if (modal) modal.classList.remove('active'); }
   function openBonusScoreModal() { const modal = document.getElementById('fq-bonus-modal'); if (modal) modal.classList.add('active'); else alert('⭐ Tambahkan Skor Bonus Tim!'); }
   function closeBonusModal() { const modal = document.getElementById('fq-bonus-modal'); if (modal) modal.classList.remove('active'); }
-  function pickRandomPlayer() { pickRandomPlayer(); }
-  function resumeGame() { timer.resume(); alert('▶ Permainan Dilanjuutkan.'); }
+  function resumeGame() { timer.resume(); alert('▶ Permainan Dilanjutkan.'); }
 
   return {
     init: init,
