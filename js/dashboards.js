@@ -2827,6 +2827,8 @@ window.resetPeriksaLKPDFilters = function() {
   if (statusSelect) statusSelect.value = "";
 
   renderPeriksaLKPDSection();
+};
+
 // Admin Dashboard renderer
 function renderAdminDashboard() {
   if (typeof updateHeaderUserBadge === 'function') updateHeaderUserBadge();

@@ -608,6 +608,36 @@ class LocalDatabase {
       localStorage.setItem(DB_PREFIX + "initialized", "true");
     }
 
+    // Self-healing: Ensure essential tables (materials, labs, worksheets, quizzes, classes, students) are never empty
+    try {
+      const curMats = this.getTable("materials");
+      if (!curMats || curMats.length === 0) {
+        this.saveTable("materials", SEED_DATA.materials);
+      }
+      const curLabs = this.getTable("labs");
+      if (!curLabs || curLabs.length === 0) {
+        this.saveTable("labs", SEED_DATA.labs);
+      }
+      const curWorksheets = this.getTable("worksheets");
+      if (!curWorksheets || curWorksheets.length === 0) {
+        this.saveTable("worksheets", SEED_DATA.worksheets);
+      }
+      const curQuizzes = this.getTable("quizzes");
+      if (!curQuizzes || curQuizzes.length === 0) {
+        this.saveTable("quizzes", SEED_DATA.quizzes);
+      }
+      const curClasses = this.getTable("classes");
+      if (!curClasses || curClasses.length === 0) {
+        this.saveTable("classes", SEED_DATA.classes);
+      }
+      const curStudents = this.getTable("students");
+      if (!curStudents || curStudents.length === 0) {
+        this.saveTable("students", SEED_DATA.students);
+      }
+    } catch(err) {
+      console.warn("Self-healing table check:", err);
+    }
+
     // Ensure teacher credentials (Syarif121220) & registered students are guaranteed on all devices
     try {
       let users = this.getTable("users") || [];
