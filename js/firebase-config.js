@@ -127,16 +127,15 @@ async function initFirebase(customConfig = null) {
       window.FIVIA_FIREBASE.auth = firebase.auth();
     }
 
-    // Enable offline persistence in Firestore for ultra-smooth offline-first experience
-    try {
-      await window.FIVIA_FIREBASE.db.enablePersistence({ synchronizeTabs: true });
-      console.log("[Firebase] Firestore offline persistence diaktifkan.");
-    } catch (persistErr) {
-      if (persistErr.code === "failed-precondition") {
-        console.warn("[Firebase] Multiple tabs open, persistence enabled in first tab only.");
-      } else if (persistErr.code === "unimplemented") {
-        console.warn("[Firebase] Browser tidak mendukung persistence.");
-      }
+    // Clear any stale/corrupted Firestore IndexedDB cache that causes INTERNAL ASSERTION FAILED
+    if (typeof window !== "undefined" && window.indexedDB && typeof window.indexedDB.databases === "function") {
+      window.indexedDB.databases().then(dbs => {
+        dbs.forEach(db => {
+          if (db.name && db.name.indexOf("firestore") !== -1) {
+            try { window.indexedDB.deleteDatabase(db.name); } catch (_) {}
+          }
+        });
+      }).catch(() => {});
     }
 
     window.FIVIA_FIREBASE.isInitialized = true;

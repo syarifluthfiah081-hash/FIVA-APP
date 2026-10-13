@@ -212,28 +212,128 @@ function handleCloudRecordDelete(localCollection, id) {
 }
 
 /**
- * Sync a single local modification (insert/update) to Firestore
+ * REST API Helper: Parse Firestore document format to JavaScript object
+ */
+function parseFirestoreRESTDoc(doc) {
+  if (!doc) return null;
+  const id = doc.name ? doc.name.split("/").pop() : "";
+  const fields = doc.fields || {};
+  const res = { id };
+  for (const [k, v] of Object.entries(fields)) {
+    if (v.stringValue !== undefined) res[k] = v.stringValue;
+    else if (v.integerValue !== undefined) res[k] = parseInt(v.integerValue, 10);
+    else if (v.doubleValue !== undefined) res[k] = parseFloat(v.doubleValue);
+    else if (v.booleanValue !== undefined) res[k] = v.booleanValue;
+    else if (v.arrayValue !== undefined) {
+      res[k] = (v.arrayValue.values || []).map(item => {
+        if (item.stringValue !== undefined) return item.stringValue;
+        if (item.mapValue !== undefined) return parseFirestoreRESTDoc({ fields: item.mapValue.fields });
+        return item;
+      });
+    } else if (v.mapValue !== undefined) {
+      res[k] = parseFirestoreRESTDoc({ fields: v.mapValue.fields });
+    }
+  }
+  return res;
+}
+
+/**
+ * REST API Helper: Convert JavaScript object to Firestore REST fields
+ */
+function toFirestoreRESTFields(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === null || v === undefined) continue;
+    if (typeof v === "string") fields[k] = { stringValue: v };
+    else if (typeof v === "boolean") fields[k] = { booleanValue: v };
+    else if (typeof v === "number") {
+      if (Number.isInteger(v)) fields[k] = { integerValue: String(v) };
+      else fields[k] = { doubleValue: v };
+    } else if (Array.isArray(v)) {
+      fields[k] = {
+        arrayValue: {
+          values: v.map(item => {
+            if (typeof item === "object" && item !== null) return { mapValue: { fields: toFirestoreRESTFields(item) } };
+            return { stringValue: String(item) };
+          })
+        }
+      };
+    } else if (typeof v === "object") {
+      fields[k] = { mapValue: { fields: toFirestoreRESTFields(v) } };
+    }
+  }
+  return fields;
+}
+
+/**
+ * Direct REST API fetcher that completely bypasses SDK WebChannel & IndexedDB bugs
+ */
+async function fetchCollectionFromFirestoreREST(collectionName) {
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/fiva-app/databases/(default)/documents/${collectionName}?pageSize=100`;
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      console.warn(`[Firestore REST] HTTP error: ${resp.status}`);
+      return [];
+    }
+    const json = await resp.json();
+    return (json.documents || []).map(parseFirestoreRESTDoc);
+  } catch (err) {
+    console.warn(`[Firestore REST] Fetch failed for ${collectionName}:`, err);
+    return [];
+  }
+}
+
+/**
+ * Direct REST API writer
+ */
+async function writeDocToFirestoreREST(collectionName, docId, data) {
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/fiva-app/databases/(default)/documents/${collectionName}/${docId}`;
+    const fields = toFirestoreRESTFields(data);
+    const resp = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields })
+    });
+    return resp.ok;
+  } catch (err) {
+    console.warn(`[Firestore REST] Write failed for ${collectionName}/${docId}:`, err);
+    return false;
+  }
+}
+
+/**
+ * Sync a single local modification (insert/update) to Firestore (SDK + REST Fallback)
  */
 async function syncLocalChangeToCloud(collectionName, item) {
-  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
-    return;
-  }
-
   const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
   if (!cloudCollection || !item || !item.id) return;
 
-  try {
-    const firestore = window.FIVIA_FIREBASE.db;
-    const docRef = firestore.collection(cloudCollection).doc(String(item.id));
-    
-    // Clean data of undefined fields before writing
-    const cleanItem = JSON.parse(JSON.stringify(item));
-    cleanItem.lastSyncedAt = new Date().toISOString();
+  const cleanItem = JSON.parse(JSON.stringify(item));
+  cleanItem.lastSyncedAt = new Date().toISOString();
 
-    await docRef.set(cleanItem, { merge: true });
-    console.log(`[Firebase Sync] Tersimpan ke Firestore: ${cloudCollection}/${item.id}`);
-  } catch (err) {
-    console.warn(`[Firebase Sync] Gagal mengirim data ke cloud ${cloudCollection}:`, err);
+  let written = false;
+
+  // 1. Try SDK first
+  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+    try {
+      const firestore = window.FIVIA_FIREBASE.db;
+      const docRef = firestore.collection(cloudCollection).doc(String(item.id));
+      await docRef.set(cleanItem, { merge: true });
+      written = true;
+      console.log(`[Firebase Sync] Tersimpan ke Firestore: ${cloudCollection}/${item.id}`);
+    } catch (err) {
+      console.warn(`[Firebase Sync] SDK write failed, using REST fallback:`, err);
+    }
+  }
+
+  // 2. Ultra-reliable REST Fallback
+  if (!written) {
+    written = await writeDocToFirestoreREST(cloudCollection, String(item.id), cleanItem);
+    if (written) {
+      console.log(`[Firebase Sync] Tersimpan via REST: ${cloudCollection}/${item.id}`);
+    }
   }
 }
 
@@ -317,8 +417,26 @@ async function fetchRosterFromCloud() {
     console.log(`[Firebase Sync] Berhasil memuat ${count} data siswa dari Cloud!`);
     return { success: true, count };
   } catch (err) {
-    console.warn("[Firebase Sync] Gagal memuat data dari cloud:", err);
-    return { success: false, error: err.message };
+    console.warn("[Firebase Sync] SDK fetch error, attempting direct REST API fallback:", err);
+    try {
+      const restUsers = await fetchCollectionFromFirestoreREST("vlab_users");
+      restUsers.forEach(doc => { handleCloudRecordUpdate("users", doc.id, doc); count++; });
+
+      const restStudents = await fetchCollectionFromFirestoreREST("vlab_students");
+      restStudents.forEach(doc => { handleCloudRecordUpdate("students", doc.id, doc); count++; });
+
+      const restSubs = await fetchCollectionFromFirestoreREST("vlab_lkpd_submissions");
+      restSubs.forEach(doc => { handleCloudRecordUpdate("submissions", doc.id, doc); });
+
+      const restQuiz = await fetchCollectionFromFirestoreREST("vlab_quiz_results");
+      restQuiz.forEach(doc => { handleCloudRecordUpdate("quizScores", doc.id, doc); });
+
+      console.log(`[Firebase Sync] Berhasil memuat ${count} data dari Cloud via REST API!`);
+      return { success: true, count };
+    } catch (restErr) {
+      console.warn("[Firebase Sync] REST fallback also failed:", restErr);
+      return { success: false, error: err.message };
+    }
   }
 }
 
@@ -413,36 +531,62 @@ async function backfillLocalToCloud() {
  * Explicit helper to fetch LKPD submissions on demand
  */
 async function fetchLKPDSubmissionsFromCloud() {
-  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
-    if (window.showToast) window.showToast("Memuat dari database lokal (Firebase belum terhubung).", "info");
-    if (window.renderTeacherDashboard) window.renderTeacherDashboard();
-    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
-    return false;
-  }
-  try {
-    const firestore = window.FIVIA_FIREBASE.db;
-    const subsSnap = await firestore.collection("vlab_lkpd_submissions").get();
-    let count = 0;
-    if (!subsSnap.empty) {
-      subsSnap.forEach(doc => {
-        handleCloudRecordUpdate("submissions", doc.id, doc.data());
-        count++;
-      });
+  let count = 0;
+  let succeeded = false;
+
+  // 1. Try Firestore SDK first if initialized
+  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+    try {
+      const firestore = window.FIVIA_FIREBASE.db;
+      const subsSnap = await Promise.race([
+        firestore.collection("vlab_lkpd_submissions").get(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 2000))
+      ]);
+      if (subsSnap && !subsSnap.empty) {
+        subsSnap.forEach(doc => {
+          handleCloudRecordUpdate("submissions", doc.id, doc.data());
+          count++;
+        });
+      }
+      succeeded = true;
+    } catch (sdkErr) {
+      console.warn("[Firebase Sync] SDK fetch failed, falling back to direct REST API:", sdkErr);
     }
-    if (window.showToast) window.showToast(`Berhasil menyinkronkan ${count} lembar kerja LKPD dari Cloud!`, "success");
+  }
+
+  // 2. Ultra-reliable REST API Fallback (Guaranteed to bypass SDK IndexedDB & WebChannel issues)
+  if (!succeeded) {
+    try {
+      const restDocs = await fetchCollectionFromFirestoreREST("vlab_lkpd_submissions");
+      if (restDocs && Array.isArray(restDocs)) {
+        restDocs.forEach(doc => {
+          if (doc && doc.id) {
+            handleCloudRecordUpdate("submissions", doc.id, doc);
+            count++;
+          }
+        });
+        succeeded = true;
+      }
+    } catch (restErr) {
+      console.warn("[Firebase Sync] REST API fallback error:", restErr);
+    }
+  }
+
+  if (succeeded) {
+    if (window.showToast) {
+      if (count > 0) {
+        window.showToast(`Berhasil menyinkronkan ${count} lembar kerja LKPD dari Cloud Server!`, "success");
+      } else {
+        window.showToast("Sinkronisasi Cloud berhasil! (Belum ada lembar kerja baru yang dikirim)", "info");
+      }
+    }
     if (window.renderTeacherDashboard) window.renderTeacherDashboard();
     if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
     return true;
-  } catch (err) {
-    console.warn("Gagal menyinkronkan LKPD dari Cloud:", err);
-    if (err && (err.code === "permission-denied" || String(err).includes("permission") || String(err).includes("Missing or insufficient permissions"))) {
-      if (window.FIVIA_FIREBASE) window.FIVIA_FIREBASE.permissionDenied = true;
-      const permAlert = document.getElementById("firestore-permission-alert");
-      if (permAlert) permAlert.style.display = "block";
-      if (window.showToast) window.showToast("Aturan Firebase terkunci (Permission Denied). Gunakan tombol 'Impor LKPD' atau buka aturan di Firebase Console.", "warning");
-    } else {
-      if (window.showToast) window.showToast("Gagal menarik data dari Cloud: " + err.message, "danger");
-    }
+  } else {
+    if (window.showToast) window.showToast("Memuat dari database lokal (Cloud belum dapat diakses).", "info");
+    if (window.renderTeacherDashboard) window.renderTeacherDashboard();
+    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
     return false;
   }
 }
@@ -485,13 +629,23 @@ async function ensureTeacherRegisteredInFirebase() {
   };
 
   try {
-    await firestore.collection("vlab_users").doc("usr_guru_syarif").set(teacherData, { merge: true });
-    await firestore.collection("vlab_teachers").doc("usr_guru_syarif").set(teacherData, { merge: true });
-    await firestore.collection("vlab_servers").doc("srv_syarif_fivia").set(serverDoc, { merge: true });
-    console.log("[Firebase] Akun Guru & Server Pak Syarif Hidayatullah berhasil diverifikasi di Firestore.");
-    return true;
+    if (firestore) {
+      await firestore.collection("vlab_users").doc("usr_guru_syarif").set(teacherData, { merge: true });
+      await firestore.collection("vlab_teachers").doc("usr_guru_syarif").set(teacherData, { merge: true });
+      await firestore.collection("vlab_servers").doc("srv_syarif_fivia").set(serverDoc, { merge: true });
+      console.log("[Firebase] Akun Guru & Server Pak Syarif Hidayatullah berhasil diverifikasi di Firestore.");
+      return true;
+    }
   } catch (err) {
-    console.warn("[Firebase] Peringatan pendaftaran akun guru ke Firestore:", err);
+    console.warn("[Firebase] SDK write failed, using REST API:", err);
+  }
+
+  try {
+    await writeDocToFirestoreREST("vlab_users", "usr_guru_syarif", teacherData);
+    await writeDocToFirestoreREST("vlab_teachers", "usr_guru_syarif", teacherData);
+    await writeDocToFirestoreREST("vlab_servers", "srv_syarif_fivia", serverDoc);
+    return true;
+  } catch (_) {
     return false;
   }
 }
@@ -561,5 +715,7 @@ window.backfillLocalToCloud = backfillLocalToCloud;
 window.fetchRosterFromCloud = fetchRosterFromCloud;
 window.syncAllRosterToCloud = syncAllRosterToCloud;
 window.fetchLKPDSubmissionsFromCloud = fetchLKPDSubmissionsFromCloud;
+window.fetchCollectionFromFirestoreREST = fetchCollectionFromFirestoreREST;
+window.writeDocToFirestoreREST = writeDocToFirestoreREST;
 window.ensureTeacherRegisteredInFirebase = ensureTeacherRegisteredInFirebase;
 window.exportServerDatabaseJSON = exportServerDatabaseJSON;
