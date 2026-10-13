@@ -3,7 +3,7 @@
  * Enables offline access to all physics virtual labs, games, and quizzes.
  */
 
-const CACHE_NAME = "fivia-vlab-cache-v1.2.6";
+const CACHE_NAME = "fivia-vlab-cache-v1.2.7";
 
 const CORE_ASSETS = [
   "./",
@@ -66,7 +66,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// 3. Fetch event: Stale-While-Revalidate caching strategy
+// 3. Fetch event: Network-First strategy for instant live updates, cache fallback for offline
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
@@ -76,37 +76,24 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch background update for cache freshness
-        fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse.clone()));
-          }
-        }).catch(() => {
-          // Offline mode active
-        });
-        return cachedResponse;
-      }
-
-      // If not in cache, fetch from network and cache
-      return fetch(request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== "basic") {
-          return networkResponse;
+    fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
         }
-
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache);
-        });
-
         return networkResponse;
-      }).catch(() => {
-        // If navigating to an HTML page while offline, return index.html
-        if (request.headers.get("accept") && request.headers.get("accept").includes("text/html")) {
-          return caches.match("./index.html");
-        }
-      });
-    })
+      })
+      .catch(() => {
+        // Offline mode: fallback to cached assets
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (request.headers.get("accept") && request.headers.get("accept").includes("text/html")) {
+            return caches.match("./index.html");
+          }
+        });
+      })
   );
 });
