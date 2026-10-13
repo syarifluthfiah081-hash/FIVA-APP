@@ -34,7 +34,12 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
         // Redirect to dashboard
-        window.location.hash = "#dashboard";
+        if (window.location.hash === "#dashboard") {
+          if (typeof handleRouting === "function") handleRouting();
+          else window.dispatchEvent(new Event("hashchange"));
+        } else {
+          window.location.hash = "#dashboard";
+        }
       } else {
         window.showToast(res.message, "danger");
       }
