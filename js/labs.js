@@ -7090,10 +7090,24 @@ function submitRedesignedLKPD() {
   const submission = {
     id: subId,
     studentId: currentUser.id,
+    studentName: currentUser.name || currentUser.displayName || "Siswa",
+    studentNis: currentUser.nis || "-",
+    studentCode: currentUser.studentCode || (currentUser.nis ? ('FIVIA-' + currentUser.nis) : "-"),
+    className: currentUser.className || currentUser.classId || "Kelas X-1",
     labId: 2,
-    timestamp: new Date().toISOString(),
+    labName: "Pengukuran Dasar Fisika (Jangka Sorong & Mikrometer)",
+    hypothesis: hypothesis,
+    observations: measState.results.map(r => ({
+      alat: r.alat,
+      benda: r.benda,
+      siswa: r.siswa,
+      benar: r.benar,
+      eval: "✔️ BENAR"
+    })),
+    conclusion: conclusion,
     answers: submissionAnswers,
-    status: "submitted"
+    timestamp: new Date().toISOString(),
+    status: "pending"
   };
 
   const success = window.db.submitLKPD(submission);

@@ -154,16 +154,26 @@ window.FIVIALabLKPD = (function() {
 
     // Also push to central database for Teacher Dashboard & Cloud Sync
     if (window.db && typeof window.db.submitLKPD === "function") {
-      const student = (window.FIVIAStudent && window.FIVIAStudent.getStudentProfile) ? window.FIVIAStudent.getStudentProfile() : null;
+      const curUser = (window.auth && typeof window.auth.getCurrentUser === "function") ? window.auth.getCurrentUser() : null;
+      const studentProfile = (window.FIVIAStudent && window.FIVIAStudent.getStudentProfile) ? window.FIVIAStudent.getStudentProfile() : null;
       const measurements = (window.FIVIALabEngine && window.FIVIALabEngine.getMeasurements) ? window.FIVIALabEngine.getMeasurements() : [];
       
-      const pseudoId = `sub_${(name || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '')}_${currentExp.id}`;
-      window.db.submitLKPD({
-        id: pseudoId,
-        studentId: (student && student.studentId) ? student.studentId : pseudoId,
-        studentName: name || (student ? student.name : "Siswa Praktikum"),
-        className: className || (student ? student.className : "Kelas X-1"),
-        labId: parseInt(currentExp.id) || 1,
+      const expNum = parseInt(String(currentExp.id).replace(/[^0-9]/g, ''), 10) || 1;
+      const finalStudentId = (curUser && curUser.id) ? curUser.id : (studentProfile && studentProfile.studentId ? studentProfile.studentId : `std_${(name || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '')}`);
+      const finalStudentName = name || (curUser ? (curUser.name || curUser.displayName) : (studentProfile ? studentProfile.name : "Siswa Praktikum"));
+      const finalClassName = className || (curUser ? (curUser.className || curUser.classId) : (studentProfile ? studentProfile.class : "Kelas X-1"));
+      const finalNis = (curUser && curUser.nis) ? curUser.nis : (studentProfile && studentProfile.absen ? studentProfile.absen : "-");
+      const finalCode = (curUser && curUser.studentCode) ? curUser.studentCode : (finalNis !== "-" ? ('FIVIA-' + finalNis) : "STD");
+      
+      const submissionPayload = {
+        id: `sub_${finalStudentId}_${expNum}`,
+        studentId: finalStudentId,
+        studentName: finalStudentName,
+        studentNis: finalNis,
+        studentCode: finalCode,
+        className: finalClassName,
+        labId: expNum,
+        labName: currentExp.title || currentExp.topic || `Laboratorium Fisika #${expNum}`,
         hypothesis: "Data pengamatan dan analisis laboratorium virtual",
         observations: measurements.map((m, idx) => ({
           no: idx + 1,
@@ -178,11 +188,18 @@ window.FIVIALabLKPD = (function() {
         conclusion: conclusion || "-",
         status: "pending",
         timestamp: new Date().toISOString()
-      });
+      };
+      
+      window.db.submitLKPD(submissionPayload);
+      if (window.syncLocalChangeToCloud) {
+        window.syncLocalChangeToCloud("submissions", submissionPayload);
+      }
     }
 
-    window.FIVIALabAnalytics.recordLabCompletion(currentExp.id, 50);
-    alert('🎉 LKPD DIGITAL BERHASIL DISIMPAN!\n\n+50 XP ditambahkan ke profil Anda. Data otomatis dikirim ke Guru.');
+    if (window.FIVIALabAnalytics && typeof window.FIVIALabAnalytics.recordLabCompletion === "function") {
+      window.FIVIALabAnalytics.recordLabCompletion(currentExp.id, 50);
+    }
+    alert('🎉 LKPD DIGITAL BERHASIL DISIMPAN!\n\nData lembar kerja Anda telah dikirim ke Server Guru Pak Syarif.');
   }
 
   return {

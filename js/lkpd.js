@@ -550,27 +550,40 @@ function triggerLKPDAutosave() {
 }
 
 function compileLKPDData() {
-  const user = window.auth.getCurrentUser();
+  const user = (window.auth && typeof window.auth.getCurrentUser === "function") ? window.auth.getCurrentUser() : null;
   const answers = [];
 
   document.querySelectorAll(".lkpd-question-input").forEach(el => {
     answers.push({
       questionId: el.getAttribute("data-qid"),
-      answerText: el.value.trim()
+      answerText: (el.value || "").trim()
     });
   });
 
+  const hypEl = document.getElementById("lkpd-hipotesis") || document.getElementById("modul-lkpd-hipotesis");
+  const concEl = document.getElementById("lkpd-kesimpulan") || document.getElementById("modul-lkpd-kesimpulan");
+  const currentLabId = activeLKPD ? activeLKPD.labId : 1;
+
+  const LAB_TITLES = {
+    1: "Metode Ilmiah & Keselamatan Kerja Lab",
+    2: "Pengukuran Dasar Fisika (Jangka Sorong & Mikrometer)",
+    3: "Hukum Kekekalan Energi & Skate Park",
+    4: "Energi Terbarukan: Turbin Angin & Sel Surya",
+    5: "Termodinamika & Efek Rumah Kaca Global"
+  };
+
   return {
-    studentId: user.id,
-    studentName: user.name || "Siswa",
-    studentNis: user.nis || "-",
-    studentCode: user.studentCode || (user.nis ? ('FIVIA-' + user.nis) : "-"),
-    className: user.classId || "Kelas X-1",
-    labId: activeLKPD.labId,
-    hypothesis: document.getElementById("lkpd-hipotesis").value.trim(),
-    observations: observationsList,
+    studentId: user ? user.id : "std_demo",
+    studentName: user ? (user.name || user.displayName) : "Siswa Praktikum",
+    studentNis: user ? (user.nis || "-") : "-",
+    studentCode: user ? (user.studentCode || (user.nis ? ('FIVIA-' + user.nis) : "-")) : "-",
+    className: user ? (user.className || user.classId || "Kelas X-1") : "Kelas X-1",
+    labId: currentLabId,
+    labName: LAB_TITLES[currentLabId] || `Laboratorium Fisika #${currentLabId}`,
+    hypothesis: hypEl ? hypEl.value.trim() : "",
+    observations: typeof observationsList !== "undefined" ? observationsList : [],
     answers: answers,
-    conclusion: document.getElementById("lkpd-kesimpulan").value.trim(),
+    conclusion: concEl ? concEl.value.trim() : "",
     serverId: "srv_syarif_fivia",
     serverHost: "Syarif Hidayatullah",
     storageMode: "server",

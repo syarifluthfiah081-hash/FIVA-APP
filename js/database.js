@@ -812,21 +812,10 @@ class LocalDatabase {
 
   saveTable(tableName, data, skipCloudSync = false) {
     const key = DB_PREFIX + tableName;
-    localStorage.setItem(key, JSON.stringify(data));
-
-    if (skipCloudSync) return;
-
-    // Asynchronously trigger cloud sync if connected
-    if (window.syncLocalChangeToCloud && Array.isArray(data)) {
-      const syncable = ["submissions", "quizScores", "detektifProgress", "students", "classes", "users"];
-      if (syncable.includes(tableName)) {
-        data.forEach(item => {
-          if (item && (item.id || item.userId || item.studentId)) {
-            const syncItem = { ...item, id: item.id || item.userId || `sub_${item.studentId}_${item.labId}` };
-            window.syncLocalChangeToCloud(tableName, syncItem);
-          }
-        });
-      }
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      console.warn(`[Database] Failed to save ${key} to localStorage:`, e);
     }
   }
 
@@ -990,15 +979,26 @@ class LocalDatabase {
   // Scores & Submissions
   submitLKPD(submission) {
     const submissions = this.getTable("submissions") || [];
-    const sId = String(submission.studentId || submission.id || "");
-    const labId = String(submission.labId || "");
+    const curUser = (window.auth && typeof window.auth.getCurrentUser === "function") ? window.auth.getCurrentUser() : null;
 
-    // Ensure unique ID
+    const sId = String(submission.studentId || (curUser ? curUser.id : "") || submission.id || "").trim();
+    const labId = String(submission.labId || "1").trim();
+
     submission.id = submission.id || `sub_${sId}_${labId}`;
+    submission.studentId = sId;
+    submission.labId = parseInt(labId, 10) || labId;
     if (!submission.timestamp) submission.timestamp = new Date().toISOString();
     if (!submission.status) submission.status = "pending";
 
-    // Auto enrich studentName & className if missing
+    // Auto enrich from active session user if available
+    if (curUser) {
+      if (!submission.studentName) submission.studentName = curUser.name || curUser.displayName;
+      if (!submission.studentNis) submission.studentNis = curUser.nis || "-";
+      if (!submission.studentCode) submission.studentCode = curUser.studentCode || (curUser.nis ? ('FIVIA-' + curUser.nis) : "-");
+      if (!submission.className) submission.className = curUser.className || curUser.classId || "Kelas X-1";
+    }
+
+    // Secondary fallback from students or users tables
     if (!submission.studentName || !submission.className) {
       const students = this.getTable("students") || [];
       const users = this.getTable("users") || [];
@@ -1012,10 +1012,21 @@ class LocalDatabase {
       }
     }
 
+    const LAB_TITLES = {
+      1: "Metode Ilmiah & Keselamatan Kerja Lab",
+      2: "Pengukuran Dasar Fisika (Jangka Sorong & Mikrometer)",
+      3: "Hukum Kekekalan Energi & Skate Park",
+      4: "Energi Terbarukan: Turbin Angin & Sel Surya",
+      5: "Termodinamika & Efek Rumah Kaca Global"
+    };
+    submission.labName = submission.labName || LAB_TITLES[labId] || `Laboratorium Fisika #${labId}`;
+    submission.serverId = "srv_syarif_fivia";
+    submission.serverHost = "Syarif Hidayatullah";
+
     // Check if exists to overwrite (autosave or resubmission)
     const existingIdx = submissions.findIndex(s => 
       (s.id && s.id === submission.id) ||
-      (String(s.studentId) === sId && String(s.labId) === labId)
+      (String(s.studentId) === sId && String(s.labId) === String(submission.labId))
     );
 
     let finalSubmission = { ...submission };
@@ -1236,7 +1247,10 @@ class LocalDatabase {
       submissions[subIdx].feedback = feedback || "";
       submissions[subIdx].status = "graded";
       submissions[subIdx].gradedAt = new Date().toISOString();
-      this.saveTable("submissions", submissions);
+      this.saveTable("submissions", submissions, true);
+      if (window.syncLocalChangeToCloud) {
+        window.syncLocalChangeToCloud("submissions", submissions[subIdx]);
+      }
       return true;
     }
     return false;
@@ -1255,7 +1269,7 @@ class LocalDatabase {
       if (sName === "ahmad naufal" || (sName === "pasya ramadhan" && (sId === "usr_siswa_pasya" || sId === "202401"))) return false;
       return true;
     });
-    this.saveTable("submissions", submissions);
+    this.saveTable("submissions", submissions, true);
     return beforeCount - submissions.length;
   }
 

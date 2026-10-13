@@ -127,17 +127,6 @@ async function initFirebase(customConfig = null) {
       window.FIVIA_FIREBASE.auth = firebase.auth();
     }
 
-    // Clear any stale/corrupted Firestore IndexedDB cache that causes INTERNAL ASSERTION FAILED
-    if (typeof window !== "undefined" && window.indexedDB && typeof window.indexedDB.databases === "function") {
-      window.indexedDB.databases().then(dbs => {
-        dbs.forEach(db => {
-          if (db.name && db.name.indexOf("firestore") !== -1) {
-            try { window.indexedDB.deleteDatabase(db.name); } catch (_) {}
-          }
-        });
-      }).catch(() => {});
-    }
-
     window.FIVIA_FIREBASE.isInitialized = true;
     notifyFirebaseStatus(true, `Terhubung ke Firebase: ${config.projectId}`);
 

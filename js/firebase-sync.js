@@ -1,6 +1,7 @@
 /**
  * js/firebase-sync.js
  * Two-way real-time synchronization bridge between Local Database and Firebase Firestore
+ * Optimized for High-Performance (No freezing, No infinite polling, No quota exhaustion)
  */
 
 const FIRESTORE_COLLECTIONS = {
@@ -18,113 +19,299 @@ const FIRESTORE_COLLECTIONS = {
 };
 
 let syncUnsubscribers = [];
+let isSyncInitialized = false;
+
+// Queue for offline or throttled writes
+const OFFLINE_QUEUE_KEY = "fivia_offline_sync_queue";
+let isFlushingQueue = false;
+let queueThrottleTimer = null;
+
+// Batch buffer for real-time Firestore snapshots to avoid UI freezes
+let pendingCloudUpdates = {
+  submissions: {},
+  students: {},
+  users: {},
+  roster: {},
+  classes: {},
+  quizScores: {},
+  detektifProgress: {}
+};
+let batchDebounceTimer = null;
 
 /**
- * Initialize real-time listeners and push existing local records to Firestore
+ * REST API Helper: Parse Firestore document value recursively
  */
-async function initFirebaseSync() {
-  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
+function parseFirestoreRESTValue(v) {
+  if (!v || typeof v !== "object") return v;
+  if (v.stringValue !== undefined) return v.stringValue;
+  if (v.integerValue !== undefined) return parseInt(v.integerValue, 10);
+  if (v.doubleValue !== undefined) return parseFloat(v.doubleValue);
+  if (v.booleanValue !== undefined) return v.booleanValue;
+  if (v.timestampValue !== undefined) return v.timestampValue;
+  if (v.nullValue !== undefined) return null;
+  if (v.arrayValue !== undefined) {
+    return (v.arrayValue.values || []).map(parseFirestoreRESTValue);
+  }
+  if (v.mapValue !== undefined) {
+    const obj = {};
+    const fields = v.mapValue.fields || {};
+    for (const [k, val] of Object.entries(fields)) {
+      obj[k] = parseFirestoreRESTValue(val);
+    }
+    return obj;
+  }
+  return v;
+}
+
+/**
+ * REST API Helper: Parse Firestore document format to JavaScript object
+ */
+function parseFirestoreRESTDoc(doc) {
+  if (!doc) return null;
+  const id = doc.name ? doc.name.split("/").pop() : "";
+  const fields = doc.fields || {};
+  const res = { id };
+  for (const [k, v] of Object.entries(fields)) {
+    res[k] = parseFirestoreRESTValue(v);
+  }
+  return res;
+}
+
+/**
+ * REST API Helper: Convert JavaScript value to Firestore REST value recursively
+ */
+function toFirestoreRESTValue(val) {
+  if (val === null || val === undefined) return { nullValue: null };
+  if (typeof val === "string") return { stringValue: val };
+  if (typeof val === "boolean") return { booleanValue: val };
+  if (typeof val === "number") {
+    if (Number.isInteger(val)) return { integerValue: String(val) };
+    return { doubleValue: val };
+  }
+  if (Array.isArray(val)) {
+    if (val.length === 0) return { arrayValue: {} };
+    return { arrayValue: { values: val.map(toFirestoreRESTValue) } };
+  }
+  if (typeof val === "object") {
+    const fields = {};
+    for (const [k, v] of Object.entries(val)) {
+      if (v !== undefined) {
+        fields[k] = toFirestoreRESTValue(v);
+      }
+    }
+    return { mapValue: { fields } };
+  }
+  return { stringValue: String(val) };
+}
+
+/**
+ * REST API Helper: Convert JavaScript object to Firestore REST fields
+ */
+function toFirestoreRESTFields(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined && k !== "id") {
+      fields[k] = toFirestoreRESTValue(v);
+    }
+  }
+  return fields;
+}
+
+/**
+ * Direct REST API fetcher (fallback when SDK is offline or uninitialized)
+ */
+async function fetchCollectionFromFirestoreREST(collectionName) {
+  try {
+    const config = (window.getFirebaseConfig && window.getFirebaseConfig()) || {};
+    const projectId = config.projectId || "fiva-app";
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collectionName}?pageSize=200`;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    
+    const resp = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (!resp.ok) {
+      if (resp.status === 429) {
+        console.warn(`[Firestore REST] 429 Quota Exceeded pada ${collectionName}`);
+      }
+      return [];
+    }
+    const json = await resp.json();
+    return (json.documents || []).map(parseFirestoreRESTDoc);
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Direct REST API writer (fallback)
+ */
+async function writeDocToFirestoreREST(collectionName, docId, data) {
+  try {
+    const config = (window.getFirebaseConfig && window.getFirebaseConfig()) || {};
+    const projectId = config.projectId || "fiva-app";
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collectionName}/${encodeURIComponent(docId)}`;
+    const fields = toFirestoreRESTFields(data);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    
+    const resp = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    
+    if (resp.status === 429) {
+      console.warn(`[Firestore REST] Kuota harian Firestore tercapai (429 RESOURCE_EXHAUSTED).`);
+      return false;
+    }
+    return resp.ok;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Push an item to offline sync queue
+ */
+function enqueueOfflineSync(collectionName, item) {
+  try {
+    const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || "[]");
+    const docId = String(item.id || item.studentId || "");
+    const existingIdx = queue.findIndex(q => q.collection === collectionName && q.id === docId);
+    
+    const queueItem = {
+      collection: collectionName,
+      id: docId,
+      data: item,
+      queuedAt: new Date().toISOString()
+    };
+    
+    if (existingIdx !== -1) {
+      queue[existingIdx] = queueItem;
+    } else {
+      queue.push(queueItem);
+    }
+    
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+    
+    // Notify status badge if present
+    const badge = document.getElementById("firebase-status-badge");
+    if (badge && queue.length > 0) {
+      badge.innerHTML = `<i class="fas fa-clock" style="color: #38bdf8;"></i> ${queue.length} Antrian Tersimpan`;
+    }
+  } catch (_) {}
+}
+
+/**
+ * Flush offline sync queue in the background with safe intervals (avoids lag & throttling)
+ */
+async function flushOfflineSyncQueue() {
+  if (isFlushingQueue) return;
+  
+  let queue = [];
+  try {
+    queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || "[]");
+  } catch (_) {
     return;
   }
-
-  const firestore = window.FIVIA_FIREBASE.db;
-  console.log("[Firebase Sync] Memulai sinkronisasi dua arah dengan Firestore...");
-
-  // Unsubscribe old listeners if any
-  syncUnsubscribers.forEach((unsub) => {
-    try { unsub(); } catch (_) {}
-  });
-  syncUnsubscribers = [];
-
-  // Setup real-time listeners for critical collections
-  Object.keys(FIRESTORE_COLLECTIONS).forEach((localKey) => {
-    const cloudCollection = FIRESTORE_COLLECTIONS[localKey];
-    
-    try {
-      const unsub = firestore.collection(cloudCollection).onSnapshot((snapshot) => {
-        if (!snapshot || snapshot.empty) return;
-
-        snapshot.docChanges().forEach((change) => {
-          const docData = change.doc.data();
-          const docId = change.doc.id;
-          
-          if (change.type === "added" || change.type === "modified") {
-            handleCloudRecordUpdate(localKey, docId, docData);
-          } else if (change.type === "removed") {
-            handleCloudRecordDelete(localKey, docId);
-          }
-        });
-      }, (err) => {
-        console.warn(`[Firebase Sync] Error pada listener ${cloudCollection}:`, err);
-        if (err && (err.code === "permission-denied" || String(err).includes("permission") || String(err).includes("Missing or insufficient permissions"))) {
-          if (window.FIVIA_FIREBASE) window.FIVIA_FIREBASE.permissionDenied = true;
-          const permAlert = document.getElementById("firestore-permission-alert");
-          if (permAlert) permAlert.style.display = "block";
-        }
-      });
-
-      syncUnsubscribers.push(unsub);
-    } catch (e) {
-      console.warn(`[Firebase Sync] Gagal mengaktifkan listener ${cloudCollection}:`, e);
+  
+  if (!queue || queue.length === 0) return;
+  
+  isFlushingQueue = true;
+  
+  const remaining = [];
+  for (let i = 0; i < queue.length; i++) {
+    const entry = queue[i];
+    const ok = await syncLocalChangeToCloud(entry.collection, entry.data, false);
+    if (!ok) {
+      // Re-queue remaining items if network or quota blocks writes
+      remaining.push(...queue.slice(i));
+      break;
     }
-  });
-
-  // 1. Fetch LKPD submissions immediately without blocking on other collections
-  fetchLKPDSubmissionsFromCloud(true).catch(() => {});
-
-  // 2. Background roster & teacher registration
-  ensureTeacherRegisteredInFirebase().catch(() => {});
-  fetchRosterFromCloud().catch(() => {});
-  backfillLocalToCloud().catch(() => {});
+    // Small pause between queue writes
+    await new Promise(r => setTimeout(r, 400));
+  }
+  
+  try {
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining));
+  } catch (_) {}
+  
+  isFlushingQueue = false;
 }
 
 /**
- * Update local storage when a cloud record changes
+ * Sync a single local item (LKPD, quiz result, student, teacher grade) to Firestore Cloud
+ * @param {string} collectionName - Local key (e.g. "submissions")
+ * @param {object} item - Data item with an 'id'
+ * @param {boolean} allowEnqueue - Whether to add to offline queue on failure
  */
-function handleCloudRecordUpdate(localCollection, id, data) {
-  const mergedItem = { ...data, id: id };
-
-  // 1. If it's a student or user, sync across both tables and local rosters
-  if (localCollection === "students" || localCollection === "users" || localCollection === "roster") {
-    syncStudentRecordLocally(mergedItem);
-  }
-
-  if (typeof db !== "undefined" && typeof db.getTable === "function") {
-    const tableName = (localCollection === "roster") ? "students" : localCollection;
-    const localList = db.getTable(tableName) || [];
-    let idx = -1;
-
-    if (localCollection === "submissions") {
-      idx = localList.findIndex((item) => 
-        String(item.id) === String(id) || 
-        (item.studentId && item.labId && String(item.studentId) === String(data.studentId) && String(item.labId) === String(data.labId))
-      );
-    } else {
-      idx = localList.findIndex((item) => String(item.id) === String(id) || (item.nis && String(item.nis) === String(data.nis)));
+async function syncLocalChangeToCloud(collectionName, item, allowEnqueue = true) {
+  const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
+  if (!cloudCollection || !item) return false;
+  
+  const docId = String(item.id || item.studentId || item.userId || "");
+  if (!docId) return false;
+  
+  const cleanItem = JSON.parse(JSON.stringify(item));
+  cleanItem.id = docId;
+  cleanItem.lastSyncedAt = new Date().toISOString();
+  
+  let written = false;
+  
+  // 1. Primary write: Firestore SDK
+  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+    try {
+      const firestore = window.FIVIA_FIREBASE.db;
+      const docRef = firestore.collection(cloudCollection).doc(docId);
+      
+      await Promise.race([
+        docRef.set(cleanItem, { merge: true }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 2500))
+      ]);
+      written = true;
+    } catch (sdkErr) {
+      // If SDK write fails (e.g. offline, permission, timeout), fall through to REST
     }
-
-    if (idx !== -1) {
-      localList[idx] = { ...localList[idx], ...mergedItem };
-    } else {
-      localList.push(mergedItem);
-    }
-
-    db.saveTable(tableName, localList, true);
   }
-
-  // Trigger UI refresh if currently on dashboard, class management, or LKPD
-  if (window.renderClassManagement && (localCollection === "students" || localCollection === "users" || localCollection === "roster")) {
-    window.renderClassManagement();
+  
+  // 2. Secondary write: Direct REST API (if SDK failed or uninitialized)
+  if (!written) {
+    try {
+      written = await writeDocToFirestoreREST(cloudCollection, docId, cleanItem);
+    } catch (_) {}
   }
-  if (localCollection === "submissions") {
-    if (typeof window.renderSubmissionsList === 'function') window.renderSubmissionsList();
-    if (typeof window.renderTeacherDashboard === 'function') window.renderTeacherDashboard();
-    if (typeof window.renderPeriksaLKPDSection === 'function') window.renderPeriksaLKPDSection();
+  
+  if (written) {
+    console.log(`[Firebase Sync] Tersimpan ke Cloud: ${cloudCollection}/${docId}`);
+  } else if (allowEnqueue) {
+    enqueueOfflineSync(collectionName, cleanItem);
+  }
+  
+  return written;
+}
+
+/**
+ * Handle remote document deletion
+ */
+async function syncLocalDeleteToCloud(collectionName, id) {
+  const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
+  if (!cloudCollection || !id) return;
+  
+  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+    try {
+      await window.FIVIA_FIREBASE.db.collection(cloudCollection).doc(String(id)).delete();
+    } catch (_) {}
   }
 }
 
 /**
- * Sync a student record across all local storage targets
+ * Synchronize a student record across local storage stores without triggering mass cloud writes
  */
 function syncStudentRecordLocally(std) {
   if (!std) return;
@@ -134,10 +321,14 @@ function syncStudentRecordLocally(std) {
   const sClass = std.className || std.classId || "cls_x1";
   const sId = std.id || std.studentId || ("usr_" + Math.random().toString(36).substr(2, 9));
 
-  // A. Sync to fivia_student_roster
+  // 1. Sync to fivia_student_roster
   try {
     let roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
-    const rIdx = roster.findIndex(r => String(r.id || r.studentId) === String(sId) || (r.nis && String(r.nis) === sNis) || (r.name && r.name.toLowerCase().trim() === sName.toLowerCase().trim()));
+    const rIdx = roster.findIndex(r => 
+      String(r.id || r.studentId) === String(sId) || 
+      (r.nis && String(r.nis) === sNis && sNis !== "") || 
+      (r.name && r.name.toLowerCase().trim() === sName.toLowerCase().trim())
+    );
     const rosterObj = {
       id: sId,
       studentId: sId,
@@ -154,12 +345,12 @@ function syncStudentRecordLocally(std) {
       roster.push(rosterObj);
     }
     localStorage.setItem("fivia_student_roster", JSON.stringify(roster));
-  } catch(e) {}
+  } catch (_) {}
 
-  // B. Sync to fivia_classroom_students
+  // 2. Sync to fivia_classroom_students
   try {
     let cs = JSON.parse(localStorage.getItem("fivia_classroom_students") || "[]");
-    const csIdx = cs.findIndex(c => String(c.studentId || c.id) === String(sId) || (c.nis && String(c.nis) === sNis));
+    const csIdx = cs.findIndex(c => String(c.studentId || c.id) === String(sId) || (c.nis && String(c.nis) === sNis && sNis !== ""));
     const csObj = {
       studentId: sId,
       id: sId,
@@ -174,12 +365,16 @@ function syncStudentRecordLocally(std) {
       cs.push(csObj);
     }
     localStorage.setItem("fivia_classroom_students", JSON.stringify(cs));
-  } catch(e) {}
+  } catch (_) {}
 
-  // C. Sync to users table for login authentication
+  // 3. Sync to users table for login authentication
   if (window.db && typeof window.db.getTable === "function") {
     let users = window.db.getTable("users") || [];
-    const uIdx = users.findIndex(u => String(u.id) === String(sId) || (u.nis && String(u.nis) === sNis) || (u.name && u.name.toLowerCase().trim() === sName.toLowerCase().trim()));
+    const uIdx = users.findIndex(u => 
+      String(u.id) === String(sId) || 
+      (u.nis && String(u.nis) === sNis && sNis !== "") || 
+      (u.name && u.name.toLowerCase().trim() === sName.toLowerCase().trim())
+    );
     const userObj = {
       id: sId,
       name: sName,
@@ -195,424 +390,385 @@ function syncStudentRecordLocally(std) {
     } else {
       users.push(userObj);
     }
-    window.db.saveTable("users", users);
+    window.db.saveTable("users", users, true);
   }
 }
 
 /**
- * Handle remote delete
+ * Handle individual cloud record updates by staging into batch buffer
+ */
+function handleCloudRecordUpdate(localCollection, id, data) {
+  if (!localCollection || !id || !data) return;
+  const mergedItem = { ...data, id: String(id) };
+  
+  if (!pendingCloudUpdates[localCollection]) {
+    pendingCloudUpdates[localCollection] = {};
+  }
+  pendingCloudUpdates[localCollection][String(id)] = mergedItem;
+  
+  // Debounce the flush to apply changes in one clean render
+  if (batchDebounceTimer) {
+    clearTimeout(batchDebounceTimer);
+  }
+  batchDebounceTimer = setTimeout(flushPendingCloudUpdates, 200);
+}
+
+/**
+ * Flush all staged cloud updates into local storage and trigger UI renders ONCE
+ */
+function flushPendingCloudUpdates() {
+  batchDebounceTimer = null;
+  
+  let hasSubmissionChanges = false;
+  let hasStudentChanges = false;
+  let hasClassChanges = false;
+  
+  // 1. Process submissions
+  const subMap = pendingCloudUpdates.submissions;
+  const subIds = Object.keys(subMap);
+  if (subIds.length > 0 && window.db && typeof window.db.getTable === "function") {
+    const localList = window.db.getTable("submissions") || [];
+    subIds.forEach(id => {
+      const doc = subMap[id];
+      const idx = localList.findIndex(item => 
+        String(item.id) === String(id) || 
+        (item.studentId && item.labId && String(item.studentId) === String(doc.studentId) && String(item.labId) === String(doc.labId))
+      );
+      if (idx !== -1) {
+        localList[idx] = { ...localList[idx], ...doc };
+      } else {
+        localList.push(doc);
+      }
+    });
+    window.db.saveTable("submissions", localList, true);
+    hasSubmissionChanges = true;
+    pendingCloudUpdates.submissions = {};
+  }
+  
+  // 2. Process students & roster
+  const stdMap = { ...pendingCloudUpdates.students, ...pendingCloudUpdates.roster, ...pendingCloudUpdates.users };
+  const stdIds = Object.keys(stdMap);
+  if (stdIds.length > 0) {
+    stdIds.forEach(id => {
+      const std = stdMap[id];
+      syncStudentRecordLocally(std);
+    });
+    hasStudentChanges = true;
+    pendingCloudUpdates.students = {};
+    pendingCloudUpdates.roster = {};
+    pendingCloudUpdates.users = {};
+  }
+  
+  // 3. Process classes
+  const clsMap = pendingCloudUpdates.classes;
+  const clsIds = Object.keys(clsMap);
+  if (clsIds.length > 0 && window.db && typeof window.db.getTable === "function") {
+    const classes = window.db.getTable("classes") || [];
+    clsIds.forEach(id => {
+      const cls = clsMap[id];
+      const idx = classes.findIndex(c => String(c.id) === String(id));
+      if (idx !== -1) {
+        classes[idx] = { ...classes[idx], ...cls };
+      } else {
+        classes.push(cls);
+      }
+    });
+    window.db.saveTable("classes", classes, true);
+    hasClassChanges = true;
+    pendingCloudUpdates.classes = {};
+  }
+  
+  // 4. Trigger UI re-renders ONCE if relevant view is active
+  if (hasSubmissionChanges) {
+    if (typeof window.renderSubmissionsList === "function") window.renderSubmissionsList();
+    if (typeof window.renderTeacherDashboard === "function") window.renderTeacherDashboard();
+    if (typeof window.renderPeriksaLKPDSection === "function") window.renderPeriksaLKPDSection();
+  }
+  if (hasStudentChanges || hasClassChanges) {
+    if (typeof window.renderClassManagement === "function") window.renderClassManagement();
+    if (typeof window.updateAllClassDropdowns === "function") window.updateAllClassDropdowns();
+  }
+}
+
+/**
+ * Handle remote document deletion
  */
 function handleCloudRecordDelete(localCollection, id) {
   if (typeof db === "undefined" || !db.getTable) return;
   const tableName = (localCollection === "roster") ? "students" : localCollection;
   const localList = db.getTable(tableName) || [];
   const filtered = localList.filter((item) => String(item.id) !== String(id));
-  db.saveTable(tableName, filtered);
-}
-
-/**
- * REST API Helper: Parse Firestore document format to JavaScript object
- */
-function parseFirestoreRESTDoc(doc) {
-  if (!doc) return null;
-  const id = doc.name ? doc.name.split("/").pop() : "";
-  const fields = doc.fields || {};
-  const res = { id };
-  for (const [k, v] of Object.entries(fields)) {
-    if (v.stringValue !== undefined) res[k] = v.stringValue;
-    else if (v.integerValue !== undefined) res[k] = parseInt(v.integerValue, 10);
-    else if (v.doubleValue !== undefined) res[k] = parseFloat(v.doubleValue);
-    else if (v.booleanValue !== undefined) res[k] = v.booleanValue;
-    else if (v.arrayValue !== undefined) {
-      res[k] = (v.arrayValue.values || []).map(item => {
-        if (item.stringValue !== undefined) return item.stringValue;
-        if (item.mapValue !== undefined) return parseFirestoreRESTDoc({ fields: item.mapValue.fields });
-        return item;
-      });
-    } else if (v.mapValue !== undefined) {
-      res[k] = parseFirestoreRESTDoc({ fields: v.mapValue.fields });
-    }
-  }
-  return res;
-}
-
-/**
- * REST API Helper: Convert JavaScript object to Firestore REST fields
- */
-function toFirestoreRESTFields(obj) {
-  const fields = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === null || v === undefined) continue;
-    if (typeof v === "string") fields[k] = { stringValue: v };
-    else if (typeof v === "boolean") fields[k] = { booleanValue: v };
-    else if (typeof v === "number") {
-      if (Number.isInteger(v)) fields[k] = { integerValue: String(v) };
-      else fields[k] = { doubleValue: v };
-    } else if (Array.isArray(v)) {
-      fields[k] = {
-        arrayValue: {
-          values: v.map(item => {
-            if (typeof item === "object" && item !== null) return { mapValue: { fields: toFirestoreRESTFields(item) } };
-            return { stringValue: String(item) };
-          })
-        }
-      };
-    } else if (typeof v === "object") {
-      fields[k] = { mapValue: { fields: toFirestoreRESTFields(v) } };
-    }
-  }
-  return fields;
-}
-
-/**
- * Direct REST API fetcher that completely bypasses SDK WebChannel & IndexedDB bugs
- */
-async function fetchCollectionFromFirestoreREST(collectionName) {
-  try {
-    const url = `https://firestore.googleapis.com/v1/projects/fiva-app/databases/(default)/documents/${collectionName}?pageSize=100`;
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      console.warn(`[Firestore REST] HTTP error: ${resp.status}`);
-      return [];
-    }
-    const json = await resp.json();
-    return (json.documents || []).map(parseFirestoreRESTDoc);
-  } catch (err) {
-    console.warn(`[Firestore REST] Fetch failed for ${collectionName}:`, err);
-    return [];
+  db.saveTable(tableName, filtered, true);
+  
+  if (localCollection === "submissions") {
+    if (typeof window.renderTeacherDashboard === "function") window.renderTeacherDashboard();
+    if (typeof window.renderPeriksaLKPDSection === "function") window.renderPeriksaLKPDSection();
   }
 }
 
 /**
- * Direct REST API writer
+ * Initialize real-time listeners for all critical Firestore collections
  */
-async function writeDocToFirestoreREST(collectionName, docId, data) {
-  try {
-    const url = `https://firestore.googleapis.com/v1/projects/fiva-app/databases/(default)/documents/${collectionName}/${docId}`;
-    const fields = toFirestoreRESTFields(data);
-    const resp = await fetch(url, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fields })
-    });
-    return resp.ok;
-  } catch (err) {
-    console.warn(`[Firestore REST] Write failed for ${collectionName}/${docId}:`, err);
-    return false;
-  }
-}
-
-/**
- * Sync a single local modification (insert/update) to Firestore (REST first + SDK)
- */
-async function syncLocalChangeToCloud(collectionName, item) {
-  const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
-  if (!cloudCollection || !item || !item.id) return false;
-
-  const cleanItem = JSON.parse(JSON.stringify(item));
-  cleanItem.lastSyncedAt = new Date().toISOString();
-
-  let written = false;
-
-  // 1. Direct REST write: guaranteed fast and persistent in ~200ms
-  try {
-    written = await writeDocToFirestoreREST(cloudCollection, String(item.id), cleanItem);
-    if (written) {
-      console.log(`[Firebase Sync] Tersimpan via REST: ${cloudCollection}/${item.id}`);
-    }
-  } catch (errRest) {
-    console.warn(`[Firebase Sync] REST write error:`, errRest);
-  }
-
-  // 2. Also notify/update Firestore SDK if active
-  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
-    try {
-      const firestore = window.FIVIA_FIREBASE.db;
-      const docRef = firestore.collection(cloudCollection).doc(String(item.id));
-      await Promise.race([
-        docRef.set(cleanItem, { merge: true }),
-        new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 1200))
-      ]);
-      console.log(`[Firebase Sync] Tersimpan ke Firestore SDK: ${cloudCollection}/${item.id}`);
-      written = true;
-    } catch (_) {
-      // SDK write ignored if REST already completed
-    }
-  }
-
-  return written;
-}
-
-/**
- * Fetch entire roster and student records directly from Firestore Cloud into LocalStorage
- */
-async function fetchRosterFromCloud() {
+async function initFirebaseSync() {
   if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
-    return false;
+    return;
   }
-
+  
+  if (isSyncInitialized) return;
+  isSyncInitialized = true;
+  
   const firestore = window.FIVIA_FIREBASE.db;
+  console.log("[Firebase Sync] Mengaktifkan listener real-time Firestore...");
+  
+  // Unsubscribe old listeners if any
+  syncUnsubscribers.forEach((unsub) => {
+    try { unsub(); } catch (_) {}
+  });
+  syncUnsubscribers = [];
+  
+  // Real-time collections to observe
+  const listenCollections = ["submissions", "students", "classes", "quizScores", "users", "roster"];
+  
+  listenCollections.forEach((localKey) => {
+    const cloudCollection = FIRESTORE_COLLECTIONS[localKey];
+    if (!cloudCollection) return;
+    
+    try {
+      const unsub = firestore.collection(cloudCollection).onSnapshot((snapshot) => {
+        if (!snapshot || snapshot.empty) return;
+        
+        snapshot.docChanges().forEach((change) => {
+          const docData = change.doc.data();
+          const docId = change.doc.id;
+          
+          if (change.type === "added" || change.type === "modified") {
+            handleCloudRecordUpdate(localKey, docId, docData);
+          } else if (change.type === "removed") {
+            handleCloudRecordDelete(localKey, docId);
+          }
+        });
+      }, (err) => {
+        if (err && (err.code === "permission-denied" || String(err).includes("permission"))) {
+          if (window.FIVIA_FIREBASE) window.FIVIA_FIREBASE.permissionDenied = true;
+          const permAlert = document.getElementById("firestore-permission-alert");
+          if (permAlert) permAlert.style.display = "block";
+        }
+      });
+      
+      syncUnsubscribers.push(unsub);
+    } catch (e) {
+      console.warn(`[Firebase Sync] Gagal mengaktifkan listener ${cloudCollection}:`, e);
+    }
+  });
+  
+  // Automatically pull teacher/student data once on connection
+  syncServerDataForTeacher(true).catch(() => {});
+  
+  // Start gentle background queue flusher
+  setTimeout(flushOfflineSyncQueue, 3000);
+}
+
+/**
+ * Pull all cloud data for Teacher to ensure identical data across all devices (PC, HP, Tablet)
+ * @param {boolean} silent - If true, do not show toasts
+ */
+async function syncServerDataForTeacher(silent = false) {
   let count = 0;
-
+  
+  // 1. Fetch LKPD Submissions
   try {
-    // 1. Fetch vlab_users (especially registered students & teachers)
-    const usersSnap = await firestore.collection("vlab_users").get();
-    if (!usersSnap.empty) {
-      usersSnap.forEach(doc => {
-        handleCloudRecordUpdate("users", doc.id, doc.data());
+    let subs = [];
+    if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+      try {
+        const snap = await Promise.race([
+          window.FIVIA_FIREBASE.db.collection("vlab_lkpd_submissions").get(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 3000))
+        ]);
+        if (!snap.empty) {
+          subs = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        }
+      } catch (_) {}
+    }
+    
+    // REST fallback
+    if (subs.length === 0) {
+      subs = await fetchCollectionFromFirestoreREST("vlab_lkpd_submissions");
+    }
+    
+    if (subs && subs.length > 0) {
+      subs.forEach(doc => {
+        handleCloudRecordUpdate("submissions", doc.id, doc);
         count++;
       });
     }
-
-    // 2. Fetch vlab_students
-    const studentsSnap = await firestore.collection("vlab_students").get();
-    if (!studentsSnap.empty) {
-      studentsSnap.forEach(doc => {
-        handleCloudRecordUpdate("students", doc.id, doc.data());
-        count++;
-      });
+  } catch (err) {
+    console.warn("[Firebase Sync] Error fetching submissions:", err);
+  }
+  
+  // 2. Fetch Students & Roster
+  try {
+    let students = [];
+    if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+      try {
+        const snap = await Promise.race([
+          window.FIVIA_FIREBASE.db.collection("vlab_students").get(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 2500))
+        ]);
+        if (!snap.empty) {
+          students = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        }
+      } catch (_) {}
     }
-
-    // 3. Fetch vlab_student_roster
-    const rosterSnap = await firestore.collection("vlab_student_roster").get();
-    if (!rosterSnap.empty) {
-      rosterSnap.forEach(doc => {
-        handleCloudRecordUpdate("roster", doc.id, doc.data());
-        count++;
-      });
+    if (students.length === 0) {
+      students = await fetchCollectionFromFirestoreREST("vlab_students");
     }
-
-    // 4. Fetch vlab_classes
-    const classSnap = await firestore.collection("vlab_classes").get();
-    if (!classSnap.empty) {
-      classSnap.forEach(doc => {
-        handleCloudRecordUpdate("classes", doc.id, doc.data());
-      });
+    students.forEach(doc => {
+      handleCloudRecordUpdate("students", doc.id, doc);
+    });
+  } catch (_) {}
+  
+  // 3. Fetch Classes
+  try {
+    let classes = [];
+    if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+      try {
+        const snap = await Promise.race([
+          window.FIVIA_FIREBASE.db.collection("vlab_classes").get(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 2500))
+        ]);
+        if (!snap.empty) {
+          classes = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        }
+      } catch (_) {}
     }
+    if (classes.length === 0) {
+      classes = await fetchCollectionFromFirestoreREST("vlab_classes");
+    }
+    classes.forEach(doc => {
+      handleCloudRecordUpdate("classes", doc.id, doc);
+    });
+  } catch (_) {}
+  
+  // Flush batch immediately
+  flushPendingCloudUpdates();
+  
+  if (!silent && window.showToast) {
+    if (count > 0) {
+      window.showToast(`Berhasil menyinkronkan ${count} lembar kerja LKPD dari Cloud Server!`, "success");
+    } else {
+      window.showToast("Data server telah disinkronkan dengan perangkat Anda.", "info");
+    }
+  }
+  
+  return { success: true, count };
+}
 
-    // 5. Fetch vlab_lkpd_submissions (Student LKPD Answers)
-    try {
-      const subsSnap = await firestore.collection("vlab_lkpd_submissions").get();
-      if (!subsSnap.empty) {
-        let subsCount = 0;
-        subsSnap.forEach(doc => {
-          handleCloudRecordUpdate("submissions", doc.id, doc.data());
-          subsCount++;
-        });
-        console.log(`[Firebase Sync] Berhasil memuat ${subsCount} jawaban LKPD siswa dari Cloud!`);
+/**
+ * Public helper alias for pulling submissions
+ */
+function fetchLKPDSubmissionsFromCloud(silent = false) {
+  return syncServerDataForTeacher(silent);
+}
+
+/**
+ * Export complete teacher server database as a clean JSON file
+ */
+function exportServerDatabaseJSON() {
+  const users = (window.db && window.db.getTable("users")) || [];
+  const students = (window.db && window.db.getTable("students")) || [];
+  const submissions = (window.db && window.db.getTable("submissions")) || [];
+  const quizScores = (window.db && window.db.getTable("quizScores")) || [];
+  const classes = (window.db && window.db.getTable("classes")) || [];
+  let roster = [];
+  try { roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]"); } catch(_) {}
+
+  const serverDatabase = {
+    server: {
+      serverId: "srv_syarif_fivia",
+      serverHost: "Syarif Hidayatullah",
+      serverEmail: "syarifhidayatullah64@guru.sma.belajar.id",
+      exportedAt: new Date().toISOString(),
+      appVersion: "1.3.8",
+      status: "verified"
+    },
+    statistics: {
+      totalStudents: students.length,
+      totalSubmissions: submissions.length,
+      totalQuizScores: quizScores.length,
+      totalClasses: classes.length
+    },
+    classes: classes,
+    students: students,
+    roster: roster,
+    users: users,
+    submissions: submissions,
+    quizScores: quizScores
+  };
+
+  const blob = new Blob([JSON.stringify(serverDatabase, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `fivia_server_backup_guru_${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (window.showToast) window.showToast("Database Server Guru berhasil diekspor dan diunduh!", "success");
+}
+
+/**
+ * Import complete server database from JSON string or file
+ */
+function importServerDatabaseJSON(jsonInput) {
+  try {
+    const data = typeof jsonInput === "string" ? JSON.parse(jsonInput) : jsonInput;
+    if (!data || typeof data !== "object") {
+      throw new Error("Format berkas backup tidak valid.");
+    }
+    
+    let count = 0;
+    if (window.db && typeof window.db.saveTable === "function") {
+      if (Array.isArray(data.classes) && data.classes.length > 0) {
+        window.db.saveTable("classes", data.classes, true);
       }
-    } catch (errSubs) {
-      console.warn("[Firebase Sync] Gagal memuat submissions LKPD dari cloud:", errSubs);
-    }
-
-    // 6. Fetch vlab_quiz_results (Student Quiz Results)
-    try {
-      const quizSnap = await firestore.collection("vlab_quiz_results").get();
-      if (!quizSnap.empty) {
-        let quizCount = 0;
-        quizSnap.forEach(doc => {
-          handleCloudRecordUpdate("quizScores", doc.id, doc.data());
-          quizCount++;
-        });
-        console.log(`[Firebase Sync] Berhasil memuat ${quizCount} hasil kuis siswa dari Cloud!`);
+      if (Array.isArray(data.students) && data.students.length > 0) {
+        window.db.saveTable("students", data.students, true);
+        count += data.students.length;
       }
-    } catch (errQuiz) {
-      console.warn("[Firebase Sync] Gagal memuat quiz results dari cloud:", errQuiz);
+      if (Array.isArray(data.users) && data.users.length > 0) {
+        window.db.saveTable("users", data.users, true);
+      }
+      if (Array.isArray(data.submissions) && data.submissions.length > 0) {
+        window.db.saveTable("submissions", data.submissions, true);
+        count += data.submissions.length;
+      }
+      if (Array.isArray(data.quizScores) && data.quizScores.length > 0) {
+        window.db.saveTable("quizScores", data.quizScores, true);
+      }
     }
-
-    console.log(`[Firebase Sync] Berhasil memuat ${count} data siswa dari Cloud!`);
+    if (Array.isArray(data.roster)) {
+      localStorage.setItem("fivia_student_roster", JSON.stringify(data.roster));
+    }
+    
+    if (typeof window.renderTeacherDashboard === "function") window.renderTeacherDashboard();
+    if (typeof window.renderPeriksaLKPDSection === "function") window.renderPeriksaLKPDSection();
+    if (typeof window.renderClassManagement === "function") window.renderClassManagement();
+    
+    if (window.showToast) {
+      window.showToast(`Berhasil memulihkan ${count} data server dari berkas backup!`, "success");
+    }
     return { success: true, count };
   } catch (err) {
-    console.warn("[Firebase Sync] SDK fetch error, attempting direct REST API fallback:", err);
-    try {
-      const restUsers = await fetchCollectionFromFirestoreREST("vlab_users");
-      restUsers.forEach(doc => { handleCloudRecordUpdate("users", doc.id, doc); count++; });
-
-      const restStudents = await fetchCollectionFromFirestoreREST("vlab_students");
-      restStudents.forEach(doc => { handleCloudRecordUpdate("students", doc.id, doc); count++; });
-
-      const restSubs = await fetchCollectionFromFirestoreREST("vlab_lkpd_submissions");
-      restSubs.forEach(doc => { handleCloudRecordUpdate("submissions", doc.id, doc); });
-
-      const restQuiz = await fetchCollectionFromFirestoreREST("vlab_quiz_results");
-      restQuiz.forEach(doc => { handleCloudRecordUpdate("quizScores", doc.id, doc); });
-
-      console.log(`[Firebase Sync] Berhasil memuat ${count} data dari Cloud via REST API!`);
-      return { success: true, count };
-    } catch (restErr) {
-      console.warn("[Firebase Sync] REST fallback also failed:", restErr);
-      return { success: false, error: err.message };
-    }
-  }
-}
-
-/**
- * Push all local data (students, roster, users, classes) to Firestore Cloud
- */
-async function syncAllRosterToCloud() {
-  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
-    return { success: false, message: "Firebase belum terhubung. Periksa konfigurasi di menu Cloud DB." };
-  }
-
-  const firestore = window.FIVIA_FIREBASE.db;
-  let uploaded = 0;
-
-  try {
-    // 1. Upload students table
-    const students = (window.db && window.db.getTable("students")) || [];
-    for (const s of students) {
-      if (s && (s.id || s.nis)) {
-        const docId = String(s.id || ('std_' + s.nis));
-        await firestore.collection("vlab_students").doc(docId).set(JSON.parse(JSON.stringify(s)), { merge: true });
-        uploaded++;
-      }
-    }
-
-    // 2. Upload users table (students and teachers)
-    const users = (window.db && window.db.getTable("users")) || [];
-    for (const u of users) {
-      if (u && (u.id || u.email || u.nis)) {
-        const docId = String(u.id || ('usr_' + (u.nis || u.email)));
-        await firestore.collection("vlab_users").doc(docId).set(JSON.parse(JSON.stringify(u)), { merge: true });
-        uploaded++;
-      }
-    }
-
-    // 3. Upload fivia_student_roster
-    let roster = [];
-    try {
-      roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]");
-    } catch(e) {}
-    for (const r of roster) {
-      if (r && (r.studentId || r.id || r.nis)) {
-        const docId = String(r.studentId || r.id || ('ros_' + r.nis));
-        await firestore.collection("vlab_student_roster").doc(docId).set(JSON.parse(JSON.stringify(r)), { merge: true });
-        uploaded++;
-      }
-    }
-
-    // 4. Upload classes
-    const classes = (window.db && window.db.getTable("classes")) || [];
-    for (const c of classes) {
-      if (c && c.id) {
-        await firestore.collection("vlab_classes").doc(String(c.id)).set(JSON.parse(JSON.stringify(c)), { merge: true });
-      }
-    }
-
-    // 5. Upload LKPD Submissions
-    const submissions = (window.db && window.db.getTable("submissions")) || [];
-    for (const sub of submissions) {
-      if (sub && (sub.id || sub.studentId)) {
-        const docId = String(sub.id || `sub_${sub.studentId}_${sub.labId}`);
-        await firestore.collection("vlab_lkpd_submissions").doc(docId).set(JSON.parse(JSON.stringify(sub)), { merge: true });
-      }
-    }
-
-    return { success: true, count: uploaded };
-  } catch (err) {
-    console.error("[Firebase Sync] Gagal mengunggah seluruh roster ke cloud:", err);
+    if (window.showToast) window.showToast("Gagal memulihkan database: " + err.message, "danger");
     return { success: false, error: err.message };
   }
 }
 
 /**
- * Push all local items that might not yet exist on Firestore
- */
-async function backfillLocalToCloud() {
-  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) return;
-
-  const collections = ["students", "classes", "users", "submissions"];
-  for (const col of collections) {
-    const items = (typeof db !== "undefined" && db.getTable) ? (db.getTable(col) || []) : [];
-    for (const item of items) {
-      if (item && (item.id || item.studentId)) {
-        const syncItem = { ...item, id: item.id || `sub_${item.studentId}_${item.labId}` };
-        await syncLocalChangeToCloud(col, syncItem);
-      }
-    }
-  }
-}
-
-/**
- * Explicit helper to fetch LKPD submissions automatically or on demand
- * @param {boolean} silent - If true, do not show toasts (seamless background update)
- */
-let isFetchingLKPD = false;
-async function fetchLKPDSubmissionsFromCloud(silent = false) {
-  if (isFetchingLKPD) return false;
-  isFetchingLKPD = true;
-
-  let count = 0;
-  let succeeded = false;
-
-  try {
-    // 1. Ultra-fast direct REST API fetch (bypasses SDK WebChannel handshake)
-    try {
-      const restDocs = await fetchCollectionFromFirestoreREST("vlab_lkpd_submissions");
-      if (restDocs && Array.isArray(restDocs)) {
-        restDocs.forEach(doc => {
-          if (doc && doc.id) {
-            handleCloudRecordUpdate("submissions", doc.id, doc);
-            count++;
-          }
-        });
-        succeeded = true;
-      }
-    } catch (restErr) {
-      console.warn("[Firebase Sync] REST API fetch error:", restErr);
-    }
-
-    // 2. Also check Firestore SDK if REST had error or returned empty
-    if (!succeeded && window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
-      try {
-        const firestore = window.FIVIA_FIREBASE.db;
-        const subsSnap = await Promise.race([
-          firestore.collection("vlab_lkpd_submissions").get(),
-          new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 1500))
-        ]);
-        if (subsSnap && !subsSnap.empty) {
-          subsSnap.forEach(doc => {
-            handleCloudRecordUpdate("submissions", doc.id, doc.data());
-            count++;
-          });
-        }
-        succeeded = true;
-      } catch (sdkErr) {
-        console.warn("[Firebase Sync] SDK fetch fallback error:", sdkErr);
-      }
-    }
-
-    if (succeeded) {
-      if (!silent && window.showToast) {
-        if (count > 0) {
-          window.showToast(`Berhasil menyinkronkan ${count} lembar kerja LKPD dari Cloud Server!`, "success");
-        } else {
-          window.showToast("Sinkronisasi Cloud berhasil! (Belum ada lembar kerja baru yang dikirim)", "info");
-        }
-      }
-      if (typeof window.renderTeacherDashboard === 'function') window.renderTeacherDashboard();
-      if (typeof window.renderPeriksaLKPDSection === 'function') window.renderPeriksaLKPDSection();
-      return true;
-    } else {
-      if (!silent && window.showToast) {
-        window.showToast("Memuat dari database lokal (Cloud belum dapat diakses).", "info");
-      }
-      return false;
-    }
-  } finally {
-    isFetchingLKPD = false;
-  }
-}
-
-/**
- * Memastikan akun Guru Pak Syarif Hidayatullah dan status Server terdaftar di Firebase Firestore
+ * Ensure Pak Syarif's teacher account & server metadata exist in Firestore
  */
 async function ensureTeacherRegisteredInFirebase() {
-  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
-    return false;
-  }
-  const firestore = window.FIVIA_FIREBASE.db;
-
   const teacherData = {
     id: "usr_guru_syarif",
     name: "Syarif Hidayatullah",
@@ -641,142 +797,55 @@ async function ensureTeacherRegisteredInFirebase() {
     updatedAt: new Date().toISOString()
   };
 
-  try {
-    if (firestore) {
-      await firestore.collection("vlab_users").doc("usr_guru_syarif").set(teacherData, { merge: true });
-      await firestore.collection("vlab_teachers").doc("usr_guru_syarif").set(teacherData, { merge: true });
-      await firestore.collection("vlab_servers").doc("srv_syarif_fivia").set(serverDoc, { merge: true });
-      console.log("[Firebase] Akun Guru & Server Pak Syarif Hidayatullah berhasil diverifikasi di Firestore.");
-      return true;
-    }
-  } catch (err) {
-    console.warn("[Firebase] SDK write failed, using REST API:", err);
-  }
-
-  try {
-    await writeDocToFirestoreREST("vlab_users", "usr_guru_syarif", teacherData);
-    await writeDocToFirestoreREST("vlab_teachers", "usr_guru_syarif", teacherData);
-    await writeDocToFirestoreREST("vlab_servers", "srv_syarif_fivia", serverDoc);
-    return true;
-  } catch (_) {
-    return false;
-  }
+  await syncLocalChangeToCloud("users", teacherData, false);
+  await syncLocalChangeToCloud("teachers", teacherData, false);
+  await syncLocalChangeToCloud("servers", serverDoc, false);
+  return true;
 }
 
-/**
- * Ekspor seluruh database siswa dalam bentuk server (JSON) untuk diarsipkan di perangkat guru
- */
-function exportServerDatabaseJSON() {
-  const users = (window.db && window.db.getTable("users")) || [];
-  const students = (window.db && window.db.getTable("students")) || [];
+// Push all roster to cloud on demand (Explicit button click ONLY)
+async function syncAllRosterToCloud() {
+  let uploaded = 0;
   const submissions = (window.db && window.db.getTable("submissions")) || [];
-  const quizScores = (window.db && window.db.getTable("quizScores")) || [];
-  const classes = (window.db && window.db.getTable("classes")) || [];
-
-  const serverDatabase = {
-    server: {
-      serverId: "srv_syarif_fivia",
-      serverHost: "Syarif Hidayatullah",
-      serverEmail: "syarifhidayatullah64@guru.sma.belajar.id",
-      exportedAt: new Date().toISOString(),
-      appVersion: "1.2.7",
-      status: "verified"
-    },
-    statistics: {
-      totalStudents: students.length,
-      totalSubmissions: submissions.length,
-      totalQuizScores: quizScores.length
-    },
-    students: students,
-    submissions: submissions,
-    quizScores: quizScores,
-    classes: classes
-  };
-
-  const blob = new Blob([JSON.stringify(serverDatabase, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `database_server_guru_${new Date().toISOString().split("T")[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  if (window.showToast) window.showToast("Database Server Guru berhasil diunduh!", "success");
-}
-
-/**
- * Hapus dokumen dari Firestore saat dihapus di lokal
- */
-async function syncLocalDeleteToCloud(collectionName, id) {
-  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) return;
-  const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
-  if (!cloudCollection || !id) return;
-  try {
-    await window.FIVIA_FIREBASE.db.collection(cloudCollection).doc(String(id)).delete();
-    console.log(`[Firebase Sync] Terhapus dari Firestore: ${cloudCollection}/${id}`);
-  } catch (err) {
-    console.warn(`[Firebase Sync] Gagal menghapus dari cloud:`, err);
+  for (const sub of submissions) {
+    if (sub && (sub.id || sub.studentId)) {
+      await syncLocalChangeToCloud("submissions", sub);
+      uploaded++;
+    }
   }
+  return { success: true, count: uploaded };
 }
 
-// Export to window
+// Export functions to window
 window.initFirebaseSync = initFirebaseSync;
 window.syncLocalChangeToCloud = syncLocalChangeToCloud;
 window.syncLocalDeleteToCloud = syncLocalDeleteToCloud;
-window.backfillLocalToCloud = backfillLocalToCloud;
-window.fetchRosterFromCloud = fetchRosterFromCloud;
-window.syncAllRosterToCloud = syncAllRosterToCloud;
+window.syncServerDataForTeacher = syncServerDataForTeacher;
 window.fetchLKPDSubmissionsFromCloud = fetchLKPDSubmissionsFromCloud;
-window.fetchCollectionFromFirestoreREST = fetchCollectionFromFirestoreREST;
-window.writeDocToFirestoreREST = writeDocToFirestoreREST;
+window.syncAllRosterToCloud = syncAllRosterToCloud;
 window.ensureTeacherRegisteredInFirebase = ensureTeacherRegisteredInFirebase;
 window.exportServerDatabaseJSON = exportServerDatabaseJSON;
+window.importServerDatabaseJSON = importServerDatabaseJSON;
+window.flushOfflineSyncQueue = flushOfflineSyncQueue;
 
-// ==========================================
-// AUTOMATIC TEACHER REAL-TIME SYNC ENGINE
-// Automatically fetches new student submissions every 4s without manual intervention
-// ==========================================
-let teacherAutoSyncInterval = null;
-
-function setupTeacherAutoSync() {
-  if (teacherAutoSyncInterval) {
-    clearInterval(teacherAutoSyncInterval);
-    teacherAutoSyncInterval = null;
-  }
-
-  function checkAndSync() {
-    const user = window.auth ? window.auth.getCurrentUser() : null;
-    if (user && (user.role === "guru" || user.role === "admin")) {
-      fetchLKPDSubmissionsFromCloud(true);
-    }
-  }
-
-  // Immediate check
-  checkAndSync();
-
-  // Poll quietly every 4 seconds when teacher is active
-  teacherAutoSyncInterval = setInterval(checkAndSync, 4000);
-}
-
-window.setupTeacherAutoSync = setupTeacherAutoSync;
-
-// Attach triggers for auto-sync
+// Attach clean lifecycle triggers (no setInterval!)
 if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
   window.addEventListener("DOMContentLoaded", () => {
-    setTimeout(setupTeacherAutoSync, 1000);
+    // Single non-blocking initialization
+    setTimeout(() => {
+      if (window.initFirebaseSync) window.initFirebaseSync();
+    }, 800);
   });
+  
   window.addEventListener("authChange", () => {
-    setupTeacherAutoSync();
-  });
-  window.addEventListener("focus", () => {
     const user = window.auth ? window.auth.getCurrentUser() : null;
     if (user && (user.role === "guru" || user.role === "admin")) {
-      fetchLKPDSubmissionsFromCloud(true);
+      syncServerDataForTeacher(true);
     }
   });
+  
   window.addEventListener("online", () => {
-    fetchLKPDSubmissionsFromCloud(true);
+    flushOfflineSyncQueue();
+    syncServerDataForTeacher(true);
   });
 }
-

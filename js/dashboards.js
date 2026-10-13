@@ -1444,11 +1444,6 @@ function renderTeacherDashboard() {
   const user = window.auth.getCurrentUser();
   if (!user) return;
   
-  // Background auto-sync latest student submissions from cloud without user intervention
-  if (window.fetchLKPDSubmissionsFromCloud) {
-    window.fetchLKPDSubmissionsFromCloud(true);
-  }
-  
   const allDbClasses = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("classes") || [] : [];
   let teacherClasses = allDbClasses.filter(c => c.teacherId === user.id);
   
@@ -2702,11 +2697,6 @@ function renderPeriksaLKPDSection() {
   const user = window.auth ? window.auth.getCurrentUser() : null;
   if (!user || (user.role !== "guru" && user.role !== "admin")) return;
 
-  // Background auto-sync latest student submissions from cloud without user intervention
-  if (window.fetchLKPDSubmissionsFromCloud) {
-    window.fetchLKPDSubmissionsFromCloud(true);
-  }
-
   const rawSubmissions = (window.db && typeof window.db.getPendingSubmissions === 'function') 
     ? window.db.getPendingSubmissions(user.id) || [] 
     : [];
@@ -2745,9 +2735,9 @@ function renderPeriksaLKPDSection() {
     permAlert.style.display = (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.permissionDenied) ? "block" : "none";
   }
 
-  // Populate Classes filter dropdown
+  // Populate Classes filter dropdown once or when count changes
   const classSelect = document.getElementById("periksa-filter-class");
-  if (classSelect) {
+  if (classSelect && classSelect.options.length <= 1) {
     const currentVal = classSelect.value;
     const availClasses = (typeof getAvailableClassrooms === 'function') ? getAvailableClassrooms() : [];
     const classMap = new Map();
@@ -3265,6 +3255,25 @@ window.handleShareClassLinkClick = function() {
   } else {
     prompt("Salin link aplikasi berikut dan bagikan ke WhatsApp grup siswa:", cleanUrl);
   }
+};
+
+// 1-Click Restore Server Database JSON from file
+window.restoreServerDatabasePrompt = function() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (window.importServerDatabaseJSON) {
+        window.importServerDatabaseJSON(event.target.result);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 };
 
 
