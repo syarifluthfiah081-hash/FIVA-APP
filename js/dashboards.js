@@ -1487,7 +1487,7 @@ function renderTeacherDashboard() {
       <td style="font-weight: 700; font-family: monospace;">${(sub.score !== undefined && sub.score !== null) ? sub.score : "-"}</td>
       <td>
         <button class="btn btn-primary btn-grade" style="padding: 6px 12px; font-size: 0.8rem;" 
-                data-student="${sub.studentId}" data-lab="${sub.labId}">
+                data-student="${sub.studentId || sub.id}" data-lab="${sub.labId}" data-sub-id="${sub.id || ''}">
           ${isGraded ? "Edit Nilai" : "Koreksi"}
         </button>
       </td>
@@ -1500,13 +1500,29 @@ function renderTeacherDashboard() {
     btn.addEventListener("click", () => {
       const studentId = btn.getAttribute("data-student");
       const labId = btn.getAttribute("data-lab");
-      openGradingModal(studentId, labId);
+      const subId = btn.getAttribute("data-sub-id");
+      openGradingModal(studentId, labId, subId);
     });
   });
 }
 
-function openGradingModal(studentId, labId) {
-  const sub = window.db.getLKPDSubmission(studentId, labId);
+function openGradingModal(studentId, labId, subId) {
+  let sub = null;
+  const submissions = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("submissions") || [] : [];
+  if (subId) {
+    sub = submissions.find(s => String(s.id).trim() === String(subId).trim());
+  }
+  if (!sub && studentId && labId) {
+    sub = window.db.getLKPDSubmission(studentId, labId);
+  }
+  if (!sub && studentId) {
+    sub = submissions.find(s => String(s.studentId || "").trim() === String(studentId).trim() || String(s.id || "").trim() === String(studentId).trim());
+  }
+  if (!sub && (window.db && typeof window.db.getPendingSubmissions === 'function')) {
+    const pending = window.db.getPendingSubmissions() || [];
+    if (subId) sub = pending.find(s => String(s.id).trim() === String(subId).trim());
+    if (!sub && studentId && labId) sub = pending.find(s => (String(s.studentId) === String(studentId) || String(s.id) === String(studentId)) && (String(s.labId) === String(labId)));
+  }
   if (!sub) {
     if (window.showToast) window.showToast("Data LKPD siswa tidak ditemukan.", "warning");
     return;
@@ -1709,6 +1725,8 @@ function openGradingModal(studentId, labId) {
 function renderClassManagement() {
   const user = window.auth.getCurrentUser();
   if (!user || user.role !== "guru") return;
+  
+  if (typeof updateAllClassDropdowns === 'function') updateAllClassDropdowns();
   
   // Track deleted students so they are never displayed
   let deletedList = [];
@@ -2437,9 +2455,79 @@ function deleteStudentScores(studentId, studentName) {
   if (typeof window.renderClassManagement === 'function') window.renderClassManagement();
 }
 
-function updateAllClassDropdowns() {
-  const classes = window.FIVIAClassroom ? window.FIVIAClassroom.getClassrooms() : [];
+// Universal Classrooms Provider (Guarantees classes are always available)
+function getAvailableClassrooms() {
+  const classMap = new Map();
 
+  // 1. Guaranteed baseline classes
+  const baseline = [
+    { id: "cls_x1", name: "Kelas X-1" },
+    { id: "cls_x2", name: "Kelas X-2" },
+    { id: "cls_xi1", name: "Kelas XI IPA-1" },
+    { id: "cls_xi2", name: "Kelas XI IPA-2" }
+  ];
+  baseline.forEach(c => classMap.set(c.id, c));
+
+  // 2. Classes from Local Database
+  if (window.db && typeof window.db.getTable === 'function') {
+    const dbClasses = window.db.getTable("classes") || [];
+    dbClasses.forEach(c => {
+      if (c && (c.name || c.id)) {
+        const id = c.id || ('cls_' + (c.name || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+        const name = c.name || c.id;
+        classMap.set(id, { id, name });
+      }
+    });
+  }
+
+  // 3. Classes from FIVIAClassroom module
+  if (window.FIVIAClassroom && typeof window.FIVIAClassroom.getClassrooms === 'function') {
+    const fcClasses = window.FIVIAClassroom.getClassrooms() || [];
+    fcClasses.forEach(c => {
+      if (c && (c.name || c.id)) {
+        const id = c.id || ('cls_' + (c.name || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+        const name = c.name || c.id;
+        classMap.set(id, { id, name });
+      }
+    });
+  }
+
+  // 4. Stored classrooms in LocalStorage
+  try {
+    const stored = JSON.parse(localStorage.getItem('fivia_classrooms') || '[]');
+    stored.forEach(c => {
+      if (c && (c.name || c.id)) {
+        const id = c.id || ('cls_' + (c.name || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+        const name = c.name || c.id;
+        classMap.set(id, { id, name });
+      }
+    });
+  } catch (_) {}
+
+  // 5. Classes from Student Roster
+  try {
+    const roster = (window.FIVIAExcelImport && typeof window.FIVIAExcelImport.getExistingRoster === 'function') 
+      ? window.FIVIAExcelImport.getExistingRoster() 
+      : JSON.parse(localStorage.getItem('fivia_student_roster') || '[]');
+    roster.forEach(s => {
+      const cName = (s.className || s.classId || s.kelas || '').trim();
+      if (cName) {
+        const id = s.classId || ('cls_' + cName.toLowerCase().replace(/[^a-z0-9]/g, ''));
+        if (!Array.from(classMap.values()).some(x => x.name.toLowerCase() === cName.toLowerCase())) {
+          classMap.set(id, { id, name: cName });
+        }
+      }
+    });
+  } catch (_) {}
+
+  return Array.from(classMap.values());
+}
+window.getAvailableClassrooms = getAvailableClassrooms;
+
+function updateAllClassDropdowns() {
+  const classes = getAvailableClassrooms();
+
+  // 1. Filter Class in Manajemen Kelas
   const filterSelect = document.getElementById("filter-class");
   if (filterSelect) {
     const cur = filterSelect.value;
@@ -2448,6 +2536,16 @@ function updateAllClassDropdowns() {
     if (classes.some(c => c.id === cur)) filterSelect.value = cur;
   }
 
+  // 2. Filter Class in Periksa LKPD Siswa
+  const periksaClassSelect = document.getElementById("periksa-filter-class");
+  if (periksaClassSelect) {
+    const cur = periksaClassSelect.value;
+    periksaClassSelect.innerHTML = `<option value="">Semua Kelas</option>` +
+      classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (classes.some(c => c.id === cur || c.name === cur)) periksaClassSelect.value = cur;
+  }
+
+  // 3. Report Class Select (Laporan Nilai)
   const reportSelect = document.getElementById("report-class-select");
   if (reportSelect) {
     const cur = reportSelect.value;
@@ -2456,11 +2554,25 @@ function updateAllClassDropdowns() {
     else if (classes.length > 0) reportSelect.value = classes[0].id;
   }
 
+  // 4. Add Student Modal
   const addStudentSelect = document.getElementById("add-student-class");
   if (addStudentSelect) {
+    const cur = addStudentSelect.value;
     addStudentSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (classes.some(c => c.id === cur)) addStudentSelect.value = cur;
+    else if (classes.length > 0) addStudentSelect.value = classes[0].id;
   }
 
+  // 5. Register Modal
+  const registerClassSelect = document.getElementById("register-class");
+  if (registerClassSelect) {
+    const cur = registerClassSelect.value;
+    registerClassSelect.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (classes.some(c => c.id === cur)) registerClassSelect.value = cur;
+    else if (classes.length > 0) registerClassSelect.value = classes[0].id;
+  }
+
+  // 6. Group Play Classroom
   const gpSelect = document.getElementById("gp-classroom-select");
   if (gpSelect) {
     const cur = gpSelect.value;
@@ -2606,19 +2718,22 @@ function renderPeriksaLKPDSection() {
   const classSelect = document.getElementById("periksa-filter-class");
   if (classSelect) {
     const currentVal = classSelect.value;
-    const uniqueClasses = new Set();
-    rawSubmissions.forEach(s => { if (s.className) uniqueClasses.add(s.className); });
-    
-    // Also include classes from DB
-    const dbClasses = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("classes") || [] : [];
-    dbClasses.forEach(c => uniqueClasses.add(c.name || c.id));
-    
+    const availClasses = (typeof getAvailableClassrooms === 'function') ? getAvailableClassrooms() : [];
+    const classMap = new Map();
+    availClasses.forEach(c => classMap.set(c.id, c.name));
+    rawSubmissions.forEach(s => {
+      if (s.className) {
+        const cId = s.classId || ('cls_' + s.className.toLowerCase().replace(/[^a-z0-9]/g, ''));
+        if (!classMap.has(cId)) classMap.set(cId, s.className);
+      }
+    });
+
     classSelect.innerHTML = `<option value="">Semua Kelas</option>`;
-    Array.from(uniqueClasses).sort().forEach(cls => {
+    classMap.forEach((cName, cId) => {
       const opt = document.createElement("option");
-      opt.value = cls;
-      opt.textContent = cls;
-      if (cls === currentVal) opt.selected = true;
+      opt.value = cId;
+      opt.textContent = cName;
+      if (cId === currentVal || cName.toLowerCase() === currentVal.toLowerCase()) opt.selected = true;
       classSelect.appendChild(opt);
     });
   }
@@ -2632,8 +2747,9 @@ function renderPeriksaLKPDSection() {
   // Apply filtering
   const filtered = rawSubmissions.filter(sub => {
     if (selectedClass) {
-      const cName = (sub.className || "").toLowerCase();
-      if (!cName.includes(selectedClass)) return false;
+      const filterNorm = (typeof getNormClass === 'function') ? getNormClass(selectedClass).id : selectedClass;
+      const subNorm = (typeof getNormClass === 'function') ? getNormClass(sub.className || sub.classId).id : (sub.className || '').toLowerCase();
+      if (filterNorm !== subNorm && !(sub.className || '').toLowerCase().includes(selectedClass) && !selectedClass.includes((sub.className || '').toLowerCase())) return false;
     }
     if (selectedLab) {
       if (String(sub.labId) !== selectedLab) return false;
@@ -2709,7 +2825,7 @@ function renderPeriksaLKPDSection() {
       <td style="text-align: center;">
         <button class="btn ${isGraded ? 'btn-outline' : 'btn-primary'} btn-grade-periksa" 
                 style="padding: 7px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px;"
-                data-student="${sub.studentId}" data-lab="${sub.labId}">
+                data-student="${sub.studentId || sub.id}" data-lab="${sub.labId}" data-sub-id="${sub.id || ''}">
           ${isGraded ? `<i class="fas fa-edit"></i> Edit Nilai` : `<i class="fas fa-pen-nib"></i> Periksa & Beri Nilai`}
         </button>
       </td>
@@ -2722,7 +2838,8 @@ function renderPeriksaLKPDSection() {
     btn.addEventListener("click", () => {
       const studentId = btn.getAttribute("data-student");
       const labId = btn.getAttribute("data-lab");
-      openGradingModal(studentId, labId);
+      const subId = btn.getAttribute("data-sub-id");
+      openGradingModal(studentId, labId, subId);
     });
   });
 }

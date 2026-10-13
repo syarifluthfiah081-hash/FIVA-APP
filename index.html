@@ -38,7 +38,7 @@
   <script>
     // Enforce instant cache purge for new application versions
     (function() {
-      const APP_VERSION = '1.3.4';
+      const APP_VERSION = '1.3.5';
       const storedVersion = localStorage.getItem('fivia_app_version');
       if (storedVersion !== APP_VERSION) {
         localStorage.setItem('fivia_app_version', APP_VERSION);
@@ -3164,7 +3164,7 @@ service cloud.firestore {
     // 1. Service Worker Registration (Force Update on Load)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.3.4')
+        navigator.serviceWorker.register('./sw.js?v=1.3.5')
           .then((reg) => {
             console.log('[FIVIA PWA] Service Worker aktif dengan scope:', reg.scope);
             if (reg.update) reg.update();

@@ -763,34 +763,83 @@ function handleRouting() {
   window.scrollTo(0, 0);
 }
 
-// Global Toast Notification Helper
+// Global Toast Notification Helper with Instant Interactive Dismissal & Auto-Remove
 function showToast(message, type = "success") {
   const container = document.getElementById("toast-holder");
   if (!container) return;
-  
+
+  const msgText = String(message || "").trim();
+  if (!msgText) return;
+
+  // 1. Remove duplicate toasts with the exact same text immediately
+  container.querySelectorAll(".toast").forEach(existing => {
+    const textSpan = existing.querySelector(".toast-text");
+    if (textSpan && textSpan.textContent.trim() === msgText) {
+      existing.remove();
+    }
+  });
+
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  
+  toast.setAttribute("role", "alert");
+  toast.title = "Klik untuk menutup peringatan";
+
   let icon = "fa-check-circle";
   if (type === "warning") icon = "fa-exclamation-triangle";
   if (type === "danger") icon = "fa-exclamation-circle";
-  
+
   toast.innerHTML = `
-    <i class="fas ${icon}"></i>
-    <span>${message}</span>
+    <div style="display: flex; align-items: center; gap: 10px; flex: 1; pointer-events: none;">
+      <i class="fas ${icon}" style="font-size: 1.15rem; flex-shrink: 0;"></i>
+      <span class="toast-text" style="font-size: 0.88rem; line-height: 1.4; font-weight: 600;">${msgText}</span>
+    </div>
+    <button type="button" class="toast-close-btn" aria-label="Tutup" title="Tutup peringatan">
+      <i class="fas fa-times"></i>
+    </button>
   `;
-  
-  container.appendChild(toast);
-  
-  // Remove toast after 4s
-  setTimeout(() => {
-    toast.style.animation = "slideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) reverse";
+
+  let isDismissed = false;
+  const dismissToast = () => {
+    if (isDismissed) return;
+    isDismissed = true;
+    toast.style.transition = "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(50px) scale(0.95)";
     setTimeout(() => {
-      toast.remove();
-    }, 300);
-  }, 4000);
+      try { toast.remove(); } catch (_) {}
+    }, 250);
+  };
+
+  // Close on button click
+  const closeBtn = toast.querySelector(".toast-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dismissToast();
+    });
+  }
+
+  // Also close if user taps/clicks anywhere on the toast
+  toast.addEventListener("click", () => {
+    dismissToast();
+  });
+
+  container.appendChild(toast);
+
+  // Auto-dismiss after 3.8 seconds
+  setTimeout(() => {
+    dismissToast();
+  }, 3800);
+}
+
+function clearAllToasts() {
+  const container = document.getElementById("toast-holder");
+  if (container) {
+    container.innerHTML = "";
+  }
 }
 
 window.showToast = showToast;
+window.clearAllToasts = clearAllToasts;
 window.openModal = openModal;
 window.closeAllModals = closeAllModals;
