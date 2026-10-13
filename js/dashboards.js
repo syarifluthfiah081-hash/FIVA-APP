@@ -8,80 +8,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Login Form Submission
   const loginForm = document.getElementById("form-login");
   if (loginForm) {
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = (document.getElementById("login-email").value || "").trim();
-      const pass = (document.getElementById("login-password").value || "").trim();
-
-      const eNorm = email.toLowerCase();
-      const pNorm = pass.toLowerCase();
-      const isTeacher = (
-        eNorm.includes("syarif") ||
-        eNorm.includes("guru") ||
-        eNorm.includes("hidayat") ||
-        eNorm.includes("belajar.id") ||
-        eNorm.includes("hidayasmapat") ||
-        pNorm === "syarif121220" ||
-        pNorm === "121220"
-      );
-
-      if (isTeacher) {
-        const teacherUser = {
-          id: "usr_guru_syarif",
-          email: "syarifhidayatullah64@guru.sma.belajar.id",
-          name: "Syarif Hidayatullah",
-          role: "guru",
-          nis: null,
-          classId: null
-        };
-        localStorage.setItem("vlab_active_session", JSON.stringify(teacherUser));
-        if (window.auth) window.auth.currentUser = teacherUser;
-        if (window.closeAllModals) window.closeAllModals();
-        else {
-          const m = document.getElementById("login-modal");
-          if (m) m.classList.remove("active");
-        }
-        window.showToast("Selamat datang kembali, Pak Syarif Hidayatullah!");
-        if (window.updateHeaderUserBadge) window.updateHeaderUserBadge();
-        window.location.hash = "#dashboard";
-        if (typeof handleRouting === "function") handleRouting();
-        window.dispatchEvent(new Event("authChange"));
-        return;
-      }
-      
-      const res = await window.auth.login(email, pass);
-      if (res.success) {
-        if (window.closeAllModals) window.closeAllModals();
-        else {
-          const m = document.getElementById("login-modal");
-          if (m) m.classList.remove("active");
-        }
-        window.showToast(`Selamat datang kembali, ${res.user.name}!`);
-        // Update top header user indicator
-        updateHeaderUserBadge();
-        // If student, sync Quest & Lab profile
-        if (res.user.role === "siswa") {
-          if (window.FIVIAStudent && typeof window.FIVIAStudent.saveStudentProfile === "function") {
-            window.FIVIAStudent.saveStudentProfile({
-              name: res.user.name,
-              nis: res.user.nis,
-              studentCode: res.user.studentCode || ('FIVIA-' + res.user.nis),
-              className: res.user.classId
-            });
-          }
-          if (window.FIVIAStudentSession && typeof window.FIVIAStudentSession.startStudentSession === "function") {
-            window.FIVIAStudentSession.startStudentSession(res.user.name, res.user.classId, res.user.studentCode || res.user.nis);
-          }
-        }
-        // Redirect to dashboard
-        if (window.location.hash === "#dashboard") {
-          if (typeof handleRouting === "function") handleRouting();
-          else window.dispatchEvent(new Event("hashchange"));
-        } else {
-          window.location.hash = "#dashboard";
-        }
-      } else {
-        window.showToast(res.message, "danger");
+    loginForm.addEventListener("submit", (e) => {
+      if (typeof window.handleFiviaFormLogin === "function") {
+        return window.handleFiviaFormLogin(e);
       }
     });
   }
@@ -2616,6 +2545,16 @@ function renderTeacherManagement() {
       deleteTeacher(teacherId, teacherName);
     });
   });
+}
+
+function deleteTeacher(teacherId, teacherName) {
+  if (confirm(`Yakin ingin menghapus guru ${teacherName}?`)) {
+    let users = window.db ? window.db.getTable("users") : [];
+    users = users.filter(u => u.id !== teacherId);
+    if (window.db) window.db.saveTable("users", users);
+    if (window.showToast) window.showToast(`Guru ${teacherName} berhasil dihapus.`);
+    renderTeacherManagement();
+  }
 }
 
 // ==========================================

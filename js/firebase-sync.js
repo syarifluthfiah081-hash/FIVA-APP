@@ -521,6 +521,21 @@ function exportServerDatabaseJSON() {
   if (window.showToast) window.showToast("Database Server Guru berhasil diunduh!", "success");
 }
 
+/**
+ * Hapus dokumen dari Firestore saat dihapus di lokal
+ */
+async function syncLocalDeleteToCloud(collectionName, id) {
+  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) return;
+  const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
+  if (!cloudCollection || !id) return;
+  try {
+    await window.FIVIA_FIREBASE.db.collection(cloudCollection).doc(String(id)).delete();
+    console.log(`[Firebase Sync] Terhapus dari Firestore: ${cloudCollection}/${id}`);
+  } catch (err) {
+    console.warn(`[Firebase Sync] Gagal menghapus dari cloud:`, err);
+  }
+}
+
 // Export to window
 window.initFirebaseSync = initFirebaseSync;
 window.syncLocalChangeToCloud = syncLocalChangeToCloud;
