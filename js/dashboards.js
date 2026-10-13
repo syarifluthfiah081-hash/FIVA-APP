@@ -72,7 +72,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search-student");
   const classFilter = document.getElementById("filter-class");
   if (searchInput) searchInput.addEventListener("input", renderClassManagement);
-  if (classFilter) classFilter.addEventListener("change", renderClassManagement);
+  if (classFilter) {
+    classFilter.addEventListener("change", renderClassManagement);
+    const ensureOptions = () => {
+      if (classFilter.options.length <= 1 && typeof updateAllClassDropdowns === 'function') {
+        updateAllClassDropdowns();
+      }
+    };
+    classFilter.addEventListener("focus", ensureOptions);
+    classFilter.addEventListener("mousedown", ensureOptions);
+    classFilter.addEventListener("click", ensureOptions);
+  }
 
   // Teacher reports class filter
   const reportClassFilter = document.getElementById("report-class-select");
@@ -2525,7 +2535,15 @@ function getAvailableClassrooms() {
 window.getAvailableClassrooms = getAvailableClassrooms;
 
 function updateAllClassDropdowns() {
-  const classes = getAvailableClassrooms();
+  let classes = (typeof getAvailableClassrooms === 'function') ? getAvailableClassrooms() : [];
+  if (!Array.isArray(classes) || classes.length === 0) {
+    classes = [
+      { id: "cls_x1", name: "Kelas X-1" },
+      { id: "cls_x2", name: "Kelas X-2" },
+      { id: "cls_xi1", name: "Kelas XI IPA-1" },
+      { id: "cls_xi2", name: "Kelas XI IPA-2" }
+    ];
+  }
 
   // 1. Filter Class in Manajemen Kelas
   const filterSelect = document.getElementById("filter-class");
@@ -2981,6 +2999,11 @@ window.deleteSelectedClassroom = deleteSelectedClassroom;
 window.deleteClassScoresPrompt = deleteClassScoresPrompt;
 window.deleteStudentScores = deleteStudentScores;
 window.updateAllClassDropdowns = updateAllClassDropdowns;
+
+// Immediate execution of class dropdown population
+try {
+  updateAllClassDropdowns();
+} catch (_) {}
 
 // ==========================================
 // LKPD IMPORT, SHARING & MANUAL GRADING HELPERS
