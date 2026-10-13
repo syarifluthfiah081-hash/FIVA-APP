@@ -7086,15 +7086,20 @@ function submitRedesignedLKPD() {
     results: measState.results
   };
 
+  const subId = `sub_${currentUser.id}_2`;
   const submission = {
+    id: subId,
     studentId: currentUser.id,
     labId: 2,
-    timestamp: Date.now(),
+    timestamp: new Date().toISOString(),
     answers: submissionAnswers,
     status: "submitted"
   };
 
   const success = window.db.submitLKPD(submission);
+  if (window.syncLocalChangeToCloud) {
+    window.syncLocalChangeToCloud("submissions", submission);
+  }
   if (success) {
     if (window.showToast) window.showToast("Laporan LKPD Digital berhasil terkirim ke Guru!", "success");
     // Go back to dashboard after brief delay

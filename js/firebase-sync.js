@@ -69,14 +69,13 @@ async function initFirebaseSync() {
     }
   });
 
-  // 1. Pastikan akun guru Pak Syarif Hidayatullah dan status Server terdaftar di Firebase
-  await ensureTeacherRegisteredInFirebase();
+  // 1. Fetch LKPD submissions immediately without blocking on other collections
+  fetchLKPDSubmissionsFromCloud(true).catch(() => {});
 
-  // 2. Fetch full roster from cloud to ensure local cache is completely up to date
-  await fetchRosterFromCloud();
-
-  // 3. Push local items that might not yet exist on Firestore (backfill)
-  await backfillLocalToCloud();
+  // 2. Background roster & teacher registration
+  ensureTeacherRegisteredInFirebase().catch(() => {});
+  fetchRosterFromCloud().catch(() => {});
+  backfillLocalToCloud().catch(() => {});
 }
 
 /**
@@ -110,7 +109,7 @@ function handleCloudRecordUpdate(localCollection, id, data) {
       localList.push(mergedItem);
     }
 
-    db.saveTable(tableName, localList);
+    db.saveTable(tableName, localList, true);
   }
 
   // Trigger UI refresh if currently on dashboard, class management, or LKPD
@@ -304,37 +303,44 @@ async function writeDocToFirestoreREST(collectionName, docId, data) {
 }
 
 /**
- * Sync a single local modification (insert/update) to Firestore (SDK + REST Fallback)
+ * Sync a single local modification (insert/update) to Firestore (REST first + SDK)
  */
 async function syncLocalChangeToCloud(collectionName, item) {
   const cloudCollection = FIRESTORE_COLLECTIONS[collectionName];
-  if (!cloudCollection || !item || !item.id) return;
+  if (!cloudCollection || !item || !item.id) return false;
 
   const cleanItem = JSON.parse(JSON.stringify(item));
   cleanItem.lastSyncedAt = new Date().toISOString();
 
   let written = false;
 
-  // 1. Try SDK first
-  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
-    try {
-      const firestore = window.FIVIA_FIREBASE.db;
-      const docRef = firestore.collection(cloudCollection).doc(String(item.id));
-      await docRef.set(cleanItem, { merge: true });
-      written = true;
-      console.log(`[Firebase Sync] Tersimpan ke Firestore: ${cloudCollection}/${item.id}`);
-    } catch (err) {
-      console.warn(`[Firebase Sync] SDK write failed, using REST fallback:`, err);
-    }
-  }
-
-  // 2. Ultra-reliable REST Fallback
-  if (!written) {
+  // 1. Direct REST write: guaranteed fast and persistent in ~200ms
+  try {
     written = await writeDocToFirestoreREST(cloudCollection, String(item.id), cleanItem);
     if (written) {
       console.log(`[Firebase Sync] Tersimpan via REST: ${cloudCollection}/${item.id}`);
     }
+  } catch (errRest) {
+    console.warn(`[Firebase Sync] REST write error:`, errRest);
   }
+
+  // 2. Also notify/update Firestore SDK if active
+  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+    try {
+      const firestore = window.FIVIA_FIREBASE.db;
+      const docRef = firestore.collection(cloudCollection).doc(String(item.id));
+      await Promise.race([
+        docRef.set(cleanItem, { merge: true }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 1200))
+      ]);
+      console.log(`[Firebase Sync] Tersimpan ke Firestore SDK: ${cloudCollection}/${item.id}`);
+      written = true;
+    } catch (_) {
+      // SDK write ignored if REST already completed
+    }
+  }
+
+  return written;
 }
 
 /**
@@ -528,34 +534,19 @@ async function backfillLocalToCloud() {
 }
 
 /**
- * Explicit helper to fetch LKPD submissions on demand
+ * Explicit helper to fetch LKPD submissions automatically or on demand
+ * @param {boolean} silent - If true, do not show toasts (seamless background update)
  */
-async function fetchLKPDSubmissionsFromCloud() {
+let isFetchingLKPD = false;
+async function fetchLKPDSubmissionsFromCloud(silent = false) {
+  if (isFetchingLKPD) return false;
+  isFetchingLKPD = true;
+
   let count = 0;
   let succeeded = false;
 
-  // 1. Try Firestore SDK first if initialized
-  if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
-    try {
-      const firestore = window.FIVIA_FIREBASE.db;
-      const subsSnap = await Promise.race([
-        firestore.collection("vlab_lkpd_submissions").get(),
-        new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 2000))
-      ]);
-      if (subsSnap && !subsSnap.empty) {
-        subsSnap.forEach(doc => {
-          handleCloudRecordUpdate("submissions", doc.id, doc.data());
-          count++;
-        });
-      }
-      succeeded = true;
-    } catch (sdkErr) {
-      console.warn("[Firebase Sync] SDK fetch failed, falling back to direct REST API:", sdkErr);
-    }
-  }
-
-  // 2. Ultra-reliable REST API Fallback (Guaranteed to bypass SDK IndexedDB & WebChannel issues)
-  if (!succeeded) {
+  try {
+    // 1. Ultra-fast direct REST API fetch (bypasses SDK WebChannel handshake)
     try {
       const restDocs = await fetchCollectionFromFirestoreREST("vlab_lkpd_submissions");
       if (restDocs && Array.isArray(restDocs)) {
@@ -568,26 +559,48 @@ async function fetchLKPDSubmissionsFromCloud() {
         succeeded = true;
       }
     } catch (restErr) {
-      console.warn("[Firebase Sync] REST API fallback error:", restErr);
+      console.warn("[Firebase Sync] REST API fetch error:", restErr);
     }
-  }
 
-  if (succeeded) {
-    if (window.showToast) {
-      if (count > 0) {
-        window.showToast(`Berhasil menyinkronkan ${count} lembar kerja LKPD dari Cloud Server!`, "success");
-      } else {
-        window.showToast("Sinkronisasi Cloud berhasil! (Belum ada lembar kerja baru yang dikirim)", "info");
+    // 2. Also check Firestore SDK if REST had error or returned empty
+    if (!succeeded && window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+      try {
+        const firestore = window.FIVIA_FIREBASE.db;
+        const subsSnap = await Promise.race([
+          firestore.collection("vlab_lkpd_submissions").get(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 1500))
+        ]);
+        if (subsSnap && !subsSnap.empty) {
+          subsSnap.forEach(doc => {
+            handleCloudRecordUpdate("submissions", doc.id, doc.data());
+            count++;
+          });
+        }
+        succeeded = true;
+      } catch (sdkErr) {
+        console.warn("[Firebase Sync] SDK fetch fallback error:", sdkErr);
       }
     }
-    if (window.renderTeacherDashboard) window.renderTeacherDashboard();
-    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
-    return true;
-  } else {
-    if (window.showToast) window.showToast("Memuat dari database lokal (Cloud belum dapat diakses).", "info");
-    if (window.renderTeacherDashboard) window.renderTeacherDashboard();
-    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
-    return false;
+
+    if (succeeded) {
+      if (!silent && window.showToast) {
+        if (count > 0) {
+          window.showToast(`Berhasil menyinkronkan ${count} lembar kerja LKPD dari Cloud Server!`, "success");
+        } else {
+          window.showToast("Sinkronisasi Cloud berhasil! (Belum ada lembar kerja baru yang dikirim)", "info");
+        }
+      }
+      if (typeof window.renderTeacherDashboard === 'function') window.renderTeacherDashboard();
+      if (typeof window.renderPeriksaLKPDSection === 'function') window.renderPeriksaLKPDSection();
+      return true;
+    } else {
+      if (!silent && window.showToast) {
+        window.showToast("Memuat dari database lokal (Cloud belum dapat diakses).", "info");
+      }
+      return false;
+    }
+  } finally {
+    isFetchingLKPD = false;
   }
 }
 
@@ -719,3 +732,51 @@ window.fetchCollectionFromFirestoreREST = fetchCollectionFromFirestoreREST;
 window.writeDocToFirestoreREST = writeDocToFirestoreREST;
 window.ensureTeacherRegisteredInFirebase = ensureTeacherRegisteredInFirebase;
 window.exportServerDatabaseJSON = exportServerDatabaseJSON;
+
+// ==========================================
+// AUTOMATIC TEACHER REAL-TIME SYNC ENGINE
+// Automatically fetches new student submissions every 4s without manual intervention
+// ==========================================
+let teacherAutoSyncInterval = null;
+
+function setupTeacherAutoSync() {
+  if (teacherAutoSyncInterval) {
+    clearInterval(teacherAutoSyncInterval);
+    teacherAutoSyncInterval = null;
+  }
+
+  function checkAndSync() {
+    const user = window.auth ? window.auth.getCurrentUser() : null;
+    if (user && (user.role === "guru" || user.role === "admin")) {
+      fetchLKPDSubmissionsFromCloud(true);
+    }
+  }
+
+  // Immediate check
+  checkAndSync();
+
+  // Poll quietly every 4 seconds when teacher is active
+  teacherAutoSyncInterval = setInterval(checkAndSync, 4000);
+}
+
+window.setupTeacherAutoSync = setupTeacherAutoSync;
+
+// Attach triggers for auto-sync
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("DOMContentLoaded", () => {
+    setTimeout(setupTeacherAutoSync, 1000);
+  });
+  window.addEventListener("authChange", () => {
+    setupTeacherAutoSync();
+  });
+  window.addEventListener("focus", () => {
+    const user = window.auth ? window.auth.getCurrentUser() : null;
+    if (user && (user.role === "guru" || user.role === "admin")) {
+      fetchLKPDSubmissionsFromCloud(true);
+    }
+  });
+  window.addEventListener("online", () => {
+    fetchLKPDSubmissionsFromCloud(true);
+  });
+}
+

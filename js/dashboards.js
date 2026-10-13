@@ -1148,6 +1148,9 @@ function bindModulLKPDHandlers(labId, user) {
 
       payload.status = "submitted";
       window.db.submitLKPD(payload);
+      if (window.syncLocalChangeToCloud) {
+        window.syncLocalChangeToCloud("submissions", payload);
+      }
 
       if (window.showToast) {
         window.showToast("Lembar Kerja Siswa (LKPD) berhasil dikirim ke Guru!");
@@ -1440,6 +1443,11 @@ function renderTeacherDashboard() {
   updateHeaderUserBadge();
   const user = window.auth.getCurrentUser();
   if (!user) return;
+  
+  // Background auto-sync latest student submissions from cloud without user intervention
+  if (window.fetchLKPDSubmissionsFromCloud) {
+    window.fetchLKPDSubmissionsFromCloud(true);
+  }
   
   const allDbClasses = (window.db && typeof window.db.getTable === 'function') ? window.db.getTable("classes") || [] : [];
   let teacherClasses = allDbClasses.filter(c => c.teacherId === user.id);
@@ -2693,6 +2701,11 @@ function deleteTeacher(teacherId, teacherName) {
 function renderPeriksaLKPDSection() {
   const user = window.auth ? window.auth.getCurrentUser() : null;
   if (!user || (user.role !== "guru" && user.role !== "admin")) return;
+
+  // Background auto-sync latest student submissions from cloud without user intervention
+  if (window.fetchLKPDSubmissionsFromCloud) {
+    window.fetchLKPDSubmissionsFromCloud(true);
+  }
 
   const rawSubmissions = (window.db && typeof window.db.getPendingSubmissions === 'function') 
     ? window.db.getPendingSubmissions(user.id) || [] 

@@ -523,13 +523,30 @@ function bindLKPDAutosave(labId) {
   });
 }
 
+let lkpdCloudAutosaveTimer = null;
+
 function triggerLKPDAutosave() {
   const user = window.auth.getCurrentUser();
-  if (!user) return;
+  if (!user || !activeLKPD) return;
 
   const lkpdData = compileLKPDData();
   const autosaveKey = `vlab_autosave_${user.id}_lab_${activeLKPD.labId}`;
   localStorage.setItem(autosaveKey, JSON.stringify(lkpdData));
+
+  // Debounced auto-sync draft to cloud so teacher sees progress across devices
+  clearTimeout(lkpdCloudAutosaveTimer);
+  lkpdCloudAutosaveTimer = setTimeout(() => {
+    if (lkpdData && (lkpdData.hypothesis || lkpdData.conclusion || (lkpdData.observations && lkpdData.observations.length > 0))) {
+      const draftSub = {
+        ...lkpdData,
+        id: `sub_${user.id}_${activeLKPD.labId}`,
+        status: "draft"
+      };
+      if (window.syncLocalChangeToCloud) {
+        window.syncLocalChangeToCloud("submissions", draftSub);
+      }
+    }
+  }, 2500);
 }
 
 function compileLKPDData() {
@@ -583,8 +600,15 @@ function submitLKPDAnswers(labId) {
     return;
   }
 
-  // Submit to Server DB
+  clearTimeout(lkpdCloudAutosaveTimer);
+  lkpdData.id = `sub_${user.id}_${labId}`;
+  lkpdData.status = "pending";
+
+  // Submit to Server DB & Push directly to Cloud immediately
   window.db.submitLKPD(lkpdData);
+  if (window.syncLocalChangeToCloud) {
+    window.syncLocalChangeToCloud("submissions", lkpdData);
+  }
   
   // Clear autosave cache
   localStorage.removeItem(`vlab_autosave_${user.id}_lab_${labId}`);

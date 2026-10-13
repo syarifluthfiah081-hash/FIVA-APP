@@ -810,9 +810,11 @@ class LocalDatabase {
     this.saveTable(tableName, data);
   }
 
-  saveTable(tableName, data) {
+  saveTable(tableName, data, skipCloudSync = false) {
     const key = DB_PREFIX + tableName;
     localStorage.setItem(key, JSON.stringify(data));
+
+    if (skipCloudSync) return;
 
     // Asynchronously trigger cloud sync if connected
     if (window.syncLocalChangeToCloud && Array.isArray(data)) {
@@ -1016,19 +1018,22 @@ class LocalDatabase {
       (String(s.studentId) === sId && String(s.labId) === labId)
     );
 
+    let finalSubmission = { ...submission };
     if (existingIdx !== -1) {
       submissions[existingIdx] = { 
         ...submissions[existingIdx], 
         ...submission, 
         timestamp: new Date().toISOString() 
       };
+      finalSubmission = submissions[existingIdx];
     } else {
       submissions.push(submission);
+      finalSubmission = submission;
     }
 
-    this.saveTable("submissions", submissions);
+    this.saveTable("submissions", submissions, true);
     if (window.syncLocalChangeToCloud) {
-      window.syncLocalChangeToCloud("submissions", submission);
+      window.syncLocalChangeToCloud("submissions", finalSubmission);
     }
     return true;
   }
