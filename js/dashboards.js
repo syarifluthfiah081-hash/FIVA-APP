@@ -2605,6 +2605,19 @@ function renderPeriksaLKPDSection() {
   const elAvg = document.getElementById("periksa-stat-avg");
   if (elAvg) elAvg.textContent = avgScore;
 
+  // Show/Hide Dummy Clear Button if dummy default submissions are present
+  const hasDummy = rawSubmissions.some(s => s.id === "sub_usr_std_7702_2" || s.id === "sub_usr_siswa_pasya_1" || (s.studentName && s.studentName.toUpperCase() === "AHMAD NAUFAL"));
+  const btnClearDummy = document.getElementById("btn-clear-dummy-lkpd");
+  if (btnClearDummy) {
+    btnClearDummy.style.display = hasDummy ? "inline-flex" : "none";
+  }
+
+  // Show/Hide Firestore Permission Alert if Cloud is restricted
+  const permAlert = document.getElementById("firestore-permission-alert");
+  if (permAlert) {
+    permAlert.style.display = (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.permissionDenied) ? "block" : "none";
+  }
+
   // Populate Classes filter dropdown
   const classSelect = document.getElementById("periksa-filter-class");
   if (classSelect) {
@@ -2850,6 +2863,215 @@ window.deleteSelectedClassroom = deleteSelectedClassroom;
 window.deleteClassScoresPrompt = deleteClassScoresPrompt;
 window.deleteStudentScores = deleteStudentScores;
 window.updateAllClassDropdowns = updateAllClassDropdowns;
+
+// ==========================================
+// LKPD IMPORT, SHARING & MANUAL GRADING HELPERS
+// ==========================================
+
+window.openImportLKPDModal = function() {
+  const modal = document.getElementById("import-lkpd-modal");
+  const textarea = document.getElementById("import-lkpd-raw-text");
+  const fileInp = document.getElementById("import-lkpd-file-input");
+  if (textarea) textarea.value = "";
+  if (fileInp) fileInp.value = "";
+  if (modal) modal.classList.add("active");
+};
+
+window.handleImportLKPDSubmit = function(event) {
+  if (event) event.preventDefault();
+  const textarea = document.getElementById("import-lkpd-raw-text");
+  const text = textarea ? textarea.value.trim() : "";
+  if (!text) {
+    if (window.showToast) window.showToast("Silakan tempel teks pesan atau kode jawaban siswa terlebih dahulu.", "warning");
+    return;
+  }
+
+  if (window.db && typeof window.db.importLKPDString === "function") {
+    const res = window.db.importLKPDString(text);
+    if (res.success) {
+      if (window.showToast) window.showToast(`Berhasil mengimpor LKPD dari ${res.submission.studentName}!`, "success");
+      const modal = document.getElementById("import-lkpd-modal");
+      if (modal) modal.classList.remove("active");
+      if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
+      if (window.renderTeacherDashboard) window.renderTeacherDashboard();
+    } else {
+      alert("Gagal mengimpor LKPD:\n" + res.message);
+    }
+  }
+};
+
+window.clearDummyLKPDData = function() {
+  if (confirm("Apakah Anda yakin ingin menghapus data contoh bawaan (AHMAD NAUFAL & Pasya Ramadhan)?\n\nHanya lembar kerja yang benar-benar dikirimkan oleh siswa yang akan tersisa.")) {
+    if (window.db && typeof window.db.clearDummySubmissions === "function") {
+      const removed = window.db.clearDummySubmissions();
+      if (window.showToast) window.showToast(`Berhasil membersihkan ${removed} data contoh bawaan.`, "success");
+      if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
+      if (window.renderTeacherDashboard) window.renderTeacherDashboard();
+    }
+  }
+};
+
+window.openManualGradeModal = function() {
+  const modal = document.getElementById("manual-grade-modal");
+  const select = document.getElementById("manual-grade-select-student");
+  if (select) {
+    select.innerHTML = '<option value="">-- Pilih Siswa dari Data Kelas --</option>';
+    const students = (window.db && typeof window.db.getTable === "function") ? (window.db.getTable("students") || []) : [];
+    let roster = [];
+    try { roster = JSON.parse(localStorage.getItem("fivia_student_roster") || "[]"); } catch(e) {}
+    const map = new Map();
+    students.forEach(s => { if (s && (s.name || s.displayName)) map.set(s.id || s.nis, s); });
+    roster.forEach(r => { if (r && r.name && !map.has(r.id || r.nis || r.studentId)) map.set(r.id || r.nis || r.studentId, r); });
+    
+    Array.from(map.values())
+      .sort((a,b) => (a.name || a.displayName || "").localeCompare(b.name || b.displayName || ""))
+      .forEach(std => {
+        const opt = document.createElement("option");
+        opt.value = std.id || std.studentId || std.nis;
+        opt.textContent = `${std.name || std.displayName} (${std.className || std.classId || 'Kelas X-1'} - NIS: ${std.nis || '-'})`;
+        opt.dataset.name = std.name || std.displayName;
+        opt.dataset.nis = std.nis || "-";
+        opt.dataset.class = std.className || std.classId || "Kelas X-1";
+        select.appendChild(opt);
+      });
+  }
+  const nameInp = document.getElementById("manual-grade-student-name");
+  if (nameInp) nameInp.value = "";
+  const classInp = document.getElementById("manual-grade-class-name");
+  if (classInp) classInp.value = "Kelas X-1";
+  const scoreInp = document.getElementById("manual-grade-score-val");
+  if (scoreInp) scoreInp.value = "";
+  const feedInp = document.getElementById("manual-grade-feedback-val");
+  if (feedInp) feedInp.value = "";
+
+  if (modal) modal.classList.add("active");
+};
+
+window.handleManualStudentChange = function(studentId) {
+  const select = document.getElementById("manual-grade-select-student");
+  if (!select) return;
+  const opt = select.selectedOptions[0];
+  if (opt && opt.dataset.name) {
+    const nameInp = document.getElementById("manual-grade-student-name");
+    const classInp = document.getElementById("manual-grade-class-name");
+    if (nameInp) nameInp.value = opt.dataset.name;
+    if (classInp) classInp.value = opt.dataset.class || "Kelas X-1";
+  }
+};
+
+window.handleManualGradeSubmit = function(event) {
+  if (event) event.preventDefault();
+  const select = document.getElementById("manual-grade-select-student");
+  const opt = select ? select.selectedOptions[0] : null;
+  const name = document.getElementById("manual-grade-student-name")?.value.trim();
+  const className = document.getElementById("manual-grade-class-name")?.value.trim() || "Kelas X-1";
+  const labId = parseInt(document.getElementById("manual-grade-lab-select")?.value) || 2;
+  const score = parseInt(document.getElementById("manual-grade-score-val")?.value, 10);
+  const feedback = document.getElementById("manual-grade-feedback-val")?.value.trim() || "";
+
+  if (!name) {
+    alert("Harap isi nama siswa.");
+    return;
+  }
+  if (isNaN(score) || score < 0 || score > 100) {
+    alert("Nilai harus berupa angka antara 0 dan 100.");
+    return;
+  }
+
+  const sId = (opt && opt.value) ? opt.value : ("std_man_" + Math.random().toString(36).substr(2, 7));
+  const sNis = (opt && opt.dataset.nis) ? opt.dataset.nis : "-";
+
+  const newSub = {
+    id: `sub_${sId}_${labId}`,
+    studentId: sId,
+    studentName: name,
+    studentNis: sNis,
+    className: className,
+    labId: labId,
+    hypothesis: "Penilaian mandiri guru.",
+    conclusion: "Penilaian praktikum terverifikasi.",
+    observations: [],
+    answers: [],
+    score: score,
+    feedback: feedback || "Penilaian mandiri guru.",
+    status: "graded",
+    timestamp: new Date().toISOString()
+  };
+
+  if (window.db && typeof window.db.submitLKPD === "function") {
+    window.db.submitLKPD(newSub);
+    if (window.showToast) window.showToast(`Berhasil menyimpan penilaian untuk ${name} (Nilai: ${score})!`, "success");
+    const modal = document.getElementById("manual-grade-modal");
+    if (modal) modal.classList.remove("active");
+    if (window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection();
+    if (window.renderTeacherDashboard) window.renderTeacherDashboard();
+  }
+};
+
+window.shareModulLKPD = function(labId) {
+  if (typeof window.shareCurrentLKPD === "function") {
+    window.shareCurrentLKPD(labId);
+  }
+};
+
+window.openFirebaseRulesModal = function() {
+  const modal = document.getElementById("firebase-rules-guide-modal");
+  if (modal) modal.classList.add("active");
+};
+
+// Bind file import listener on startup
+document.addEventListener("DOMContentLoaded", () => {
+  const fileInp = document.getElementById("import-lkpd-file-input");
+  if (fileInp) {
+    fileInp.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (re) => {
+          const area = document.getElementById("import-lkpd-raw-text");
+          if (area) area.value = re.target.result;
+        };
+        reader.readAsText(file);
+      }
+    });
+  }
+
+  // Bind Share Modal Action Buttons
+  document.getElementById("btn-do-share-wa")?.addEventListener("click", () => {
+    if (window.activeSharedLKPD && window.activeSharedLKPD.text) {
+      const waUrl = "https://wa.me/?text=" + encodeURIComponent(window.activeSharedLKPD.text);
+      window.open(waUrl, "_blank");
+    }
+  });
+
+  document.getElementById("btn-copy-lkpd-text")?.addEventListener("click", () => {
+    if (window.activeSharedLKPD && window.activeSharedLKPD.text) {
+      navigator.clipboard.writeText(window.activeSharedLKPD.text).then(() => {
+        if (window.showToast) window.showToast("Teks lengkap LKPD berhasil disalin ke clipboard!", "success");
+      });
+    }
+  });
+
+  document.getElementById("btn-copy-lkpd-code")?.addEventListener("click", () => {
+    if (window.activeSharedLKPD && window.activeSharedLKPD.code) {
+      navigator.clipboard.writeText(window.activeSharedLKPD.code).then(() => {
+        if (window.showToast) window.showToast("Kode ringkas LKPD berhasil disalin!", "success");
+      });
+    }
+  });
+
+  document.getElementById("btn-download-lkpd-json")?.addEventListener("click", () => {
+    if (window.activeSharedLKPD && window.activeSharedLKPD.json) {
+      const blob = new Blob([window.activeSharedLKPD.json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lkpd_${(window.activeSharedLKPD.studentName || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '_')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  });
+});
 
 // 1-Click Cloud Roster Synchronization for Teachers (with fast timeout protection)
 window.handleSyncRosterCloudClick = async function() {

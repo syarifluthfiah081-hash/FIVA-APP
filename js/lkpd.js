@@ -581,12 +581,120 @@ function submitLKPDAnswers(labId) {
   // Clear autosave cache
   localStorage.removeItem(`vlab_autosave_${user.id}_lab_${labId}`);
 
-  window.showToast("Lembar Kerja Siswa (LKPD) berhasil dikirim ke dashboard Guru!");
+  window.showToast("Lembar Kerja Siswa (LKPD) berhasil disimpan dan dikirim!");
   
-  // Redirect to dashboard
-  setTimeout(() => {
-    window.location.hash = "#dashboard";
-  }, 1000);
+  // Prompt option to share via WhatsApp or return
+  if (confirm("Lembar Kerja Siswa (LKPD) berhasil disimpan!\n\nApakah Anda ingin membagikan salinan jawaban ke Guru via WhatsApp atau menyalin kodenya sekarang?")) {
+    window.shareCurrentLKPD(labId);
+  } else {
+    setTimeout(() => {
+      window.location.hash = "#dashboard";
+    }, 800);
+  }
+}
+
+function shareCurrentLKPD(labId) {
+  const user = window.auth ? window.auth.getCurrentUser() : null;
+  const lkpdData = (typeof compileLKPDData === "function") ? compileLKPDData() : {};
+  const currentLabId = labId || (activeLKPD ? activeLKPD.labId : 2);
+
+  const studentName = user ? (user.displayName || user.name || "Siswa") : "Siswa";
+  const studentNis = user ? (user.nis || "-") : "-";
+  const studentClass = user ? (user.className || user.classId || "Kelas X-1") : "Kelas X-1";
+
+  const labTitles = {
+    1: "Metode Ilmiah & Keselamatan Kerja Lab",
+    2: "Pengukuran Dasar Fisika (Jangka Sorong & Mikrometer)",
+    3: "Hukum Kekekalan Energi & Skate Park",
+    4: "Energi Terbarukan: Turbin Angin & Sel Surya",
+    5: "Termodinamika & Efek Rumah Kaca Global"
+  };
+  const labTitle = labTitles[currentLabId] || `Laboratorium Fisika #${currentLabId}`;
+
+  // Format Observations
+  let obsText = "";
+  if (lkpdData.observations && lkpdData.observations.length > 0) {
+    lkpdData.observations.forEach((obs, idx) => {
+      const summary = Object.entries(obs).map(([k, v]) => `${k}: ${v}`).join(", ");
+      obsText += `  ${idx + 1}. ${summary}\n`;
+    });
+  } else {
+    obsText = "  (Data terekam otomatis pada simulasi laboratorium)\n";
+  }
+
+  // Format Answers
+  let ansText = "";
+  if (lkpdData.answers && lkpdData.answers.length > 0) {
+    lkpdData.answers.forEach((ans, idx) => {
+      ansText += `  Soal ${idx + 1}: ${ans.answerText || '-'}\n`;
+    });
+  } else {
+    ansText = "  -\n";
+  }
+
+  // Compact payload
+  const fullPayload = {
+    id: `sub_${user ? user.id : 'std'}_${currentLabId}`,
+    studentId: user ? user.id : "std",
+    studentName: studentName,
+    studentNis: studentNis,
+    className: studentClass,
+    labId: currentLabId,
+    labName: labTitle,
+    hypothesis: lkpdData.hypothesis || "-",
+    observations: lkpdData.observations || [],
+    answers: lkpdData.answers || [],
+    conclusion: lkpdData.conclusion || "-",
+    timestamp: new Date().toISOString(),
+    status: "pending"
+  };
+
+  let encodedPayload = "";
+  try {
+    encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(fullPayload))));
+  } catch(e) {
+    encodedPayload = btoa(JSON.stringify(fullPayload));
+  }
+
+  const messageText = 
+`📋 *LEMBAR KERJA PESERTA DIDIK (LKPD) - FIVIA*
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *Nama Siswa:* ${studentName}
+🏷️ *NIS:* ${studentNis} | *Kelas:* ${studentClass}
+🔬 *Eksperimen:* ${labTitle}
+
+💡 *1. HIPOTESIS:*
+${lkpdData.hypothesis || '-'}
+
+📊 *2. DATA PENGAMATAN:*
+${obsText}
+📝 *3. ANALISIS & JAWABAN PERTANYAAN:*
+${ansText}
+🎯 *4. KESIMPULAN:*
+${lkpdData.conclusion || '-'}
+━━━━━━━━━━━━━━━━━━━━━━
+🔐 *KODE FIVIA (UNTUK GURU):*
+FIVIA-LKPD::${encodedPayload}`;
+
+  window.activeSharedLKPD = {
+    text: messageText,
+    code: `FIVIA-LKPD::${encodedPayload}`,
+    json: JSON.stringify(fullPayload, null, 2),
+    studentName: studentName
+  };
+
+  const modal = document.getElementById("share-lkpd-modal");
+  const preview = document.getElementById("share-lkpd-text-preview");
+  if (modal && preview) {
+    preview.value = messageText;
+    modal.classList.add("active");
+  } else {
+    // Fallback if modal not in DOM: copy to clipboard directly
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(messageText);
+      alert("Teks jawaban LKPD berhasil disalin ke clipboard! Silakan kirimkan ke Guru via WhatsApp atau chat.");
+    }
+  }
 }
 
 // Map globals
@@ -595,3 +703,6 @@ window.recordObservationRow = recordObservationRow;
 window.observationsList = observationsList;
 window.renderObservationRows = renderObservationRows;
 window.triggerLKPDAutosave = triggerLKPDAutosave;
+window.compileLKPDData = compileLKPDData;
+window.shareCurrentLKPD = shareCurrentLKPD;
+window.submitLKPDAnswers = submitLKPDAnswers;

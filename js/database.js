@@ -1016,7 +1016,7 @@ class LocalDatabase {
   getPendingSubmissions(teacherId) {
     let submissions = this.getTable("submissions") || [];
 
-    // Auto-detect and merge any LKPD submissions saved from FIVIALabLKPD or local autosaves if not present
+    // 1. Auto-detect and merge any LKPD submissions saved from FIVIALabLKPD if not present
     try {
       const fiviaLkpd = JSON.parse(localStorage.getItem("fivia_lab_lkpd") || "{}");
       Object.keys(fiviaLkpd).forEach(expId => {
@@ -1049,56 +1049,54 @@ class LocalDatabase {
       });
     } catch(e) {}
 
-    // If completely empty (first run or cleared cache), provide sample default submissions so teacher can evaluate
-    if (submissions.length === 0) {
-      submissions = [
-        {
-          id: "sub_usr_std_7702_2",
-          studentId: "usr_std_7702",
-          studentName: "AHMAD NAUFAL",
-          studentNis: "7702",
-          studentCode: "FIVIA-X1-860",
-          className: "Kelas X-1",
-          labId: 2,
-          hypothesis: "Semakin kecil nilai skala terkecil (NST) alat ukur, maka hasil pengukuran akan semakin presisi dan nilai ketidakpastian semakin kecil.",
-          observations: [
-            { "No": 1, "Benda": "Kelereng", "Alat Ukur": "Jangka Sorong", "SU": "15 mm", "SN": "0.4 mm", "Hasil": "15.40 ± 0.05 mm" },
-            { "No": 2, "Benda": "Kawat Tembaga", "Alat Ukur": "Mikrometer Sekrup", "SU": "3.5 mm", "SN": "0.22 mm", "Hasil": "3.720 ± 0.005 mm" }
-          ],
-          answers: [
-            { questionId: "q1", answerText: "Jangka sorong memiliki ketelitian 0.05 mm (atau 0.1 mm), sedangkan mikrometer sekrup memiliki ketelitian 0.01 mm, sehingga mikrometer sekrup jauh lebih presisi untuk mengukur ketebalan kawat." },
-            { questionId: "q2", answerText: "Nilai ketidakpastian mutlak dihitung dari setengah nilai skala terkecil (1/2 x NST) masing-masing alat ukur." },
-            { questionId: "q3", answerText: "Aturan angka penting digunakan untuk menunjukkan tingkat kepastian hasil ukur sesuai batas kemampuan alat ukur yang digunakan." }
-          ],
-          conclusion: "Mikrometer sekrup terbukti lebih presisi untuk mengukur benda berdimensi sangat tipis dibandingkan mistar maupun jangka sorong.",
-          status: "pending",
-          timestamp: new Date(Date.now() - 3600000 * 2).toISOString()
-        },
-        {
-          id: "sub_usr_siswa_pasya_1",
-          studentId: "usr_siswa_pasya",
-          studentName: "Pasya Ramadhan",
-          studentNis: "202401",
-          studentCode: "FIVIA-X1-001",
-          className: "Kelas X-1",
-          labId: 1,
-          hypothesis: "Waktu yang dibutuhkan untuk mencapai titik didih berbanding lurus dengan volume zat cair yang dipanaskan.",
-          observations: [
-            { "No": 1, "Volume (mL)": "50", "Waktu Mendidih (s)": "120", "Suhu Akhir (°C)": "100" },
-            { "No": 2, "Volume (mL)": "100", "Waktu Mendidih (s)": "238", "Suhu Akhir (°C)": "100" }
-          ],
-          answers: [
-            { questionId: "q1", answerText: "Simbol korosif menandakan bahan dapat merusak jaringan hidup atau korosi logam. Tindakan pertama bila terkena adalah membilas segera dengan air mengalir selama 15 menit." },
-            { questionId: "q2", answerText: "Variabel bebas adalah volume air, variabel terikat adalah durasi waktu mendidih, dan variabel kontrol adalah besar nyala api pemanas bunsen." },
-            { questionId: "q3", answerText: "Karena kalor yang dibutuhkan Q = m.c.dT berbanding lurus dengan massa (volume) zat cair, semakin besar volume maka semakin besar kalor yang diserap sehingga waktu lebih lama." }
-          ],
-          conclusion: "Hipotesis terbukti benar. Volume cairan yang lebih besar membutuhkan waktu pemanasan lebih lama untuk mencapai titik didih sesuai asas kalorimetri.",
-          status: "pending",
-          timestamp: new Date(Date.now() - 3600000 * 5).toISOString()
+    // 2. Auto-discover all student autosaves stored on this device (vlab_autosave_*)
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("vlab_autosave_")) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.hypothesis || parsed.conclusion || (parsed.observations && parsed.observations.length > 0) || (parsed.answers && (Array.isArray(parsed.answers) ? parsed.answers.length > 0 : Object.keys(parsed.answers).length > 0)))) {
+              const sId = String(parsed.studentId || key.replace("vlab_autosave_", "").split("_lab_")[0] || "siswa").trim();
+              const lId = parseInt(parsed.labId || (key.includes("_lab_") ? key.split("_lab_")[1] : 1)) || 1;
+              const pseudoId = `sub_${sId}_${lId}`;
+
+              const exists = submissions.some(s => 
+                (String(s.studentId) === sId && parseInt(s.labId) === lId) ||
+                s.id === pseudoId
+              );
+
+              if (!exists) {
+                // Normalize answers
+                let normAnswers = [];
+                if (Array.isArray(parsed.answers)) {
+                  normAnswers = parsed.answers;
+                } else if (parsed.answers && typeof parsed.answers === "object") {
+                  normAnswers = Object.keys(parsed.answers).map(qid => ({
+                    questionId: qid,
+                    answerText: parsed.answers[qid]
+                  }));
+                }
+
+                submissions.push({
+                  id: pseudoId,
+                  studentId: sId,
+                  labId: lId,
+                  hypothesis: parsed.hypothesis || "",
+                  conclusion: parsed.conclusion || "",
+                  observations: parsed.observations || [],
+                  answers: normAnswers,
+                  status: parsed.status || "pending",
+                  timestamp: parsed.updatedAt || parsed.timestamp || new Date().toISOString()
+                });
+              }
+            }
+          } catch(errKey) {}
         }
-      ];
-      this.saveTable("submissions", submissions);
-    }
+      }
+    } catch(e) {}
 
     const students = this.getTable("students") || [];
     const users = this.getTable("users") || [];
@@ -1204,6 +1202,108 @@ class LocalDatabase {
       return true;
     }
     return false;
+  }
+
+  clearDummySubmissions() {
+    let submissions = this.getTable("submissions") || [];
+    const beforeCount = submissions.length;
+    submissions = submissions.filter(s => {
+      if (!s) return false;
+      const id = String(s.id || "");
+      const sName = String(s.studentName || "").toLowerCase().trim();
+      const sId = String(s.studentId || "").toLowerCase().trim();
+      // Identify seed dummy submissions
+      if (id === "sub_usr_std_7702_2" || id === "sub_usr_siswa_pasya_1") return false;
+      if (sName === "ahmad naufal" || (sName === "pasya ramadhan" && (sId === "usr_siswa_pasya" || sId === "202401"))) return false;
+      return true;
+    });
+    this.saveTable("submissions", submissions);
+    return beforeCount - submissions.length;
+  }
+
+  importLKPDString(raw) {
+    if (!raw || typeof raw !== "string") return { success: false, message: "Teks LKPD kosong." };
+    const trimmed = raw.trim();
+    let parsed = null;
+
+    // A. Encoded string: FIVIA-LKPD::<payload>
+    if (trimmed.startsWith("FIVIA-LKPD::")) {
+      const payload = trimmed.substring("FIVIA-LKPD::".length).trim();
+      try {
+        const decoded = decodeURIComponent(escape(atob(payload)));
+        parsed = JSON.parse(decoded);
+      } catch(e) {
+        try {
+          parsed = JSON.parse(atob(payload));
+        } catch(e2) {
+          try { parsed = JSON.parse(payload); } catch(e3) {}
+        }
+      }
+    }
+
+    // B. Direct JSON
+    if (!parsed && trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch(e) {}
+    }
+
+    // C. Intelligent text / WhatsApp parser
+    if (!parsed) {
+      try {
+        const nameMatch = trimmed.match(/(?:Nama|Nama Siswa|Nama Lengkap)\s*[:=]\s*([^\n\r]+)/i);
+        const nisMatch = trimmed.match(/(?:NIS|NISN|Nomor Induk)\s*[:=]\s*([^\n\r]+)/i);
+        const classMatch = trimmed.match(/(?:Kelas|Rombel)\s*[:=]\s*([^\n\r]+)/i);
+        const labMatch = trimmed.match(/(?:Eksperimen|Praktikum|Lab|Judul Lab)\s*[:=]\s*([^\n\r]+)/i);
+        const hypMatch = trimmed.match(/(?:Hipotesis|Dugaan Awal)\s*[:=]\s*([\s\S]*?)(?=(?:Tabel|Pengamatan|Data|Analisis|Pertanyaan|Kesimpulan|$))/i);
+        const concMatch = trimmed.match(/(?:Kesimpulan|Simpulan Akhir)\s*[:=]\s*([\s\S]*?)$/i);
+        const ansMatch = trimmed.match(/(?:Analisis|Jawaban Pertanyaan|Pembahasan)\s*[:=]\s*([\s\S]*?)(?=(?:Kesimpulan|$))/i);
+
+        if (nameMatch || hypMatch || concMatch) {
+          let detectedLabId = 2;
+          if (labMatch) {
+            const labText = labMatch[1].toLowerCase();
+            if (labText.includes("1") || labText.includes("metode") || labText.includes("ilmiah")) detectedLabId = 1;
+            else if (labText.includes("2") || labText.includes("ukur") || labText.includes("sorong") || labText.includes("mikrometer")) detectedLabId = 2;
+            else if (labText.includes("3") || labText.includes("kinetik") || labText.includes("energi") || labText.includes("skate")) detectedLabId = 3;
+            else if (labText.includes("4") || labText.includes("turbin") || labText.includes("surya")) detectedLabId = 4;
+            else if (labText.includes("5") || labText.includes("kaca") || labText.includes("rumah kaca")) detectedLabId = 5;
+          }
+
+          const sName = nameMatch ? nameMatch[1].trim() : "Siswa Praktikum";
+          const sNis = nisMatch ? nisMatch[1].trim() : "-";
+          const sClass = classMatch ? classMatch[1].trim() : "Kelas X-1";
+          const sId = "std_import_" + Math.random().toString(36).substring(2, 8);
+
+          parsed = {
+            id: `sub_${sId}_${detectedLabId}`,
+            studentId: sId,
+            studentName: sName,
+            studentNis: sNis,
+            className: sClass,
+            labId: detectedLabId,
+            hypothesis: hypMatch ? hypMatch[1].trim() : "Data pengamatan dan analisis mandiri siswa",
+            conclusion: concMatch ? concMatch[1].trim() : "-",
+            observations: [],
+            answers: ansMatch ? [{ questionId: "q1", answerText: ansMatch[1].trim() }] : [],
+            status: "pending",
+            timestamp: new Date().toISOString()
+          };
+        }
+      } catch(e) {}
+    }
+
+    if (!parsed) {
+      return { success: false, message: "Format pesan atau kode tidak dikenali. Pastikan teks mencantumkan Nama, Hipotesis, atau Kesimpulan." };
+    }
+
+    // Ensure id & timestamp
+    if (!parsed.id) parsed.id = `sub_${parsed.studentId || 'std'}_${parsed.labId || 1}`;
+    if (!parsed.timestamp) parsed.timestamp = new Date().toISOString();
+    if (!parsed.status) parsed.status = "pending";
+
+    this.submitLKPD(parsed);
+    return { success: true, submission: parsed };
   }
 
   saveQuizScore(record) {

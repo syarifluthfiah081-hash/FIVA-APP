@@ -52,6 +52,11 @@ async function initFirebaseSync() {
         });
       }, (err) => {
         console.warn(`[Firebase Sync] Error pada listener ${cloudCollection}:`, err);
+        if (err && (err.code === "permission-denied" || String(err).includes("permission") || String(err).includes("Missing or insufficient permissions"))) {
+          if (window.FIVIA_FIREBASE) window.FIVIA_FIREBASE.permissionDenied = true;
+          const permAlert = document.getElementById("firestore-permission-alert");
+          if (permAlert) permAlert.style.display = "block";
+        }
       });
 
       syncUnsubscribers.push(unsub);
@@ -408,7 +413,14 @@ async function fetchLKPDSubmissionsFromCloud() {
     return true;
   } catch (err) {
     console.warn("Gagal menyinkronkan LKPD dari Cloud:", err);
-    if (window.showToast) window.showToast("Gagal menarik data dari Cloud: " + err.message, "danger");
+    if (err && (err.code === "permission-denied" || String(err).includes("permission") || String(err).includes("Missing or insufficient permissions"))) {
+      if (window.FIVIA_FIREBASE) window.FIVIA_FIREBASE.permissionDenied = true;
+      const permAlert = document.getElementById("firestore-permission-alert");
+      if (permAlert) permAlert.style.display = "block";
+      if (window.showToast) window.showToast("Aturan Firebase terkunci (Permission Denied). Gunakan tombol 'Impor LKPD' atau buka aturan di Firebase Console.", "warning");
+    } else {
+      if (window.showToast) window.showToast("Gagal menarik data dari Cloud: " + err.message, "danger");
+    }
     return false;
   }
 }

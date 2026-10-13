@@ -123,8 +123,9 @@ window.FIVIALabLKPD = (function() {
           </div>
         </div>
 
-        <div style="display: flex; gap: 14px;">
-          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="flex: 1;" onclick="window.FIVIALabLKPD.saveFromUI()"><i class="fas fa-save"></i> SIMPAN LKPD & DAPATKAN +50 XP</button>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+          <button class="fq-btn fq-btn-cyan fq-btn-lg" style="flex: 1; min-width: 220px;" onclick="window.FIVIALabLKPD.saveFromUI()"><i class="fas fa-save"></i> SIMPAN LKPD & DAPATKAN +50 XP</button>
+          <button class="fq-btn fq-btn-outline fq-btn-lg" style="border-color: #25d366; color: #25d366;" onclick="if(window.shareCurrentLKPD) window.shareCurrentLKPD(); else window.FIVIALabLKPD.shareLKPD();"><i class="fab fa-whatsapp"></i> BAGIKAN KE GURU (WA/SALIN)</button>
           <button class="fq-btn fq-btn-outline fq-btn-lg" onclick="window.location.hash='#quest/virtual-lab'"><i class="fas fa-arrow-left"></i> KEMBALI KE LAB</button>
         </div>
       </div>
@@ -135,22 +136,53 @@ window.FIVIALabLKPD = (function() {
     const currentExp = window.FIVIALabEngine.getCurrentExp();
     if (!currentExp) return;
 
-    const name = document.getElementById('fq-lkpd-name') ? document.getElementById('fq-lkpd-name').value : '';
-    const className = document.getElementById('fq-lkpd-class') ? document.getElementById('fq-lkpd-class').value : '';
-    const date = document.getElementById('fq-lkpd-date') ? document.getElementById('fq-lkpd-date').value : '';
-    const analysis = document.getElementById('fq-lkpd-analysis') ? document.getElementById('fq-lkpd-analysis').value : '';
-    const conclusion = document.getElementById('fq-lkpd-conclusion') ? document.getElementById('fq-lkpd-conclusion').value : '';
+    const name = document.getElementById('fq-lkpd-name') ? document.getElementById('fq-lkpd-name').value.trim() : '';
+    const className = document.getElementById('fq-lkpd-class') ? document.getElementById('fq-lkpd-class').value.trim() : '';
+    const date = document.getElementById('fq-lkpd-date') ? document.getElementById('fq-lkpd-date').value.trim() : '';
+    const analysis = document.getElementById('fq-lkpd-analysis') ? document.getElementById('fq-lkpd-analysis').value.trim() : '';
+    const conclusion = document.getElementById('fq-lkpd-conclusion') ? document.getElementById('fq-lkpd-conclusion').value.trim() : '';
 
-    saveLKPDData(currentExp.id, {
+    const lkpdObj = {
       name: name,
       class: className,
       date: date,
       analysis: analysis,
       conclusion: conclusion
-    });
+    };
+
+    saveLKPDData(currentExp.id, lkpdObj);
+
+    // Also push to central database for Teacher Dashboard & Cloud Sync
+    if (window.db && typeof window.db.submitLKPD === "function") {
+      const student = (window.FIVIAStudent && window.FIVIAStudent.getStudentProfile) ? window.FIVIAStudent.getStudentProfile() : null;
+      const measurements = (window.FIVIALabEngine && window.FIVIALabEngine.getMeasurements) ? window.FIVIALabEngine.getMeasurements() : [];
+      
+      const pseudoId = `sub_${(name || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '')}_${currentExp.id}`;
+      window.db.submitLKPD({
+        id: pseudoId,
+        studentId: (student && student.studentId) ? student.studentId : pseudoId,
+        studentName: name || (student ? student.name : "Siswa Praktikum"),
+        className: className || (student ? student.className : "Kelas X-1"),
+        labId: parseInt(currentExp.id) || 1,
+        hypothesis: "Data pengamatan dan analisis laboratorium virtual",
+        observations: measurements.map((m, idx) => ({
+          no: idx + 1,
+          time: `${Math.round((m.time || 0) * 10) / 10} s`,
+          obj: m.object || `m=${m.mass || '-'}, F=${m.force || '-'}`,
+          hasil: m.acceleration ? `a = ${Math.round(m.acceleration * 100) / 100} m/s²` : m.velocity ? `v = ${Math.round(m.velocity * 100) / 100} m/s` : (m.lengthMm ? `${m.lengthMm} mm` : '-')
+        })),
+        answers: [
+          { questionId: "q1", answerText: analysis || "-" },
+          { questionId: "q2", answerText: conclusion || "-" }
+        ],
+        conclusion: conclusion || "-",
+        status: "pending",
+        timestamp: new Date().toISOString()
+      });
+    }
 
     window.FIVIALabAnalytics.recordLabCompletion(currentExp.id, 50);
-    alert('🎉 LKPD DIGITAL BERHASIL DISIMPAN!\n\n+50 XP ditambahkan ke profil Anda.');
+    alert('🎉 LKPD DIGITAL BERHASIL DISIMPAN!\n\n+50 XP ditambahkan ke profil Anda. Data otomatis dikirim ke Guru.');
   }
 
   return {

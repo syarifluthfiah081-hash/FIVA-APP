@@ -1300,15 +1300,45 @@
             </p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="btn-open-import-lkpd" onclick="window.openImportLKPDModal()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-file-import"></i> Impor / Tempel LKPD
+            </button>
+            <button class="btn btn-secondary" id="btn-open-manual-grade" onclick="window.openManualGradeModal()" style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-plus"></i> Input Nilai Manual
+            </button>
             <button class="btn btn-outline" id="btn-sync-lkpd-cloud" onclick="window.fetchLKPDSubmissionsFromCloud()" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
               <i class="fas fa-cloud-download-alt" style="color: #0284c7;"></i> Tarik dari Cloud
             </button>
             <button class="btn btn-outline" id="btn-refresh-periksa-lkpd" onclick="if(window.renderPeriksaLKPDSection) window.renderPeriksaLKPDSection()" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
               <i class="fas fa-sync-alt"></i> Segarkan Data
             </button>
-            <button class="btn btn-primary" id="btn-export-lkpd-grades" onclick="window.exportLKPDGradesCSV()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-              <i class="fas fa-file-excel"></i> Ekspor Nilai (CSV)
+            <button class="btn btn-outline" id="btn-clear-dummy-lkpd" onclick="window.clearDummyLKPDData()" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 0.82rem; display: none;" title="Hapus Data Contoh Bawaan (Ahmad Naufal & Pasya)">
+              <i class="fas fa-trash-alt"></i> Bersihkan Data Contoh
             </button>
+            <button class="btn btn-primary" id="btn-export-lkpd-grades" onclick="window.exportLKPDGradesCSV()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-file-excel"></i> Ekspor CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Firestore Permission Denied Callout Alert (Shows if Firebase rules block access) -->
+        <div id="firestore-permission-alert" class="glass-panel" style="display: none; background: rgba(245, 158, 11, 0.1); border: 1.5px solid #f59e0b; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #f59e0b;"></i>
+              <div>
+                <div style="font-weight: 700; color: #fbbf24; font-size: 0.95rem;">Sinkronisasi Otomatis Cloud Terkunci (Permission Denied)</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">Siswa di perangkat lain belum dapat mengirim data otomatis karena izin Firestore di Firebase Console terkunci. Anda dapat menempel jawaban manual atau membuka aturan rules.</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-outline" onclick="window.openFirebaseRulesModal()" style="padding: 6px 14px; font-size: 0.82rem; border-color: #f59e0b; color: #fbbf24; font-weight: 700;">
+                <i class="fas fa-key"></i> Buka Panduan Rules (30 Detik)
+              </button>
+              <button type="button" class="btn btn-primary" onclick="window.openImportLKPDModal()" style="padding: 6px 14px; font-size: 0.82rem; background: #3b82f6; border: none;">
+                <i class="fas fa-paste"></i> Tempel Jawaban Siswa
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1417,13 +1447,15 @@
             <div style="width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 50%; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #3b82f6;">
               <i class="fas fa-inbox"></i>
             </div>
-            <h4 style="margin-bottom: 6px; font-weight: 700;">Tidak Ada Data Pengumpulan LKPD yang Cocok</h4>
-            <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
-              Belum ada data pengumpulan LKPD yang sesuai dengan filter di atas, atau siswa belum mengirimkan jawaban lembar kerja.
+            <h4 style="margin-bottom: 6px; font-weight: 700;">Belum Ada LKPD Siswa yang Diterima</h4>
+            <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 20px; font-size: 0.9rem;">
+              Siswa di HP/laptop masing-masing dapat mengirimkan LKPD via WhatsApp atau salin kode. Anda dapat menempel teks jawaban siswa atau menginput nilai secara manual di bawah ini.
             </p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-              <button class="btn btn-outline" onclick="window.fetchLKPDSubmissionsFromCloud()"><i class="fas fa-cloud-download-alt"></i> Cek dari Cloud</button>
-              <button class="btn btn-primary" onclick="window.resetPeriksaLKPDFilters()"><i class="fas fa-undo"></i> Reset Filter</button>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" onclick="window.openImportLKPDModal()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; font-weight: 700;"><i class="fas fa-file-import"></i> Tempel / Impor Jawaban Siswa</button>
+              <button class="btn btn-secondary" onclick="window.openManualGradeModal()"><i class="fas fa-plus"></i> Input Nilai Siswa Manual</button>
+              <button class="btn btn-outline" onclick="window.fetchLKPDSubmissionsFromCloud()"><i class="fas fa-cloud-download-alt"></i> Tarik dari Cloud</button>
+              <button class="btn btn-outline" onclick="window.resetPeriksaLKPDFilters()"><i class="fas fa-undo"></i> Reset Filter</button>
             </div>
           </div>
         </div>
@@ -1736,7 +1768,10 @@
                     <textarea class="lkpd-textarea" id="lkpd-kesimpulan" placeholder="Tuliskan kesimpulan yang Anda peroleh dari praktikum ini..."></textarea>
                   </div>
                   
-                  <button class="btn btn-orange" id="btn-submit-lkpd" style="width: 100%;"><i class="fas fa-paper-plane"></i> Kirim Jawaban LKPD</button>
+                  <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+                    <button class="btn btn-orange" id="btn-submit-lkpd" style="flex: 1; min-width: 180px;"><i class="fas fa-paper-plane"></i> Kirim Jawaban LKPD</button>
+                    <button type="button" class="btn btn-outline" id="btn-share-lkpd" onclick="if(window.shareCurrentLKPD) window.shareCurrentLKPD()" style="display: flex; align-items: center; gap: 6px; border-color: #25d366; color: #25d366; font-weight: 700;"><i class="fab fa-whatsapp"></i> Bagikan ke Guru (WA/Salin)</button>
+                  </div>
                 </div>
               </div>
               
@@ -2465,6 +2500,207 @@
     </div>
   </div>
 
+  <!-- MODAL: BAGIKAN LKPD SISWA KE GURU -->
+  <div class="modal-overlay" id="share-lkpd-modal">
+    <div class="modal-container" style="max-width: 580px; width: 92%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(37, 211, 102, 0.15); color: #25d366; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            <i class="fab fa-whatsapp"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; margin: 0; font-family: 'Outfit', sans-serif;">Bagikan Jawaban LKPD ke Guru</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">Kirim jawaban Anda langsung ke WhatsApp Guru atau salin teks jawaban.</span>
+          </div>
+        </div>
+        <button class="modal-close" style="font-size: 1.2rem; cursor: pointer; background: transparent; border: none; color: var(--text-secondary);"><i class="fas fa-times"></i></button>
+      </div>
+
+      <!-- Preview Box -->
+      <div style="margin-bottom: 16px;">
+        <label for="share-lkpd-text-preview" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 6px;">Pratinjau Teks Jawaban LKPD:</label>
+        <textarea id="share-lkpd-text-preview" class="form-control" rows="8" readonly style="font-family: monospace; font-size: 0.82rem; line-height: 1.4; background: rgba(0,0,0,0.2);"></textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="btn btn-primary" id="btn-do-share-wa" style="background: #25d366; border: none; color: #fff; font-weight: 700; padding: 12px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> Kirim via WhatsApp ke Guru
+        </button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-copy-lkpd-text" style="flex: 1; padding: 10px; font-size: 0.85rem;">
+            <i class="fas fa-copy"></i> Salin Teks Lengkap
+          </button>
+          <button type="button" class="btn btn-outline" id="btn-copy-lkpd-code" style="flex: 1; padding: 10px; font-size: 0.85rem;">
+            <i class="fas fa-code"></i> Salin Kode Ringkas
+          </button>
+          <button type="button" class="btn btn-outline" id="btn-download-lkpd-json" style="padding: 10px 14px; font-size: 0.85rem;" title="Unduh Berkas JSON">
+            <i class="fas fa-download"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TEMPEL / IMPOR JAWABAN LKPD SISWA (GURU) -->
+  <div class="modal-overlay" id="import-lkpd-modal">
+    <div class="modal-container" style="max-width: 650px; width: 94%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(59, 130, 246, 0.15); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            <i class="fas fa-file-import"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; margin: 0; font-family: 'Outfit', sans-serif;">Impor / Tempel Jawaban LKPD Siswa</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">Masukkan teks yang dikirim siswa melalui WhatsApp, salinan kode, atau berkas JSON.</span>
+          </div>
+        </div>
+        <button class="modal-close" style="font-size: 1.2rem; cursor: pointer; background: transparent; border: none; color: var(--text-secondary);"><i class="fas fa-times"></i></button>
+      </div>
+
+      <form id="form-import-lkpd" onsubmit="window.handleImportLKPDSubmit(event)">
+        <div style="margin-bottom: 14px;">
+          <label for="import-lkpd-raw-text" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 6px;">
+            <i class="fas fa-paste" style="color: #3b82f6;"></i> Tempel Teks Pesan WhatsApp / Kode Jawaban Siswa:
+          </label>
+          <textarea id="import-lkpd-raw-text" class="form-control" rows="8" placeholder="Tempelkan teks pesan dari siswa di sini... Contoh:&#10;Nama: Budi Santoso&#10;Kelas: X-1&#10;Eksperimen: Lab 2&#10;Hipotesis: ...&#10;Atau kode singkat seperti FIVIA-LKPD::ey..." style="font-size: 0.85rem; line-height: 1.4; border-radius: 8px; font-family: monospace;"></textarea>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px dashed var(--glass-border); border-radius: 8px;">
+          <span style="font-size: 0.82rem; color: var(--text-secondary);"><i class="fas fa-file-upload"></i> Atau unggah berkas LKPD (.json / .txt):</span>
+          <input type="file" id="import-lkpd-file-input" accept=".json,.txt" style="font-size: 0.8rem; color: var(--text-secondary);">
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; font-weight: 700; padding: 12px; font-size: 0.95rem;">
+            <i class="fas fa-check-circle"></i> Proses &amp; Masukkan ke Penilaian
+          </button>
+          <button type="button" class="btn btn-outline modal-close" style="padding: 12px 18px;">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INPUT PENILAIAN SISWA MANUAL (GURU) -->
+  <div class="modal-overlay" id="manual-grade-modal">
+    <div class="modal-container" style="max-width: 600px; width: 94%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            <i class="fas fa-plus"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; margin: 0; font-family: 'Outfit', sans-serif;">Input Penilaian Siswa Manual</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">Beri nilai langsung untuk siswa yang mengumpulkan tugas secara mandiri atau luring.</span>
+          </div>
+        </div>
+        <button class="modal-close" style="font-size: 1.2rem; cursor: pointer; background: transparent; border: none; color: var(--text-secondary);"><i class="fas fa-times"></i></button>
+      </div>
+
+      <form id="form-manual-grade" onsubmit="window.handleManualGradeSubmit(event)">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="manual-grade-select-student" style="font-size: 0.88rem; font-weight: 700;">Pilih Siswa Terdaftar:</label>
+          <select id="manual-grade-select-student" class="form-control" style="font-size: 0.88rem;" onchange="window.handleManualStudentChange(this.value)">
+            <option value="">-- Pilih Siswa dari Data Kelas --</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div>
+            <label for="manual-grade-student-name" style="font-size: 0.82rem; font-weight: 600;">Nama Siswa: <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="manual-grade-student-name" class="form-control" required placeholder="Contoh: Budi Santoso">
+          </div>
+          <div>
+            <label for="manual-grade-class-name" style="font-size: 0.82rem; font-weight: 600;">Kelas: <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="manual-grade-class-name" class="form-control" required placeholder="Contoh: Kelas X-1">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div>
+            <label for="manual-grade-lab-select" style="font-size: 0.82rem; font-weight: 600;">Eksperimen / Lab: <span style="color: #ef4444;">*</span></label>
+            <select id="manual-grade-lab-select" class="form-control" required>
+              <option value="1">Lab 1: Metode Ilmiah & Keselamatan Lab</option>
+              <option value="2" selected>Lab 2: Pengukuran Dasar Fisika</option>
+              <option value="3">Lab 3: Energi Kinetik & Skate Park</option>
+              <option value="4">Lab 4: Turbin Angin & Sel Surya</option>
+              <option value="5">Lab 5: Efek Rumah Kaca & Termodinamika</option>
+            </select>
+          </div>
+          <div>
+            <label for="manual-grade-score-val" style="font-size: 0.82rem; font-weight: 600;">Nilai (0 - 100): <span style="color: #ef4444;">*</span></label>
+            <input type="number" id="manual-grade-score-val" class="form-control" min="0" max="100" required placeholder="Contoh: 88" style="font-weight: 800; font-size: 1.1rem; text-align: center;">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label for="manual-grade-feedback-val" style="font-size: 0.85rem; font-weight: 600;">Catatan / Umpan Balik Guru:</label>
+          <textarea id="manual-grade-feedback-val" class="form-control" rows="3" placeholder="Tuliskan catatan evaluasi atau masukan bimbingan..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; padding: 12px; font-size: 0.95rem;">
+            <i class="fas fa-save"></i> Simpan Penilaian Siswa
+          </button>
+          <button type="button" class="btn btn-outline modal-close" style="padding: 12px 18px;">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PANDUAN AKTIFKAN FIRESTORE RULES -->
+  <div class="modal-overlay" id="firebase-rules-guide-modal">
+    <div class="modal-container" style="max-width: 640px; width: 94%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; margin: 0; font-family: 'Outfit', sans-serif;">Panduan Buka Izin Cloud Firestore</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">Aktifkan aturan agar siswa dan guru dapat tersinkronisasi otomatis antar HP/Laptop.</span>
+          </div>
+        </div>
+        <button class="modal-close" style="font-size: 1.2rem; cursor: pointer; background: transparent; border: none; color: var(--text-secondary);"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); margin-bottom: 16px;">
+        <p style="margin-bottom: 12px;">
+          Jika status sinkronisasi menampilkan <strong>Permission Denied</strong>, itu karena Firebase Firestore secara default mengunci database. Ikuti 3 langkah cepat ini (hanya 30 detik):
+        </p>
+        
+        <ol style="padding-left: 20px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+          <li>Buka Firebase Console: <a href="https://console.firebase.google.com/project/fiva-app/firestore/rules" target="_blank" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">https://console.firebase.google.com/project/fiva-app/firestore/rules</a></li>
+          <li>Pilih tab <strong>Rules</strong> (Aturan).</li>
+          <li>Ganti seluruh teks aturan dengan kode di bawah ini lalu klik <strong>Publish</strong>:</li>
+        </ol>
+
+        <div style="position: relative; background: #030712; border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+          <button type="button" class="btn btn-outline" onclick="navigator.clipboard.writeText('rules_version = \'2\';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}'); alert('Aturan Firestore berhasil disalin!');" style="position: absolute; right: 10px; top: 10px; padding: 3px 8px; font-size: 0.75rem;">
+            <i class="fas fa-copy"></i> Salin Aturan
+          </button>
+          <pre style="margin: 0; font-family: monospace; font-size: 0.82rem; color: #34d399; overflow-x: auto;">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+        </div>
+        
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+          💡 <em>Catatan: Setelah mengklik Publish di Firebase Console, seluruh siswa dan guru akan langsung terhubung secara otomatis tanpa perlu repot!</em>
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-primary modal-close" style="padding: 10px 20px;">Mengerti</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SHEETJS (XLSX) FOR EXCEL IMPORT -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -2474,19 +2710,19 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <!-- FIREBASE INTEGRATION SCRIPTS -->
-  <script src="js/firebase-config.js"></script>
-  <script src="js/firebase-sync.js"></script>
+  <script src="js/firebase-config.js?v=1.2.5"></script>
+  <script src="js/firebase-sync.js?v=1.2.5"></script>
 
   <!-- APPLICATION CORE SCRIPTS -->
-  <script src="js/database.js?v=1.2.3"></script>
-  <script src="js/auth.js?v=1.2.3"></script>
-  <script src="js/app.js?v=1.2.3"></script>
-  <script src="js/dashboards.js?v=1.2.3"></script>
-  <script src="js/labs.js?v=1.2.3"></script>
-  <script src="js/lkpd.js?v=1.2.3"></script>
-  <script src="js/quiz.js?v=1.2.3"></script>
-  <script src="js/ai-tutor.js?v=1.2.3"></script>
-  <script src="js/detektif.js?v=1.2.3"></script>
+  <script src="js/database.js?v=1.2.5"></script>
+  <script src="js/auth.js?v=1.2.5"></script>
+  <script src="js/app.js?v=1.2.5"></script>
+  <script src="js/dashboards.js?v=1.2.5"></script>
+  <script src="js/labs.js?v=1.2.5"></script>
+  <script src="js/lkpd.js?v=1.2.5"></script>
+  <script src="js/quiz.js?v=1.2.5"></script>
+  <script src="js/ai-tutor.js?v=1.2.5"></script>
+  <script src="js/detektif.js?v=1.2.5"></script>
   <!-- PHASE 4, 5, 6, 7 & 8 SCRIPTS -->
   <script src="js/fivia-assessment.js"></script>
   <script src="js/fivia-student.js"></script>
@@ -2496,7 +2732,7 @@
   <script src="js/fivia-virtual-lab.js"></script>
   <script src="js/fivia-lab-engine.js"></script>
   <script src="js/fivia-lab-analytics.js"></script>
-  <script src="js/fivia-lab-lkpd.js"></script>
+  <script src="js/fivia-lab-lkpd.js?v=1.2.5"></script>
   <script src="js/fivia-lab-reports.js"></script>
   <script src="js/fivia-projects.js"></script>
   <script src="js/fivia-project-engine.js"></script>
