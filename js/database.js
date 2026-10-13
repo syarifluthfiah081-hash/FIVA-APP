@@ -997,6 +997,9 @@ class LocalDatabase {
     }
 
     this.saveTable("submissions", submissions);
+    if (window.syncLocalChangeToCloud) {
+      window.syncLocalChangeToCloud("submissions", submission);
+    }
     return true;
   }
 

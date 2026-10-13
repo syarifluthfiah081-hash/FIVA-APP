@@ -5,7 +5,9 @@
 
 const FIRESTORE_COLLECTIONS = {
   submissions: "vlab_lkpd_submissions",
+  quizScores: "vlab_quiz_results",
   quiz_results: "vlab_quiz_results",
+  detektifProgress: "vlab_game_progress",
   game_progress: "vlab_game_progress",
   students: "vlab_students",
   classes: "vlab_classes",
@@ -295,6 +297,21 @@ async function fetchRosterFromCloud() {
       }
     } catch (errSubs) {
       console.warn("[Firebase Sync] Gagal memuat submissions LKPD dari cloud:", errSubs);
+    }
+
+    // 6. Fetch vlab_quiz_results (Student Quiz Results)
+    try {
+      const quizSnap = await firestore.collection("vlab_quiz_results").get();
+      if (!quizSnap.empty) {
+        let quizCount = 0;
+        quizSnap.forEach(doc => {
+          handleCloudRecordUpdate("quizScores", doc.id, doc.data());
+          quizCount++;
+        });
+        console.log(`[Firebase Sync] Berhasil memuat ${quizCount} hasil kuis siswa dari Cloud!`);
+      }
+    } catch (errQuiz) {
+      console.warn("[Firebase Sync] Gagal memuat quiz results dari cloud:", errQuiz);
     }
 
     console.log(`[Firebase Sync] Berhasil memuat ${count} data siswa dari Cloud!`);
