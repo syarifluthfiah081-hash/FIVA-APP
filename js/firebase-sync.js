@@ -446,16 +446,46 @@ function flushPendingCloudUpdates() {
   }
   
   // 2. Process students & roster
-  const stdMap = { ...pendingCloudUpdates.students, ...pendingCloudUpdates.roster, ...pendingCloudUpdates.users };
+  const stdMap = { ...pendingCloudUpdates.students, ...pendingCloudUpdates.roster };
   const stdIds = Object.keys(stdMap);
   if (stdIds.length > 0) {
     stdIds.forEach(id => {
       const std = stdMap[id];
+      if (std && (std.role === "guru" || std.role === "admin")) return;
       syncStudentRecordLocally(std);
     });
     hasStudentChanges = true;
     pendingCloudUpdates.students = {};
     pendingCloudUpdates.roster = {};
+  }
+
+  // 2b. Process users (Teachers, Admins & Students)
+  const userMap = pendingCloudUpdates.users || {};
+  const userIds = Object.keys(userMap);
+  if (userIds.length > 0 && window.db && typeof window.db.getTable === "function") {
+    let curUsers = window.db.getTable("users") || [];
+    let hasUserTableChanges = false;
+    userIds.forEach(id => {
+      const u = userMap[id];
+      if (!u) return;
+      if (u.role === "guru" || u.role === "admin") {
+        const idx = curUsers.findIndex(cu => String(cu.id) === String(id) || (cu.email && u.email && cu.email.toLowerCase() === u.email.toLowerCase()));
+        if (idx !== -1) {
+          curUsers[idx] = { ...curUsers[idx], ...u };
+        } else {
+          curUsers.push(u);
+        }
+        hasUserTableChanges = true;
+      } else {
+        syncStudentRecordLocally(u);
+      }
+    });
+    if (hasUserTableChanges) {
+      window.db.saveTable("users", curUsers, true);
+      if (typeof window.renderTeacherManagement === "function") {
+        window.renderTeacherManagement();
+      }
+    }
     pendingCloudUpdates.users = {};
   }
   
@@ -646,6 +676,28 @@ async function syncServerDataForTeacher(silent = false) {
     }
     classes.forEach(doc => {
       handleCloudRecordUpdate("classes", doc.id, doc);
+    });
+  } catch (_) {}
+
+  // 4. Fetch Users (Teachers & Registered Users) to guarantee identical accounts on all devices
+  try {
+    let cloudUsers = [];
+    if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+      try {
+        const snap = await Promise.race([
+          window.FIVIA_FIREBASE.db.collection("vlab_users").get(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), 2500))
+        ]);
+        if (!snap.empty) {
+          cloudUsers = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        }
+      } catch (_) {}
+    }
+    if (cloudUsers.length === 0) {
+      cloudUsers = await fetchCollectionFromFirestoreREST("vlab_users");
+    }
+    cloudUsers.forEach(doc => {
+      handleCloudRecordUpdate("users", doc.id, doc);
     });
   } catch (_) {}
   

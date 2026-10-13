@@ -133,41 +133,6 @@ class AuthManager {
     // ==========================================
     // 1. CHECK TEACHER & ADMIN LOGINS FIRST
     // ==========================================
-    const isTeacherPass = (
-      inputPass === "syarif121220" ||
-      inputPass === "121220" ||
-      inputPass === "syarif" ||
-      inputPass === "guru123" ||
-      inputPass === "guru" ||
-      inputPass === "12345"
-    );
-
-    const isTeacherIdent = (
-      inputId === "guru" ||
-      inputId === "guru fisika" ||
-      inputId === "syarif" ||
-      inputId === "pak syarif" ||
-      inputId === "syarif hidayatullah" ||
-      inputId.includes("syarif") ||
-      inputId.includes("hidayatullah") ||
-      inputId.includes("hidayasmapat") ||
-      inputId.includes("guru.sma.belajar.id") ||
-      inputId === "guru@hidayahstore.edu" ||
-      inputId.includes("hidayat")
-    );
-
-    // Instant teacher login: matches teacher identity or teacher password
-    if (isTeacherIdent || isTeacherPass || inputPass === "syarif121220" || inputPass === "121220") {
-      return this._setSessionUser({
-        id: "usr_guru_syarif",
-        email: "syarifhidayatullah64@guru.sma.belajar.id",
-        name: "Syarif Hidayatullah",
-        role: "guru",
-        nis: null,
-        classId: null
-      });
-    }
-
     const guruOrAdmin = users.find(u => {
       if (!u || (u.role !== "guru" && u.role !== "admin")) return false;
       const uEmail = normText(u.email);
@@ -181,54 +146,113 @@ class AuthManager {
         uName === inputId ||
         uRole === inputId ||
         uId === inputId ||
-        (inputId.length >= 2 && uName.includes(inputId)) ||
-        (inputId.length >= 2 && inputId.includes(uName))
+        (inputId.length >= 3 && uName.includes(inputId)) ||
+        (inputId.length >= 3 && inputId.includes(uName))
       );
 
       const passMatches = (
         normText(u.password) === inputPass ||
-        String(u.password || "").trim() === rawPass ||
-        (u.role === "guru" && isTeacherPass) ||
-        (u.role === "admin" && (inputPass === "admin123" || inputPass === "admin" || inputPass === "12345"))
+        String(u.password || "").trim() === rawPass
       );
 
       return idMatches && passMatches;
     });
 
     if (guruOrAdmin) {
-      if (guruOrAdmin.role === "guru") {
-        return this._setSessionUser({
-          id: "usr_guru_syarif",
-          email: "syarifhidayatullah64@guru.sma.belajar.id",
-          name: "Syarif Hidayatullah",
-          role: "guru",
-          nis: null,
-          classId: null
-        });
-      }
       return this._setSessionUser(guruOrAdmin);
     }
 
-    // Default hardcoded fallbacks for Teacher & Admin
-    if (isTeacherIdent || isTeacherPass) {
-      return this._setSessionUser({
-        id: "usr_guru_syarif",
-        email: "syarifhidayatullah64@guru.sma.belajar.id",
-        name: "Syarif Hidayatullah",
-        role: "guru",
-        nis: null,
-        classId: null
-      });
+    // Dynamic Cloud Firestore check for Teachers/Admins across devices
+    if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+      try {
+        const firestore = window.FIVIA_FIREBASE.db;
+        const fetchTimeout = (p, ms = 1200) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), ms))]);
+        const snap = await fetchTimeout(firestore.collection("vlab_users").get());
+        if (!snap.empty) {
+          for (const doc of snap.docs) {
+            const u = doc.data();
+            if (!u || (u.role !== "guru" && u.role !== "admin")) continue;
+            const uEmail = normText(u.email);
+            const uName = normText(u.name);
+            const uId = normText(doc.id);
+
+            const idMatches = (
+              uEmail === inputId ||
+              uEmail.split("@")[0] === inputId ||
+              uName === inputId ||
+              uId === inputId ||
+              (inputId.length >= 3 && uName.includes(inputId))
+            );
+
+            const passMatches = (
+              normText(u.password) === inputPass ||
+              String(u.password || "").trim() === rawPass
+            );
+
+            if (idMatches && passMatches) {
+              const matchedCloudUser = {
+                id: doc.id,
+                email: u.email,
+                name: u.name,
+                role: u.role,
+                password: u.password,
+                classId: u.classId || null
+              };
+              // Cache locally
+              const curUsers = (window.db && window.db.getTable("users")) || [];
+              const exIdx = curUsers.findIndex(cu => cu.id === matchedCloudUser.id || cu.email === matchedCloudUser.email);
+              if (exIdx >= 0) curUsers[exIdx] = matchedCloudUser;
+              else curUsers.push(matchedCloudUser);
+              if (window.db) window.db.saveTable("users", curUsers);
+
+              return this._setSessionUser(matchedCloudUser);
+            }
+          }
+        }
+      } catch (errCloudGuru) {
+        console.warn("[Auth] Cloud teacher lookup:", errCloudGuru);
+      }
     }
-    if ((inputId === "admin" || inputId === "admin@hidayahstore.edu") && (inputPass === "admin123" || inputPass === "admin" || inputPass === "12345")) {
-      return this._setSessionUser({
-        id: "usr_admin",
-        email: "admin@hidayahstore.edu",
-        name: "Admin Hidayah",
-        role: "admin",
-        nis: null,
-        classId: null
-      });
+
+    // REST fallback for Teachers/Admins
+    if (typeof fetchCollectionFromFirestoreREST === "function") {
+      try {
+        const cloudUsers = await fetchCollectionFromFirestoreREST("vlab_users");
+        if (Array.isArray(cloudUsers) && cloudUsers.length > 0) {
+          for (const u of cloudUsers) {
+            if (!u || (u.role !== "guru" && u.role !== "admin")) continue;
+            const uEmail = normText(u.email);
+            const uName = normText(u.name);
+            const idMatches = (
+              uEmail === inputId ||
+              uEmail.split("@")[0] === inputId ||
+              uName === inputId ||
+              normText(u.id) === inputId ||
+              (inputId.length >= 3 && uName.includes(inputId))
+            );
+            const passMatches = (
+              normText(u.password) === inputPass ||
+              String(u.password || "").trim() === rawPass
+            );
+            if (idMatches && passMatches) {
+              const matchedCloudUser = {
+                id: u.id,
+                email: u.email,
+                name: u.name,
+                role: u.role,
+                password: u.password,
+                classId: u.classId || null
+              };
+              const curUsers = (window.db && window.db.getTable("users")) || [];
+              const exIdx = curUsers.findIndex(cu => cu.id === matchedCloudUser.id || cu.email === matchedCloudUser.email);
+              if (exIdx >= 0) curUsers[exIdx] = matchedCloudUser;
+              else curUsers.push(matchedCloudUser);
+              if (window.db) window.db.saveTable("users", curUsers);
+              return this._setSessionUser(matchedCloudUser);
+            }
+          }
+        }
+      } catch (_) {}
     }
 
     // ==========================================
@@ -311,9 +335,6 @@ class AuthManager {
       // Alphanumeric match (e.g. FIVIA-X1-001 vs fiviax1001)
       if (inAlpha && (normAlphaNum(candCode) === inAlpha || normAlphaNum(candNis) === inAlpha)) return true;
 
-      // Universal student fallbacks
-      if (inText === "12345" || inText === "siswa123" || inText === "siswa") return true;
-
       return false;
     };
 
@@ -327,7 +348,7 @@ class AuthManager {
       if (!candPass || !inRaw) return false;
       const cp = normText(candPass);
       const ip = normText(inRaw);
-      return cp === ip || String(candPass).trim() === inRaw || ip === "12345" || ip === "siswa" || ip === "siswa123";
+      return cp === ip || String(candPass).trim() === inRaw;
     };
 
     // Find student matching any of the supported login patterns
@@ -356,22 +377,6 @@ class AuthManager {
       if (nisInId && testNisMatch(cand.nis, cand.studentCode, inputPass, inputPassDigits, inputPassAlpha)) {
         matchedCandidate = cand;
         break;
-      }
-    }
-
-    // Pattern 4: Demo / fallback student account
-    if (!matchedCandidate) {
-      if ((inputId === "siswa" || inputId === "12345" || inputId === "siswa@hidayahstore.edu") && (rawPass === "12345" || rawPass === "siswa123" || rawPass === "siswa")) {
-        matchedCandidate = candidates.find(c => c.nis === "12345" || normText(c.name) === "siswa") || {
-          id: "usr_siswa",
-          email: "siswa@hidayahstore.edu",
-          name: "Siswa",
-          role: "siswa",
-          nis: "12345",
-          studentCode: "FIVIA-X1-001",
-          classId: "cls_x1",
-          password: "siswa123"
-        };
       }
     }
 
@@ -589,8 +594,76 @@ class AuthManager {
       }
     }
 
+    // Direct Cloud Firestore Sync for new accounts
+    try {
+      if (window.syncLocalChangeToCloud) {
+        window.syncLocalChangeToCloud("users", newUser);
+        if (role === "guru") window.syncLocalChangeToCloud("teachers", newUser);
+        if (role === "siswa") window.syncLocalChangeToCloud("students", newUser);
+      }
+      if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+        window.FIVIA_FIREBASE.db.collection("vlab_users").doc(newUser.id).set(newUser, { merge: true }).catch(() => {});
+        if (role === "guru") window.FIVIA_FIREBASE.db.collection("vlab_teachers").doc(newUser.id).set(newUser, { merge: true }).catch(() => {});
+        if (role === "siswa") window.FIVIA_FIREBASE.db.collection("vlab_students").doc(newUser.id).set(newUser, { merge: true }).catch(() => {});
+      }
+      if (typeof writeDocToFirestoreREST === "function") {
+        writeDocToFirestoreREST("vlab_users", newUser.id, newUser).catch(() => {});
+        if (role === "guru") writeDocToFirestoreREST("vlab_teachers", newUser.id, newUser).catch(() => {});
+        if (role === "siswa") writeDocToFirestoreREST("vlab_students", newUser.id, newUser).catch(() => {});
+      }
+    } catch (_) {}
+
     // Auto login
     return this._setSessionUser(newUser);
+  }
+
+  updatePassword(userId, newPassword) {
+    if (!newPassword || String(newPassword).trim().length < 4) {
+      return { success: false, message: "Kata sandi minimal 4 karakter!" };
+    }
+
+    const cleanPass = String(newPassword).trim();
+    const users = (window.db && window.db.getTable("users")) || [];
+    const idx = users.findIndex(u => u.id === userId || (u.email && this.currentUser && u.email === this.currentUser.email));
+
+    if (idx === -1) {
+      return { success: false, message: "Data akun tidak ditemukan!" };
+    }
+
+    users[idx].password = cleanPass;
+    if (window.db) window.db.saveTable("users", users);
+
+    // Update active session if changing current user
+    if (this.currentUser && (this.currentUser.id === users[idx].id || this.currentUser.email === users[idx].email)) {
+      this.currentUser.password = cleanPass;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(this.currentUser));
+      window.dispatchEvent(new Event("authChange"));
+    }
+
+    // Direct cloud sync to Firestore
+    try {
+      const userDoc = { ...users[idx] };
+      if (window.syncLocalChangeToCloud) {
+        window.syncLocalChangeToCloud("users", userDoc);
+        if (userDoc.role === "guru") window.syncLocalChangeToCloud("teachers", userDoc);
+      }
+      if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+        window.FIVIA_FIREBASE.db.collection("vlab_users").doc(userDoc.id).set(userDoc, { merge: true }).catch(() => {});
+        if (userDoc.role === "guru") {
+          window.FIVIA_FIREBASE.db.collection("vlab_teachers").doc(userDoc.id).set(userDoc, { merge: true }).catch(() => {});
+        }
+      }
+      if (typeof writeDocToFirestoreREST === "function") {
+        writeDocToFirestoreREST("vlab_users", userDoc.id, userDoc).catch(() => {});
+        if (userDoc.role === "guru") {
+          writeDocToFirestoreREST("vlab_teachers", userDoc.id, userDoc).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.warn("[Auth] Cloud password sync error:", err);
+    }
+
+    return { success: true, message: "Kata sandi berhasil diperbarui!" };
   }
 }
 

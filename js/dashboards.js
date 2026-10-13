@@ -209,20 +209,98 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const newTeacherId = "usr_guru_" + Math.random().toString(36).substr(2, 9);
-      users.push({
+      const newTeacherDoc = {
         id: newTeacherId,
         name: name,
         email: email,
         password: password,
         role: "guru"
-      });
+      };
+      users.push(newTeacherDoc);
       window.db.saveTable("users", users);
+
+      try {
+        if (window.syncLocalChangeToCloud) {
+          window.syncLocalChangeToCloud("users", newTeacherDoc);
+          window.syncLocalChangeToCloud("teachers", newTeacherDoc);
+        }
+        if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+          window.FIVIA_FIREBASE.db.collection("vlab_users").doc(newTeacherId).set(newTeacherDoc, { merge: true }).catch(() => {});
+          window.FIVIA_FIREBASE.db.collection("vlab_teachers").doc(newTeacherId).set(newTeacherDoc, { merge: true }).catch(() => {});
+        }
+        if (typeof writeDocToFirestoreREST === "function") {
+          writeDocToFirestoreREST("vlab_users", newTeacherId, newTeacherDoc).catch(() => {});
+          writeDocToFirestoreREST("vlab_teachers", newTeacherId, newTeacherDoc).catch(() => {});
+        }
+      } catch (_) {}
 
       window.closeAllModals();
       addTeacherForm.reset();
       window.showToast(`Akun guru ${name} berhasil ditambahkan!`);
       if (typeof window.renderTeacherManagement === 'function') {
         window.renderTeacherManagement();
+      }
+    });
+  }
+
+  // Bind Change Password My Account Button
+  const btnChangeMyPassword = document.getElementById("btn-open-change-my-password");
+  if (btnChangeMyPassword) {
+    btnChangeMyPassword.addEventListener("click", () => {
+      const cur = window.auth ? window.auth.getCurrentUser() : null;
+      if (cur) {
+        openChangeTeacherPasswordModal(cur.id, cur.name || "Akun Anda");
+      } else {
+        window.showToast("Silakan login sebagai guru terlebih dahulu.", "warning");
+      }
+    });
+  }
+
+  // Bind Form Change Teacher Password Submit
+  const formChangeTeacherPassword = document.getElementById("form-change-teacher-password");
+  if (formChangeTeacherPassword) {
+    formChangeTeacherPassword.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const teacherId = document.getElementById("change-password-teacher-id")?.value;
+      const newPass = document.getElementById("change-teacher-new-pass")?.value || "";
+      const confirmPass = document.getElementById("change-teacher-confirm-pass")?.value || "";
+
+      if (!newPass || newPass.trim().length < 4) {
+        window.showToast("Kata sandi baru minimal 4 karakter!", "warning");
+        return;
+      }
+
+      if (newPass !== confirmPass) {
+        window.showToast("Konfirmasi kata sandi tidak cocok!", "danger");
+        return;
+      }
+
+      if (window.auth && typeof window.auth.updatePassword === "function") {
+        const res = window.auth.updatePassword(teacherId, newPass);
+        if (res && res.success) {
+          window.closeAllModals();
+          window.showToast("Kata sandi guru berhasil diubah!", "success");
+          if (typeof window.renderTeacherManagement === "function") {
+            window.renderTeacherManagement();
+          }
+        } else {
+          window.showToast((res && res.message) || "Gagal mengubah kata sandi.", "danger");
+        }
+      } else {
+        // Direct local fallback
+        const users = (window.db && window.db.getTable("users")) || [];
+        const idx = users.findIndex(u => u.id === teacherId);
+        if (idx !== -1) {
+          users[idx].password = newPass.trim();
+          window.db.saveTable("users", users);
+          window.closeAllModals();
+          window.showToast("Kata sandi guru berhasil diubah!", "success");
+          if (typeof window.renderTeacherManagement === "function") {
+            window.renderTeacherManagement();
+          }
+        } else {
+          window.showToast("Data akun guru tidak ditemukan.", "danger");
+        }
       }
     });
   }
@@ -2661,14 +2739,27 @@ function renderTeacherManagement() {
       <td style="font-family: monospace; color: var(--brand-blue);">${t.email}</td>
       <td><span class="badge badge-blue">Guru Fisika</span></td>
       <td>
-        ${isSelf ? `<span class="badge badge-success" style="font-size: 0.75rem;">(Akun Anda)</span>` : `
-          <button class="btn btn-outline btn-delete-teacher" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);" data-id="${t.id}" data-name="${t.name}">
-            <i class="fas fa-trash-alt"></i> Hapus
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-change-teacher-pw" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--brand-blue); color: var(--brand-blue);" data-id="${t.id}" data-name="${t.name}">
+            <i class="fas fa-key"></i> Ubah Password
           </button>
-        `}
+          ${isSelf ? `<span class="badge badge-success" style="font-size: 0.75rem;">(Akun Anda)</span>` : `
+            <button class="btn btn-outline btn-delete-teacher" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);" data-id="${t.id}" data-name="${t.name}">
+              <i class="fas fa-trash-alt"></i> Hapus
+            </button>
+          `}
+        </div>
       </td>
     `;
     tableBody.appendChild(row);
+  });
+
+  tableBody.querySelectorAll(".btn-change-teacher-pw").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const teacherId = btn.getAttribute("data-id");
+      const teacherName = btn.getAttribute("data-name");
+      openChangeTeacherPasswordModal(teacherId, teacherName);
+    });
   });
 
   tableBody.querySelectorAll(".btn-delete-teacher").forEach(btn => {
@@ -2680,11 +2771,42 @@ function renderTeacherManagement() {
   });
 }
 
+function openChangeTeacherPasswordModal(teacherId, teacherName) {
+  const modal = document.getElementById("change-teacher-password-modal");
+  if (!modal) return;
+
+  const idInput = document.getElementById("change-password-teacher-id");
+  const targetName = document.getElementById("change-password-target-name");
+  const newPassInput = document.getElementById("change-teacher-new-pass");
+  const confirmPassInput = document.getElementById("change-teacher-confirm-pass");
+
+  if (idInput) idInput.value = teacherId;
+  if (targetName) targetName.textContent = `Ubah kata sandi untuk: ${teacherName}`;
+  if (newPassInput) newPassInput.value = "";
+  if (confirmPassInput) confirmPassInput.value = "";
+
+  window.openModal("change-teacher-password-modal");
+}
+window.openChangeTeacherPasswordModal = openChangeTeacherPasswordModal;
+
 function deleteTeacher(teacherId, teacherName) {
   if (confirm(`Yakin ingin menghapus guru ${teacherName}?`)) {
     let users = window.db ? window.db.getTable("users") : [];
     users = users.filter(u => u.id !== teacherId);
     if (window.db) window.db.saveTable("users", users);
+
+    // Delete in Firestore
+    try {
+      if (window.FIVIA_FIREBASE && window.FIVIA_FIREBASE.db && window.FIVIA_FIREBASE.isInitialized) {
+        window.FIVIA_FIREBASE.db.collection("vlab_users").doc(teacherId).delete().catch(() => {});
+        window.FIVIA_FIREBASE.db.collection("vlab_teachers").doc(teacherId).delete().catch(() => {});
+      }
+      const config = (window.getFirebaseConfig && window.getFirebaseConfig()) || {};
+      const projectId = config.projectId || "fiva-app";
+      fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/vlab_users/${encodeURIComponent(teacherId)}`, { method: "DELETE" }).catch(() => {});
+      fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/vlab_teachers/${encodeURIComponent(teacherId)}`, { method: "DELETE" }).catch(() => {});
+    } catch (_) {}
+
     if (window.showToast) window.showToast(`Guru ${teacherName} berhasil dihapus.`);
     renderTeacherManagement();
   }
