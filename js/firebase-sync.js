@@ -10,7 +10,9 @@ const FIRESTORE_COLLECTIONS = {
   students: "vlab_students",
   classes: "vlab_classes",
   users: "vlab_users",
-  roster: "vlab_student_roster"
+  roster: "vlab_student_roster",
+  teachers: "vlab_teachers",
+  servers: "vlab_servers"
 };
 
 let syncUnsubscribers = [];
@@ -65,10 +67,13 @@ async function initFirebaseSync() {
     }
   });
 
-  // Fetch full roster from cloud to ensure local cache is completely up to date
+  // 1. Pastikan akun guru Pak Syarif Hidayatullah dan status Server terdaftar di Firebase
+  await ensureTeacherRegisteredInFirebase();
+
+  // 2. Fetch full roster from cloud to ensure local cache is completely up to date
   await fetchRosterFromCloud();
 
-  // Push local items that might not yet exist on Firestore (backfill)
+  // 3. Push local items that might not yet exist on Firestore (backfill)
   await backfillLocalToCloud();
 }
 
@@ -425,6 +430,97 @@ async function fetchLKPDSubmissionsFromCloud() {
   }
 }
 
+/**
+ * Memastikan akun Guru Pak Syarif Hidayatullah dan status Server terdaftar di Firebase Firestore
+ */
+async function ensureTeacherRegisteredInFirebase() {
+  if (!window.FIVIA_FIREBASE || !window.FIVIA_FIREBASE.db || !window.FIVIA_FIREBASE.isInitialized) {
+    return false;
+  }
+  const firestore = window.FIVIA_FIREBASE.db;
+
+  const teacherData = {
+    id: "usr_guru_syarif",
+    name: "Syarif Hidayatullah",
+    email: "syarifhidayatullah64@guru.sma.belajar.id",
+    role: "guru",
+    password: "Syarif121220",
+    school: "SMA Negeri",
+    subject: "Fisika",
+    serverId: "srv_syarif_fivia",
+    serverName: "Server Guru Fisika SMA (Host: Pak Syarif)",
+    isServerHost: true,
+    mode: "server",
+    status: "active",
+    lastSyncedAt: new Date().toISOString()
+  };
+
+  const serverDoc = {
+    serverId: "srv_syarif_fivia",
+    serverName: "Server Guru Fisika SMA (Host: Pak Syarif)",
+    teacherId: "usr_guru_syarif",
+    teacherName: "Syarif Hidayatullah",
+    teacherEmail: "syarifhidayatullah64@guru.sma.belajar.id",
+    status: "online",
+    storageMode: "server",
+    description: "Database Server Terpusat Guru Fisika",
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    await firestore.collection("vlab_users").doc("usr_guru_syarif").set(teacherData, { merge: true });
+    await firestore.collection("vlab_teachers").doc("usr_guru_syarif").set(teacherData, { merge: true });
+    await firestore.collection("vlab_servers").doc("srv_syarif_fivia").set(serverDoc, { merge: true });
+    console.log("[Firebase] Akun Guru & Server Pak Syarif Hidayatullah berhasil diverifikasi di Firestore.");
+    return true;
+  } catch (err) {
+    console.warn("[Firebase] Peringatan pendaftaran akun guru ke Firestore:", err);
+    return false;
+  }
+}
+
+/**
+ * Ekspor seluruh database siswa dalam bentuk server (JSON) untuk diarsipkan di perangkat guru
+ */
+function exportServerDatabaseJSON() {
+  const users = (window.db && window.db.getTable("users")) || [];
+  const students = (window.db && window.db.getTable("students")) || [];
+  const submissions = (window.db && window.db.getTable("submissions")) || [];
+  const quizScores = (window.db && window.db.getTable("quizScores")) || [];
+  const classes = (window.db && window.db.getTable("classes")) || [];
+
+  const serverDatabase = {
+    server: {
+      serverId: "srv_syarif_fivia",
+      serverHost: "Syarif Hidayatullah",
+      serverEmail: "syarifhidayatullah64@guru.sma.belajar.id",
+      exportedAt: new Date().toISOString(),
+      appVersion: "1.2.7",
+      status: "verified"
+    },
+    statistics: {
+      totalStudents: students.length,
+      totalSubmissions: submissions.length,
+      totalQuizScores: quizScores.length
+    },
+    students: students,
+    submissions: submissions,
+    quizScores: quizScores,
+    classes: classes
+  };
+
+  const blob = new Blob([JSON.stringify(serverDatabase, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `database_server_guru_${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (window.showToast) window.showToast("Database Server Guru berhasil diunduh!", "success");
+}
+
 // Export to window
 window.initFirebaseSync = initFirebaseSync;
 window.syncLocalChangeToCloud = syncLocalChangeToCloud;
@@ -433,3 +529,5 @@ window.backfillLocalToCloud = backfillLocalToCloud;
 window.fetchRosterFromCloud = fetchRosterFromCloud;
 window.syncAllRosterToCloud = syncAllRosterToCloud;
 window.fetchLKPDSubmissionsFromCloud = fetchLKPDSubmissionsFromCloud;
+window.ensureTeacherRegisteredInFirebase = ensureTeacherRegisteredInFirebase;
+window.exportServerDatabaseJSON = exportServerDatabaseJSON;

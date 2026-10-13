@@ -545,12 +545,20 @@ function compileLKPDData() {
 
   return {
     studentId: user.id,
+    studentName: user.name || "Siswa",
+    studentNis: user.nis || "-",
+    studentCode: user.studentCode || (user.nis ? ('FIVIA-' + user.nis) : "-"),
+    className: user.classId || "Kelas X-1",
     labId: activeLKPD.labId,
     hypothesis: document.getElementById("lkpd-hipotesis").value.trim(),
     observations: observationsList,
     answers: answers,
     conclusion: document.getElementById("lkpd-kesimpulan").value.trim(),
-    status: "pending"
+    serverId: "srv_syarif_fivia",
+    serverHost: "Syarif Hidayatullah",
+    storageMode: "server",
+    status: "pending",
+    timestamp: new Date().toISOString()
   };
 }
 
@@ -575,16 +583,16 @@ function submitLKPDAnswers(labId) {
     return;
   }
 
-  // Submit to DB
+  // Submit to Server DB
   window.db.submitLKPD(lkpdData);
   
   // Clear autosave cache
   localStorage.removeItem(`vlab_autosave_${user.id}_lab_${labId}`);
 
-  window.showToast("Lembar Kerja Siswa (LKPD) berhasil disimpan dan dikirim!");
+  window.showToast("Lembar Kerja Siswa (LKPD) berhasil dikirim ke Server Guru Pak Syarif!", "success");
   
   // Prompt option to share via WhatsApp or return
-  if (confirm("Lembar Kerja Siswa (LKPD) berhasil disimpan!\n\nApakah Anda ingin membagikan salinan jawaban ke Guru via WhatsApp atau menyalin kodenya sekarang?")) {
+  if (confirm("✅ Lembar Kerja Siswa (LKPD) berhasil disimpan dan dikirim ke Server Guru (Pak Syarif Hidayatullah)!\n\nApakah Anda juga ingin mengirimkan salinan jawaban ke Guru via WhatsApp atau menyalin kodenya?")) {
     window.shareCurrentLKPD(labId);
   } else {
     setTimeout(() => {
